@@ -1,0 +1,158 @@
+{% from "webshop/templates/includes/cart/cart_macros.html" import show_address %}
+
+<div class="mb-3 frappe-card p-5" data-section="shipping-address">
+	<div class="d-flex align-items-center">
+		<div class="col-6 address-header"><h6>{{ _("Customer Information") }}</h6></div>
+		<div class="col-6 text-right" style="padding: 0;">
+			<button class="btn btn-sm btn-primary btn-customer-info">{{ _("Customer Information") }}</button>
+		</div>
+	</div>
+
+	<hr>
+
+	{% if shipping_addresses and shipping_addresses | length > 0 %}
+		{# Show only the primary/first shipping address #}
+		{% set primary_address = shipping_addresses[0] %}
+		<div class="row no-gutters" data-fieldname="shipping_address_name">
+			<div class="w-100 address-container" data-address-name="{{ primary_address.name }}" data-address-type="shipping" data-active>
+				{% with address = primary_address %}
+					{% include "templates/includes/cart/address_card.html" %}
+				{% endwith %}
+			</div>
+		</div>
+	{% else %}
+		{# Empty state - no address added yet #}
+		<div class="customer-info-empty text-center py-4">
+			<div class="text-muted mb-3">
+				<svg class="icon icon-lg mb-2">
+					<use href="#icon-user"></use>
+				</svg>
+				<p>{{ _("No customer information added yet.") }}</p>
+			</div>
+			<button class="btn btn-outline-primary btn-customer-info">
+				{{ _("Add Customer Information") }}
+			</button>
+		</div>
+	{% endif %}
+</div>
+
+<!-- Hidden billing same-as-shipping checkbox (always checked) -->
+<input type="hidden" id="input_same_billing" value="1">
+
+<!-- Billing Address section - hidden by default, same as shipping -->
+<div class="mb-3 frappe-card p-5" data-section="billing-address" style="display: none;">
+	<div class="d-flex">
+		<div class="col-6 address-header"><h6>{{ _("Billing Address") }}</h6></div>
+	</div>
+
+	<hr>
+	{% if billing_addresses and billing_addresses | length > 0 %}
+		{% set primary_billing = billing_addresses[0] %}
+		<div class="row no-gutters" data-fieldname="customer_address">
+			<div class="w-100 address-container" data-address-name="{{ primary_billing.name }}" data-address-type="billing" data-active>
+				{% with address = primary_billing %}
+					{% include "templates/includes/cart/address_card.html" %}
+				{% endwith %}
+			</div>
+		</div>
+	{% endif %}
+</div>
+
+
+<script>
+frappe.ready(() => {
+	$(document).on('click', '.address-card', (e) => {
+		const $target = $(e.currentTarget);
+		const $section = $target.closest('[data-section]');
+		$section.find('.address-card').removeClass('active');
+		$target.addClass('active');
+	});
+
+	function setup_state() {
+		const shipping_address = $('[data-section="shipping-address"]')
+			.find('[data-address-name][data-active]').attr('data-address-name');
+
+		if (shipping_address) {
+			$(`[data-section="shipping-address"] [data-address-name="${shipping_address}"] .address-card`).addClass('active');
+		}
+	}
+
+	setup_state();
+});
+</script>
+
+<script>
+	frappe.ready(() => {
+		function get_update_address_dialog() {
+			let d = new frappe.ui.Dialog({
+				title: "Select Address",
+				fields: [{
+					'fieldtype': 'HTML',
+					'fieldname': 'address_picker',
+				}],
+				primary_action_label: __('Set Address'),
+				primary_action: () => {
+					const $card = d.$wrapper.find('.address-card.active');
+					const address_type = $card.closest('[data-address-type]').attr('data-address-type');
+					const address_name = $card.closest('[data-address-name]').attr('data-address-name');
+					frappe.call({
+						type: "POST",
+						method: "webshop.webshop.shopping_cart.cart.update_cart_address",
+						freeze: true,
+						args: {
+							address_type,
+							address_name
+						},
+						callback: function(r) {
+							d.hide();
+							if (!r.exc) {
+								$(".cart-tax-items").html(r.message.total);
+								shopping_cart.parent.find(
+									`.address-container[data-address-type="${address_type}"]`
+								).html(r.message.address);
+							}
+						}
+					});
+				}
+			});
+
+			return d;
+		}
+
+		function get_address_template(type) {
+			return {
+				shipping: `<div class="mb-3" data-section="shipping-address">
+					<div class="row no-gutters" data-fieldname="shipping_address_name">
+						{% for address in shipping_addresses %}
+							<div class="mr-3 mb-3 w-100" data-address-name="{{address.name}}" data-address-type="shipping"
+								{% if doc.shipping_address_name == address.name %} data-active {% endif %}>
+								{% include "templates/includes/cart/address_picker_card.html" %}
+							</div>
+						{% endfor %}
+					</div>
+				</div>`,
+				billing: `<div class="mb-3" data-section="billing-address">
+					<div class="row no-gutters" data-fieldname="customer_address">
+						{% for address in billing_addresses %}
+							<div class="mr-3 mb-3 w-100" data-address-name="{{address.name}}" data-address-type="billing"
+								{% if doc.shipping_address_name == address.name %} data-active {% endif %}>
+								{% include "templates/includes/cart/address_picker_card.html" %}
+							</div>
+						{% endfor %}
+					</div>
+				</div>`,
+			}[type];
+		}
+
+		$(document).on('click', '.btn-change-address', (e) => {
+			const d = get_update_address_dialog();
+			const type = $(e.currentTarget).parents('.address-container').attr('data-address-type');
+
+			$(d.get_field('address_picker').wrapper).html(
+				get_address_template(type)
+			);
+
+			d.show();
+		});
+	});
+</script>

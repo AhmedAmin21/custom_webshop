@@ -1,0 +1,20 @@
+<p>
+    {{ _("Hello") }} {{ first_name | e }},
+</p>
+
+<p>
+    {{ _("Welcome to {0}!").format(site_name) }}
+</p>
+
+<p>
+    {{ _("Your account has been created successfully. You can now log in using your email and password.") }}
+</p>
+
+<p style="margin: 15px 0px;">
+    <a href="{{ site_url }}" rel="nofollow" class="btn btn-primary">{{ _("Visit Website") }}</a>
+</p>
+
+<p>
+    {{ _("Thanks") }},<br>
+    {{ site_name }} {{ _("Team") }}
+</p>

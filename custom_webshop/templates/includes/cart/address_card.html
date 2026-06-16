@@ -1,0 +1,37 @@
+<div class="card address-card h-100" data-contact-name="{{ primary_contact.name if primary_contact else '' }}">
+	<div class="btn btn-sm btn-default btn-edit-address font-md" style="position: absolute; right: 8px; top: 8px;" title="{{ _('Edit') }}">
+		<svg class="icon icon-sm">
+			<use href="#icon-edit"></use>
+		</svg>
+	</div>
+	<div class="card-body p-4">
+		<!-- Customer Name -->
+		<div class="customer-info-row customer-name font-weight-bold mb-2">
+			{{ address.address_title or address.title or '' }}
+		</div>
+
+		<!-- Phone -->
+		{% if primary_contact and primary_contact.mobile_no %}
+		<div class="customer-info-row customer-phone mb-2">
+			<span class="text-muted">{{ _('Phone:') }}</span>
+			<span class="phone-value">{{ primary_contact.mobile_no }}</span>
+		</div>
+		{% endif %}
+
+		<!-- Address -->
+		{% if address.address_line1 %}
+		<div class="customer-info-row customer-address-line mb-1">
+			{{ address.address_line1 }}
+		</div>
+		{% endif %}
+
+		<!-- City & Country -->
+		{% if address.city or address.country %}
+		<div class="customer-info-row customer-location text-muted">
+			{% if address.city %}{{ address.city }}{% endif %}
+			{% if address.city and address.country %}, {% endif %}
+			{% if address.country %}{{ address.country }}{% endif %}
+		</div>
+		{% endif %}
+	</div>
+</div>

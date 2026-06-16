@@ -1,0 +1,100 @@
+/* custom_webshop cart styles */
+
+/* Subtle freeze for qty updates - replaces full-page modal backdrop */
+.cart-freeze-subtle {
+	opacity: 0.6;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+}
+
+/* Strong freeze for Place Order */
+.cart-freeze-strong {
+	opacity: 0.4;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+}
+
+/* Input highlight while waiting for debounce */
+.cart-qty-updating {
+	border-color: #5e64ff !important;
+	background-color: #f0f2ff !important;
+	transition: all 0.2s ease;
+}
+
+/* Button processing state */
+.btn-place-order:disabled,
+.btn-request-for-quotation:disabled {
+	opacity: 0.85;
+	cursor: not-allowed;
+}
+
+/* Customer Information button */
+.btn-customer-info {
+	font-size: 0.875rem;
+}
+
+/* Empty state for customer information */
+.customer-info-empty {
+	padding: 2rem 1rem;
+}
+
+.customer-info-empty .icon {
+	color: var(--text-muted);
+}
+
+/* Edit button on address card */
+.btn-edit-address {
+	z-index: 10;
+	background: transparent;
+	border: none;
+	color: var(--text-muted);
+}
+
+.btn-edit-address:hover {
+	color: var(--primary);
+}
+
+/* Address card phone display */
+.address-phone {
+	font-size: 0.9rem;
+}
+
+.address-phone .icon {
+	vertical-align: middle;
+	margin-right: 4px;
+}
+
+/* Dialog section styling */
+.frappe-control[data-fieldname="first_name"],
+.frappe-control[data-fieldname="mobile_no"] {
+	margin-bottom: 1rem;
+}
+
+/* Customer info card styling */
+.customer-info-row {
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.customer-name {
+	font-size: 1.1rem;
+	color: var(--text-color);
+}
+
+.customer-phone .phone-value {
+	font-weight: 500;
+}
+
+.customer-location {
+	font-size: 0.9rem;
+}
+
+/* Address card body padding */
+.address-card .card-body {
+	padding-right: 2.5rem !important;
+}
+
+/* Hide billing address section completely */
+[data-section="billing-address"] {
+	display: none !important;
+}

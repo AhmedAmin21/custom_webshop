@@ -29,8 +29,11 @@ app_license = "mit"
 # app_include_js = "/assets/custom_webshop/js/custom_webshop.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/custom_webshop/css/custom_webshop.css"
-# web_include_js = "/assets/custom_webshop/js/custom_webshop.js"
+web_include_css = "/assets/custom_webshop/css/cart.css"
+web_include_js = "/assets/custom_webshop/js/custom_signup.js"
+
+# Custom signup form template
+signup_form_template = "custom_webshop/templates/signup.html"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "custom_webshop/public/scss/website"
@@ -137,12 +140,16 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
+# Document Events
+# ---------------
+# Hook on document methods and events
+
 # doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
+#	"*": {
+#		"on_update": "method",
+#		"on_cancel": "method",
+#		"on_trash": "method"
+#	}
 # }
 
 # Scheduled Tasks
@@ -173,10 +180,26 @@ app_license = "mit"
 
 # Overriding Methods
 # ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "custom_webshop.event.get_events"
-# }
+override_whitelisted_methods = {
+	"webshop.webshop.shopping_cart.cart.request_for_quotation": "custom_webshop.shopping_cart.cart_override.place_order_from_cart",
+	"webshop.webshop.shopping_cart.cart.update_cart": "custom_webshop.shopping_cart.cart_override.update_cart",
+	"frappe.core.doctype.user.user.sign_up": "custom_webshop.api.auth.custom_sign_up"
+}
+
+website_path_resolver = "custom_webshop.path_resolver.custom_resolve_path"
+
+role_home_page = {
+	"Customer": "/all-products"
+}
+
+override_doctype_class = {
+	"Sales Order": "custom_webshop.overrides.sales_order.CustomSalesOrder"
+}
+
+website_route_rules = [
+	{"from_route": "/orders", "to_route": "orders"},
+	{"from_route": "/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "orders"}]}},
+]
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
