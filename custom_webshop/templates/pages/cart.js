@@ -200,7 +200,7 @@ $.extend(shopping_cart, {
 						.toggle(true);
 				} else {
 					$(btn).hide();
-					window.location.href = '/orders/' + encodeURIComponent(r.message);
+					window.location.href = '/payment?order_id=' + encodeURIComponent(r.message);
 				}
 			}
 		});
@@ -213,26 +213,7 @@ $.extend(shopping_cart, {
 			.find('[data-address-name][data-active]').attr('data-address-name');
 
 		if (!shippingAddress && !billingAddress) {
-			const d = new frappe.ui.Dialog({
-				title: __('Customer Information Required'),
-				fields: [
-					{
-						fieldtype: 'HTML',
-						fieldname: 'message',
-						options: `<p>${__("Please add your customer information before placing your order.")}</p>`
-					}
-				],
-				primary_action_label: __('Add Customer Information'),
-				primary_action: () => {
-					d.hide();
-					shopping_cart.open_customer_info_dialog('add');
-				},
-				secondary_action_label: __('Cancel'),
-				secondary_action: () => {
-					d.hide();
-				}
-			});
-			d.show();
+			shopping_cart.open_customer_info_dialog('add');
 			return;
 		}
 
@@ -259,7 +240,7 @@ $.extend(shopping_cart, {
 						.toggle(true);
 				} else {
 					$(btn).hide();
-					window.location.href = '/orders/' + encodeURIComponent(r.message);
+					window.location.href = '/payment?order_id=' + encodeURIComponent(r.message);
 				}
 			}
 		});

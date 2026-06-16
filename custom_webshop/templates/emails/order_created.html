@@ -1,0 +1,28 @@
+<p>
+    {{ _("Hello") }} {{ first_name | e }},
+</p>
+
+<p>
+    {{ _("Thank you for your order!") }}
+</p>
+
+<p>
+    {{ _("Your order <strong>{0}</strong> has been created successfully.").format(sales_order.name) }}
+</p>
+
+<p>
+    {{ _("Order Total: {0}").format(frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency})) }}
+</p>
+
+<p>
+    {{ _("To complete your order, please make your payment and upload the payment confirmation using the link below.") }}
+</p>
+
+<p style="margin: 15px 0px;">
+    <a href="{{ payment_url }}" rel="nofollow" class="btn btn-primary">{{ _("Make Payment") }}</a>
+</p>
+
+<p>
+    {{ _("Thanks") }},<br>
+    {{ site_name }} {{ _("Team") }}
+</p>

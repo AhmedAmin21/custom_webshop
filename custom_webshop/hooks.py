@@ -178,9 +178,52 @@ signup_form_template = "custom_webshop/templates/signup.html"
 
 # before_tests = "custom_webshop.install.before_tests"
 
+# Custom Fields
+# -------------
+custom_fields = {
+	"Webshop Settings": [
+		{
+			"fieldname": "custom_manual_payment_settings",
+			"label": "Manual Payment Settings",
+			"fieldtype": "Section Break",
+			"insert_after": "payment_gateway_account",
+			"collapsible": 1,
+		},
+		{
+			"fieldname": "custom_instapay_number",
+			"label": "InstaPay Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_manual_payment_settings",
+		},
+		{
+			"fieldname": "custom_vodafone_cash_number",
+			"label": "Vodafone Cash Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_instapay_number",
+		},
+		{
+			"fieldname": "custom_etisalat_cash_number",
+			"label": "Etisalat Cash Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_vodafone_cash_number",
+		},
+	],
+	"Sales Order": [
+		{
+			"fieldname": "custom_payment_method",
+			"label": "Payment Method",
+			"fieldtype": "Select",
+			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
+			"insert_after": "payment_terms_section",
+			"read_only": 1,
+		}
+	]
+}
+
 # Overriding Methods
 # ------------------------------
 override_whitelisted_methods = {
+	"webshop.webshop.shopping_cart.cart.place_order": "custom_webshop.shopping_cart.cart_override.place_order_from_cart",
 	"webshop.webshop.shopping_cart.cart.request_for_quotation": "custom_webshop.shopping_cart.cart_override.place_order_from_cart",
 	"webshop.webshop.shopping_cart.cart.update_cart": "custom_webshop.shopping_cart.cart_override.update_cart",
 	"frappe.core.doctype.user.user.sign_up": "custom_webshop.api.auth.custom_sign_up"

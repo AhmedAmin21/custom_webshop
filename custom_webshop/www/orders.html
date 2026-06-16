@@ -34,7 +34,12 @@
 					</span>
 				</td>
 				<td class="text-right">
-					<a class="btn btn-sm btn-primary-light" href="/orders/{{ order.name }}">
+					{% if order.docstatus == 0 %}
+					<a class="btn btn-sm btn-primary" href="/payment?order_id={{ order.name }}">
+						{{ _("Pay Now") }}
+					</a>
+					{% endif %}
+					<a class="btn btn-sm btn-primary-light{% if order.docstatus != 0 %} ml-2{% endif %}" href="/orders/{{ order.name }}">
 						{{ _("View") }}
 					</a>
 				</td>

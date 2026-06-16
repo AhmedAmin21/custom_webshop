@@ -35,6 +35,7 @@ def get_context(context):
 			"name",
 			"transaction_date",
 			"status",
+			"docstatus",
 			"grand_total",
 			"currency",
 			"per_delivered",

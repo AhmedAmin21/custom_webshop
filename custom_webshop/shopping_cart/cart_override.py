@@ -20,12 +20,14 @@ from erpnext.selling.doctype.quotation.quotation import _make_sales_order
 @frappe.whitelist()
 def place_order_from_cart():
 	"""
-	Override for 'Request for Quotation'.
-	Instead of saving a Quotation, we:
+	Override for 'Place Order' and 'Request for Quotation'.
+	Instead of submitting the Sales Order immediately, we:
 	1. Submit the cart Quotation
-	2. Create and submit a Sales Order from it
-	3. Clear the cart
-	4. Return the Sales Order name
+	2. Create a Sales Order from it and keep it in Draft
+	3. Send an order-created email to the customer
+	4. Clear the cart
+	5. Return the Sales Order name
+	The customer must upload payment proof before the SO is submitted.
 	"""
 	quotation = _get_cart_quotation()
 	cart_settings = frappe.get_cached_doc("Webshop Settings")
@@ -87,7 +89,11 @@ def place_order_from_cart():
 
 	sales_order.flags.ignore_permissions = True
 	sales_order.insert()
-	sales_order.submit()
+	# Keep Sales Order in Draft until customer uploads payment proof
+	# sales_order.submit()
+
+	# Send draft order confirmation email
+	_send_order_email(sales_order, "order_created")
 
 	if hasattr(frappe.local, "cookie_manager"):
 		frappe.local.cookie_manager.delete_cookie("cart_count")
@@ -379,3 +385,44 @@ def get_customer_for_user(user=None):
 	if customers:
 		return frappe.get_doc("Customer", customers[0])
 	return None
+
+
+def _send_order_email(sales_order, email_type):
+	"""
+	Send order-related email notifications to the customer.
+	email_type: 'order_created' | 'order_payment_confirmed'
+	"""
+	if frappe.session.user == "Guest":
+		return
+
+	user = frappe.get_doc("User", frappe.session.user)
+	if not user.enabled:
+		return
+
+	site_url = frappe.utils.get_url()
+	context = {
+		"site_url": site_url,
+		"site_name": frappe.db.get_default("site_name") or frappe.db.get_default("company") or site_url,
+		"first_name": user.first_name or user.full_name or user.name,
+		"sales_order": sales_order,
+		"payment_url": f"{site_url}/payment?order_id={sales_order.name}",
+		"order_url": f"{site_url}/orders/{sales_order.name}",
+	}
+
+	if email_type == "order_created":
+		subject = _("Your order {0} has been created - payment required").format(sales_order.name)
+		template = "custom_webshop/templates/emails/order_created.html"
+	else:
+		subject = _("Payment confirmed for order {0}").format(sales_order.name)
+		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
+
+	message = frappe.render_template(template, context)
+
+	frappe.sendmail(
+		recipients=[user.email],
+		subject=subject,
+		message=message,
+		reference_doctype="Sales Order",
+		reference_name=sales_order.name,
+		now=True,
+	)

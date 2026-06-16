@@ -98,3 +98,30 @@
 [data-section="billing-address"] {
 	display: none !important;
 }
+
+/* Payment page styles */
+.payment-option {
+	cursor: pointer;
+	border: 2px solid #e2e8f0;
+	transition: all 0.2s ease;
+}
+
+.payment-option:hover {
+	border-color: #cbd5e1;
+	background-color: #f8fafc;
+}
+
+.payment-option.selected {
+	border-color: var(--primary);
+	background-color: #eff6ff;
+}
+
+.payment-option .card-title {
+	font-weight: 600;
+	margin-bottom: 1rem;
+}
+
+.payment-option .payment-number .font-lg {
+	font-size: 1.25rem;
+	letter-spacing: 0.5px;
+}

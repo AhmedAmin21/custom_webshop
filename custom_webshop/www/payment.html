@@ -1,0 +1,227 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Payment") }}{% endblock %}
+
+{% block header %}
+<h3 class="mt-2 mb-4">{{ _("Order Payment") }}</h3>
+{% endblock %}
+
+{% block page_content %}
+
+{% if invalid %}
+<div class="frappe-card p-5 text-center">
+	<div class="alert alert-warning">
+		{{ error }}
+	</div>
+	<a class="btn btn-primary mt-3" href="/orders">
+		{{ _("My Orders") }}
+	</a>
+</div>
+{% else %}
+
+<div class="frappe-card p-5 mb-4">
+	<div class="alert alert-success">
+		<h5 class="alert-heading">{{ _("Order Created Successfully!") }}</h5>
+		<p class="mb-0">
+			{{ _("Your order <strong>{0}</strong> has been created.").format(sales_order.name) }}
+			{{ _("Please complete the payment to confirm your order.") }}
+		</p>
+	</div>
+
+	<div class="order-summary mb-4">
+		<h5>{{ _("Order Summary") }}</h5>
+		<table class="table table-bordered">
+			<tbody>
+				<tr>
+					<td>{{ _("Order Total") }}</td>
+					<td class="text-right"><strong>{{ grand_total_formatted }}</strong></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<hr>
+
+	<h5 class="mb-3">{{ _("Choose Payment Method") }}</h5>
+
+	<form id="payment-form" onsubmit="return false;">
+		<input type="hidden" id="order-id" value="{{ sales_order.name }}">
+
+		<div class="row payment-options">
+			{% for option in payment_options %}
+			<div class="col-md-4 mb-3">
+				<div class="payment-option card h-100" data-option="{{ option.key }}">
+					<div class="card-body text-center">
+						<h5 class="card-title">{{ option.label }}</h5>
+						{% if option.number %}
+						<p class="payment-number mb-0">
+							<span class="text-muted">{{ _("Send to:") }}</span><br>
+							<strong class="font-lg">{{ option.number }}</strong>
+						</p>
+						{% else %}
+						<p class="text-muted mb-0">{{ _("Number not configured") }}</p>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+
+		<div class="form-group mt-4">
+			<label for="payment-proof">{{ _("Upload Payment Confirmation") }}</label>
+			<input type="file" class="form-control" id="payment-proof" name="payment_proof" accept="image/*,.pdf" required>
+			<small class="form-text text-muted">
+				{{ _("Please upload a screenshot or PDF of your payment confirmation.") }}
+			</small>
+		</div>
+
+		<div id="payment-error" class="alert alert-danger mt-3" style="display: none;"></div>
+		<div id="payment-success" class="alert alert-success mt-3" style="display: none;"></div>
+
+		<button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="submit-payment">
+			{{ _("Submit Payment Confirmation") }}
+		</button>
+	</form>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block base_scripts %}
+{{ include_script("frappe-web.bundle.js") }}
+{{ include_script("controls.bundle.js") }}
+{{ include_script("dialog.bundle.js") }}
+<script>
+(function() {
+	"use strict";
+
+	var selected_option = null;
+
+	function show_error(message) {
+		$("#payment-error").html(message).show();
+		$("#payment-success").hide();
+	}
+
+	function show_success(message) {
+		$("#payment-success").html(message).show();
+		$("#payment-error").hide();
+	}
+
+	function hide_messages() {
+		$("#payment-error, #payment-success").hide();
+	}
+
+	function show_loading(show) {
+		var btn = $("#submit-payment");
+		if (show) {
+			btn.prop("disabled", true).text(__("Submitting..."));
+		} else {
+			btn.prop("disabled", false).text(__("Submit Payment Confirmation"));
+		}
+	}
+
+	function bind_payment_options() {
+		$(".payment-option").on("click", function() {
+			$(".payment-option").removeClass("border-primary selected");
+			$(this).addClass("border-primary selected");
+			selected_option = $(this).data("option");
+		});
+
+		var first_option = $(".payment-option").first();
+		if (first_option.length) {
+			first_option.addClass("border-primary selected");
+			selected_option = first_option.data("option");
+		}
+	}
+
+	function submit_payment() {
+		var order_id = $("#order-id").val();
+		var file_input = $("#payment-proof")[0];
+
+		if (!selected_option) {
+			show_error(__("Please select a payment method."));
+			return;
+		}
+
+		if (!file_input.files || !file_input.files[0]) {
+			show_error(__("Please upload a payment confirmation document."));
+			return;
+		}
+
+		var file = file_input.files[0];
+
+		if (file.size > 5 * 1024 * 1024) {
+			show_error(__("File size must be less than 5MB."));
+			return;
+		}
+
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var base64_content = e.target.result.split(",")[1];
+
+			show_loading(true);
+			hide_messages();
+
+			frappe.call({
+				type: "POST",
+				method: "custom_webshop.api.payment.confirm_payment",
+				args: {
+					order_id: order_id,
+					payment_method: selected_option,
+					filename: file.name,
+					file_content: base64_content
+				},
+				callback: function(r) {
+					show_loading(false);
+
+					if (r.exc) {
+						var msg = "";
+						if (r._server_messages) {
+							try {
+								msg = JSON.parse(r._server_messages || "[]").join("<br>");
+							} catch (e) {
+								msg = r._server_messages;
+							}
+						}
+						show_error(msg || __("Something went wrong. Please try again."));
+					} else if (r.message && r.message.success) {
+						show_success(__("Payment confirmation submitted successfully. Redirecting..."));
+						setTimeout(function() {
+							window.location.href = "/orders/" + encodeURIComponent(order_id);
+						}, 2000);
+					} else {
+						show_error((r.message && r.message.error) || __("Something went wrong. Please try again."));
+					}
+				},
+				error: function() {
+					show_loading(false);
+					show_error(__("Something went wrong. Please try again."));
+				}
+			});
+		};
+
+		reader.onerror = function() {
+			show_error(__("Failed to read the file. Please try again."));
+		};
+
+		reader.readAsDataURL(file);
+	}
+
+	function init() {
+		bind_payment_options();
+		$("#payment-form").on("submit", function(e) {
+			e.preventDefault();
+			submit_payment();
+			return false;
+		});
+	}
+
+	if (window.frappe && frappe.ready) {
+		frappe.ready(init);
+	} else {
+		$(document).ready(init);
+	}
+})();
+</script>
+{% endblock %}
