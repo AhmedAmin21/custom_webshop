@@ -226,6 +226,7 @@ override_whitelisted_methods = {
 	"webshop.webshop.shopping_cart.cart.place_order": "custom_webshop.shopping_cart.cart_override.place_order_from_cart",
 	"webshop.webshop.shopping_cart.cart.request_for_quotation": "custom_webshop.shopping_cart.cart_override.place_order_from_cart",
 	"webshop.webshop.shopping_cart.cart.update_cart": "custom_webshop.shopping_cart.cart_override.update_cart",
+	"webshop.webshop.shopping_cart.cart.update_cart_address": "custom_webshop.shopping_cart.cart_override.update_cart_address",
 	"frappe.core.doctype.user.user.sign_up": "custom_webshop.api.auth.custom_sign_up"
 }
 

@@ -5,6 +5,7 @@ no_cache = 1
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 
 def get_context(context):
@@ -47,6 +48,40 @@ def get_context(context):
 	context.sales_order = sales_order
 	context.grand_total_formatted = frappe.format_value(
 		sales_order.grand_total,
+		{"fieldtype": "Currency", "options": sales_order.currency}
+	)
+
+	# Shipping details — show raw total weight in its original UOM
+	context.total_weight = flt(sales_order.total_net_weight)
+
+	# Determine weight UOM from items (same logic as shipping_api)
+	weight_uom = None
+	if sales_order.get("weight_uom"):
+		weight_uom = sales_order.weight_uom
+	else:
+		for item in sales_order.get("items", []):
+			if item.get("weight_uom"):
+				weight_uom = item.weight_uom
+				break
+	context.weight_uom = weight_uom or ""
+
+	# Get shipping destination name
+	if sales_order.get("shipping_destination"):
+		context.shipping_destination = frappe.db.get_value(
+			"Governorate", sales_order.shipping_destination, "governorate_name"
+		) or sales_order.shipping_destination
+	else:
+		context.shipping_destination = None
+
+	# Find shipping tax amount from taxes
+	context.shipping_amount = 0
+	for tax in sales_order.get("taxes", []):
+		# Shipping rules typically add tax rows with description containing shipping
+		if "shipping" in (tax.get("description") or "").lower():
+			context.shipping_amount += flt(tax.tax_amount)
+
+	context.shipping_amount_formatted = frappe.format_value(
+		context.shipping_amount,
 		{"fieldtype": "Currency", "options": sales_order.currency}
 	)
 

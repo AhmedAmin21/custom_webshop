@@ -15,6 +15,10 @@ from webshop.webshop.doctype.webshop_settings.webshop_settings import (
 )
 from webshop.webshop.utils.product import get_web_item_qty_in_stock
 from erpnext.selling.doctype.quotation.quotation import _make_sales_order
+from custom_webshop.shopping_cart.shipping_api import (
+	_get_cart_weight_info,
+	apply_cart_settings_for_webshop,
+)
 
 
 @frappe.whitelist()
@@ -46,6 +50,14 @@ def place_order_from_cart():
 		_make_sales_order(quotation.name, ignore_permissions=True)
 	)
 	sales_order.payment_schedule = []
+
+	# Copy Governorate shipping fields from Quotation to Sales Order
+	for field in ("shipping_rule", "shipping_destination", "custom_manual_shipping_amount"):
+		if quotation.get(field):
+			sales_order.set(field, quotation.get(field))
+
+	# Reserve stock for this Sales Order
+	sales_order.reserve_stock = 1
 
 	if not cint(cart_settings.allow_items_not_in_stock):
 		for item in sales_order.get("items"):
@@ -333,7 +345,8 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 			quotation_items[0].warehouse = warehouse
 			quotation_items[0].additional_notes = additional_notes
 
-	apply_cart_settings(quotation=quotation)
+	# Use custom cart settings that never auto-select non-Governorate shipping rules
+	apply_cart_settings_for_webshop(quotation=quotation)
 
 	quotation.flags.ignore_permissions = True
 	quotation.payment_schedule = []
@@ -353,6 +366,8 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 
 	if cint(with_items):
 		context = get_cart_quotation(quotation)
+		# Inject raw weight info so payment summary renders it correctly
+		context.update(_get_cart_weight_info(quotation))
 		return {
 			"items": frappe.render_template(
 				"templates/includes/cart/cart_items.html", context
@@ -366,6 +381,48 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 		}
 	else:
 		return {"name": quotation.name}
+
+
+@frappe.whitelist()
+def update_cart_address(address_type, address_name):
+	"""
+	Override update_cart_address to prevent standard shipping rule auto-selection.
+	"""
+	from frappe.contacts.doctype.address.address import get_address_display
+
+	quotation = _get_cart_quotation()
+	address_doc = frappe.get_doc("Address", address_name).as_dict()
+	address_display = get_address_display(address_doc)
+
+	if address_type.lower() == "billing":
+		quotation.customer_address = address_name
+		quotation.address_display = address_display
+		quotation.shipping_address_name = (
+			quotation.shipping_address_name or address_name
+		)
+	elif address_type.lower() == "shipping":
+		quotation.shipping_address_name = address_name
+		quotation.shipping_address = address_display
+		quotation.customer_address = quotation.customer_address or address_name
+
+	# Use custom cart settings that never auto-select non-Governorate shipping rules
+	apply_cart_settings_for_webshop(quotation=quotation)
+
+	quotation.flags.ignore_permissions = True
+	quotation.save()
+
+	context = get_cart_quotation(quotation)
+	context.update(_get_cart_weight_info(quotation))
+	context["address"] = {"name": address_name, "display": address_display}
+
+	return {
+		"taxes": frappe.render_template(
+			"templates/includes/order/order_taxes.html", context
+		),
+		"address": frappe.render_template(
+			"templates/includes/cart/address_card.html", context
+		),
+	}
 
 
 def get_customer_for_user(user=None):

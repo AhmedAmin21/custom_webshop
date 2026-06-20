@@ -33,7 +33,23 @@
 		<table class="table table-bordered">
 			<tbody>
 				<tr>
-					<td>{{ _("Order Total") }}</td>
+					<td>{{ _("Total Weight") }}</td>
+					<td class="text-right">{{ total_weight }} {{ weight_uom }}</td>
+				</tr>
+				{% if shipping_destination %}
+				<tr>
+					<td>{{ _("Shipping Destination") }}</td>
+					<td class="text-right">{{ shipping_destination }}</td>
+				</tr>
+				{% endif %}
+				{% if shipping_amount %}
+				<tr>
+					<td>{{ _("Shipping Amount") }}</td>
+					<td class="text-right">{{ shipping_amount_formatted }}</td>
+				</tr>
+				{% endif %}
+				<tr>
+					<td><strong>{{ _("Grand Total") }}</strong></td>
 					<td class="text-right"><strong>{{ grand_total_formatted }}</strong></td>
 				</tr>
 			</tbody>

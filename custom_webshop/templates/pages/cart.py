@@ -4,12 +4,32 @@
 no_cache = 1
 
 import frappe
-from webshop.webshop.shopping_cart.cart import get_cart_quotation, get_party
+from webshop.webshop.shopping_cart.cart import get_cart_quotation, get_party, _get_cart_quotation as _fetch_cart_quotation
+from custom_webshop.shopping_cart.shipping_api import _get_cart_weight_info, apply_cart_settings_for_webshop
 
 
 def get_context(context):
 	context.body_class = "product-page"
+
+	# --- Fix: clear any non-Governorate shipping rule saved in the DB ---
+	quotation = _fetch_cart_quotation()
+	if quotation and quotation.get("shipping_rule"):
+		is_governorate = frappe.db.get_value(
+			"Shipping Rule", quotation.shipping_rule, "calculate_based_on"
+		) == "Governorate"
+		if not is_governorate:
+			quotation.shipping_rule = None
+			quotation.shipping_destination = None
+			quotation.set("taxes", [t for t in quotation.get("taxes", []) if "shipping" not in (t.description or "").lower()])
+			quotation.flags.ignore_permissions = True
+			quotation.save()
+	# ------------------------------------------------------------------
+
 	context.update(get_cart_quotation())
+
+	# Inject raw weight info so the payment summary can render it server-side
+	cart_weight = _get_cart_weight_info()
+	context.update(cart_weight)
 
 	# Enrich shipping and billing addresses with full Address document fields
 	# so the address_card template can access address_line1, city, country, etc.

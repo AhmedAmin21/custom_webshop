@@ -34,19 +34,6 @@
                 <span toggle="#signup_confirm_password" class="toggle-password text-muted">{{ _('Show') }}</span>
             </div>
         </div>
-        <div class="form-group">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="has_past_transactions">
-                <label class="custom-control-label" for="has_past_transactions">
-                    {{ _("Have you purchased from CNCLeaders before?") }}
-                </label>
-            </div>
-        </div>
-        <div class="form-group" id="mobile_field_group" style="display:none;">
-            <label class="form-label sr-only" for="signup_mobile">{{ _("Mobile Number") }}</label>
-            <input type="tel" id="signup_mobile" class="form-control"
-                placeholder="{{ _('Mobile Number') }}" autocomplete="tel">
-        </div>
         <div id="password-strength-message" class="small text-muted mt-2" style="display:none;"></div>
     </div>
     <div class="page-card-actions">
@@ -58,24 +45,3 @@
         </p>
     </div>
 </form>
-<script>
-(function() {
-    var cb = document.getElementById("has_past_transactions");
-    var mobileGroup = document.getElementById("mobile_field_group");
-    var mobileInput = document.getElementById("signup_mobile");
-    if (cb && mobileGroup) {
-        cb.addEventListener("change", function() {
-            if (this.checked) {
-                mobileGroup.style.display = "block";
-                if (mobileInput) mobileInput.required = true;
-            } else {
-                mobileGroup.style.display = "none";
-                if (mobileInput) {
-                    mobileInput.required = false;
-                    mobileInput.value = "";
-                }
-            }
-        });
-    }
-})();
-</script>

@@ -1,0 +1,88 @@
+<!-- Payment -->
+{% if cart_settings.enable_checkout or cart_settings.show_price_in_quotation %}
+<h6>
+	{{ _("Payment Summary") }}
+</h6>
+{% endif %}
+
+<div class="card h-100">
+	<div class="card-body p-0">
+		{% if cart_settings.enable_checkout or cart_settings.show_price_in_quotation %}
+		<table class="table w-100">
+			<tr>
+				{% set total_items = frappe.utils.cstr(frappe.utils.flt(doc.total_qty, 0)) %}
+				<td class="bill-label">{{ _("Net Total (") + total_items + _(" Items)") }}</td>
+				<td class="bill-content net-total text-right">{{ doc.get_formatted("net_total") }}</td>
+			</tr>
+
+			<!-- Total Weight -->
+			<tr>
+				<td class="bill-label">{{ _("Total Weight") }}</td>
+				<td class="bill-content text-right">
+					<span id="cart-total-weight">{{ total_weight }} {{ weight_uom }}</span>
+				</td>
+			</tr>
+
+			<!-- Shipping Company (Governorate-based only) -->
+			<tr>
+				<td class="bill-label">{{ _("Shipping Company") }}</td>
+				<td class="bill-content text-right">
+					<select id="cart-shipping-rule" class="form-control form-control-sm">
+						<option value="">{{ _("Select Shipping Company") }}</option>
+					</select>
+				</td>
+			</tr>
+
+			<!-- Shipping Destination (Governorate) -->
+			<tr>
+				<td class="bill-label">{{ _("Shipping Destination") }}</td>
+				<td class="bill-content text-right">
+					<select id="cart-shipping-destination" class="form-control form-control-sm">
+						<option value="">{{ _("Select Destination") }}</option>
+					</select>
+				</td>
+			</tr>
+
+			<!-- Shipping Amount -->
+			<tr id="cart-shipping-amount-row" style="display: none;">
+				<td class="bill-label">{{ _("Shipping Amount") }}</td>
+				<td class="bill-content text-right">
+					<strong id="cart-shipping-amount"></strong>
+				</td>
+			</tr>
+
+			<!-- taxes -->
+			{% for d in doc.taxes %}
+				{% if d.base_tax_amount %}
+					<tr>
+						<td class="bill-label">
+							{{ d.description }}
+						</td>
+						<td class="bill-content text-right">
+							{{ d.get_formatted("base_tax_amount") }}
+						</td>
+					</tr>
+				{% endif %}
+			{% endfor %}
+		</table>
+
+			<table class="table w-100 grand-total mt-6">
+				<tr>
+					<td class="bill-content net-total">{{ _("Grand Total") }}</td>
+					<td class="bill-content net-total text-right">
+						<span id="cart-grand-total">{{ doc.get_formatted("grand_total") }}</span>
+					</td>
+				</tr>
+			</table>
+		{% endif %}
+	</div>
+</div>
+
+<script>
+frappe.ready(function() {
+	// Initialize cart shipping controls
+	if (window.shopping_cart && window.shopping_cart.init_governorate_shipping) {
+		window.shopping_cart.init_governorate_shipping();
+	}
+});
+</script>

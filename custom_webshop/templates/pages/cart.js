@@ -415,6 +415,78 @@ $.extend(shopping_cart, {
 				country: country
 			});
 		});
+	},
+
+	// Governorate Shipping Methods
+	init_governorate_shipping: function() {
+		// Load and populate controls
+		shopping_cart.load_governorate_shipping_rules();
+		shopping_cart.load_governorates();
+		shopping_cart.bind_governorate_shipping_events();
+	},
+
+	load_governorate_shipping_rules: function() {
+		frappe.call({
+			method: 'custom_webshop.shopping_cart.shipping_api.get_governorate_shipping_rules',
+			callback: function(r) {
+				if (r.message && r.message.length) {
+					var $select = $('#cart-shipping-rule');
+					$select.empty().append('<option value=\"\">' + __('Select Shipping Company') + '</option>');
+					$.each(r.message, function(i, rule) {
+						$select.append('<option value=\"' + rule[0] + '\">' + rule[1] + '</option>');
+					});
+				}
+			}
+		});
+	},
+
+	load_governorates: function() {
+		frappe.call({
+			method: 'custom_webshop.shopping_cart.shipping_api.get_governorates',
+			callback: function(r) {
+				if (r.message && r.message.length) {
+					var $select = $('#cart-shipping-destination');
+					$select.empty().append('<option value=\"\">' + __('Select Destination') + '</option>');
+					$.each(r.message, function(i, gov) {
+						$select.append('<option value=\"' + gov.name + '\">' + gov.governorate_name + '</option>');
+					});
+				}
+			}
+		});
+	},
+
+	bind_governorate_shipping_events: function() {
+		$(document).off('change.governorate_shipping', '#cart-shipping-rule, #cart-shipping-destination')
+			.on('change.governorate_shipping', '#cart-shipping-rule, #cart-shipping-destination', function() {
+				shopping_cart.update_governorate_shipping();
+			});
+	},
+
+	update_governorate_shipping: function() {
+		var shipping_rule = $('#cart-shipping-rule').val();
+		var shipping_destination = $('#cart-shipping-destination').val();
+
+		if (!shipping_rule || !shipping_destination) {
+			$('#cart-shipping-amount-row').hide();
+			$('#cart-shipping-amount').text('');
+			return;
+		}
+
+		// First update the cart on the server
+		frappe.call({
+			method: 'custom_webshop.shopping_cart.shipping_api.update_cart_shipping',
+			args: {
+				shipping_rule: shipping_rule,
+				shipping_destination: shipping_destination
+			},
+			callback: function(r) {
+				if (r.exc) {
+					return;
+				}
+				// Refresh page to show updated totals (simplest approach)
+				window.location.reload();
+			}
+		});
 	}
 });
 
