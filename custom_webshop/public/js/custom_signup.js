@@ -13,17 +13,24 @@ frappe.ready(function () {
 
             var email = $("#signup_email").val().trim();
             var full_name = frappe.utils.xss_sanitise(($("#signup_fullname").val() || "").trim());
+            var mobile = $("#signup_mobile").val().trim();
             var pwd = $("#signup_password").val();
             var confirm_pwd = $("#signup_confirm_password").val();
             var redirect_to = frappe.utils.sanitise_redirect(frappe.utils.get_url_arg("redirect-to"));
 
             console.log("[custom_webshop] signup args:", {
                 email: email,
-                full_name: full_name
+                full_name: full_name,
+                mobile: mobile
             });
 
             if (!email || !validate_email(email) || !full_name) {
                 login.set_status(__("Valid email and name required"), 'red');
+                return false;
+            }
+
+            if (!mobile) {
+                login.set_status(__("Please enter your mobile number"), 'red');
                 return false;
             }
 
@@ -48,11 +55,11 @@ frappe.ready(function () {
                         login.set_status(msg, 'red');
                         return false;
                     }
-                    submit_signup(email, full_name, pwd, redirect_to);
+                    submit_signup(email, full_name, pwd, redirect_to, mobile);
                 },
                 error: function () {
                     // Policy might be disabled; just submit
-                    submit_signup(email, full_name, pwd, redirect_to);
+                    submit_signup(email, full_name, pwd, redirect_to, mobile);
                 }
             });
 
@@ -69,12 +76,13 @@ frappe.ready(function () {
         bind_custom_signup_handler();
     });
 
-    function submit_signup(email, full_name, pwd, redirect_to) {
+    function submit_signup(email, full_name, pwd, redirect_to, mobile) {
         var args = {
             cmd: "frappe.core.doctype.user.user.sign_up",
             email: email,
             full_name: full_name,
             pwd: pwd,
+            mobile_no: mobile,
             redirect_to: redirect_to
         };
 

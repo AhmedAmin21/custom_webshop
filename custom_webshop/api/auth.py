@@ -8,7 +8,7 @@ from frappe.core.doctype.user.user import test_password_strength, handle_passwor
 
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(
-    email: str, full_name: str, redirect_to: str, pwd: str
+    email: str, full_name: str, redirect_to: str, pwd: str, mobile_no: str = None
 ):
     """Custom sign up that validates input, creates the user, and auto-creates
     a Customer, Contact, and Portal User for the new account."""
@@ -49,6 +49,7 @@ def custom_sign_up(
             "enabled": 1,
             "new_password": pwd,
             "user_type": "Website User",
+            "mobile_no": mobile_no,
         }
     )
     user.flags.ignore_permissions = True
@@ -117,37 +118,54 @@ def _create_new_customer_for_user(user):
         customer.flags.ignore_permissions = True
         customer.insert()
 
-    # Check if a Contact already exists for this user email
-    existing_contact_name = frappe.db.get_value("Contact", {"email_id": user.email}, "name")
+    # Reuse the Contact auto-created by Customer.create_primary_contact
+    # instead of creating a duplicate.
+    contact_name = customer.customer_primary_contact
+    if not contact_name:
+        contact_name = frappe.db.get_value(
+            "Dynamic Link",
+            {"link_doctype": "Customer", "link_name": customer.name, "parenttype": "Contact"},
+            "parent"
+        )
 
-    if existing_contact_name:
-        contact = frappe.get_doc("Contact", existing_contact_name)
-        contact.user = user.name
-        # Ensure Customer link exists
-        has_customer_link = any(
-            l.link_doctype == "Customer" and l.link_name == customer.name
-            for l in contact.get("links", [])
-        )
-        if not has_customer_link:
-            contact.append(
-                "links", {"link_doctype": "Customer", "link_name": customer.name}
-            )
-        contact.flags.ignore_permissions = True
-        contact.save()
+    if contact_name:
+        contact = frappe.get_doc("Contact", contact_name)
     else:
-        # Create Contact linked to Customer + User
         contact = frappe.new_doc("Contact")
-        contact.first_name = user.first_name or user.name
-        contact.email_id = user.email
-        contact.user = user.name
-        contact.is_primary_contact = 1
+
+    contact.first_name = user.first_name or user.name
+    contact.email_id = user.email
+    contact.user = user.name
+    contact.is_primary_contact = 1
+
+    if not any(e.email_id == user.email for e in contact.get("email_ids", [])):
         contact.append("email_ids", {"email_id": user.email, "is_primary": 1})
-        contact.append(
-            "links", {"link_doctype": "Customer", "link_name": customer.name}
-        )
-        contact.flags.ignore_mandatory = True
-        contact.flags.ignore_permissions = True
+
+    if user.mobile_no:
+        if not any(p.phone == user.mobile_no for p in contact.get("phone_nos", [])):
+            contact.append("phone_nos", {"phone": user.mobile_no, "is_primary_mobile_no": 1})
+
+    has_customer_link = any(
+        l.link_doctype == "Customer" and l.link_name == customer.name
+        for l in contact.get("links", [])
+    )
+    if not has_customer_link:
+        contact.append("links", {"link_doctype": "Customer", "link_name": customer.name})
+
+    contact.flags.ignore_mandatory = True
+    contact.flags.ignore_permissions = True
+    if contact.is_new():
         contact.insert()
+    else:
+        contact.save()
+
+    # Set customer_primary_contact so Customer.create_primary_contact never fires later
+    if not customer.customer_primary_contact:
+        customer.db_set("customer_primary_contact", contact.name)
+    if not customer.email_id:
+        customer.db_set("email_id", user.email)
+    if not customer.mobile_no:
+        customer.db_set("mobile_no", user.mobile_no)
 
     # Add Portal User row manually (avoids triggering automatic Customer role assignment)
     existing_portal_user = frappe.db.exists(

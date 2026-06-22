@@ -38,6 +38,33 @@ $.extend(shopping_cart, {
 		}, 1000);
 	},
 
+	shopping_cart_update: function({item_code, qty, cart_dropdown, additional_notes}) {
+		shopping_cart.update_cart({
+			item_code,
+			qty,
+			additional_notes,
+			with_items: 1,
+			btn: this,
+			callback: function(r) {
+				if(!r.exc) {
+					$(".cart-items").html(r.message.items);
+					$(".cart-tax-items").html(r.message.total);
+					$(".payment-summary").html(r.message.taxes_and_totals);
+					shopping_cart.set_cart_count();
+
+					// Re-populate governorate shipping dropdowns after summary refresh
+					if (window.shopping_cart && window.shopping_cart.init_governorate_shipping) {
+						window.shopping_cart.init_governorate_shipping();
+					}
+
+					if (cart_dropdown != true) {
+						$(".cart-icon").hide();
+					}
+				}
+			},
+		});
+	},
+
 	bind_events: function() {
 		shopping_cart.bind_place_order();
 		shopping_cart.bind_request_quotation();
@@ -271,6 +298,7 @@ $.extend(shopping_cart, {
 
 	open_customer_info_dialog: function(mode = 'add', existingData = {}) {
 		const user_fullname = $('#user-fullname').val() || frappe.session.user_fullname || '';
+		const user_mobile = $('#user-mobile').val() || '';
 		const isEdit = mode === 'edit';
 
 		const d = new frappe.ui.Dialog({
@@ -293,7 +321,7 @@ $.extend(shopping_cart, {
 					fieldname: 'mobile_no',
 					fieldtype: 'Data',
 					reqd: 1,
-					default: existingData.mobile_no || ''
+					default: existingData.mobile_no || user_mobile
 				},
 				{
 					fieldtype: 'Section Break',

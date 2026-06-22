@@ -11,6 +11,7 @@
 
 <!-- Hidden data for JS -->
 <input type="hidden" id="user-fullname" value="{{ user_fullname or '' }}">
+<input type="hidden" id="user-mobile" value="{{ frappe.db.get_value('Contact', {'email_id': frappe.session.user}, 'mobile_no') or '' }}">
 
 {% from "templates/includes/macros.html" import item_name_and_description %}
 

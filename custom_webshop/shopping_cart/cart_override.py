@@ -126,27 +126,37 @@ def add_customer_info(address_data, contact_data):
 	address_data = frappe.parse_json(address_data)
 	contact_data = frappe.parse_json(contact_data)
 
-	# Find existing contact by email first (handles signup-created contacts
-	# that may not yet be linked to the customer via Dynamic Link)
+	# Find existing contact by email first (handles signup-created contacts)
 	contact_name = get_contact_name(frappe.session.user)
 	existing_contacts = []
 
 	if contact_name:
 		existing_contacts.append(contact_name)
-	else:
-		# Fallback: search by Dynamic Link
-		existing_contacts = frappe.get_all(
-			"Contact",
-			filters=[
-				["Dynamic Link", "link_doctype", "=", "Customer"],
-				["Dynamic Link", "link_name", "=", party.name]
-			],
-			pluck="name"
-		)
+
+	# Fallback: search by Dynamic Link
+	linked_contacts = frappe.get_all(
+		"Contact",
+		filters=[
+			["Dynamic Link", "link_doctype", "=", "Customer"],
+			["Dynamic Link", "link_name", "=", party.name]
+		],
+		pluck="name"
+	)
+	for c in linked_contacts:
+		if c not in existing_contacts:
+			existing_contacts.append(c)
 
 	if existing_contacts:
-		# Use existing contact and add mobile
-		contact = frappe.get_doc("Contact", existing_contacts[0])
+		# Prefer the contact that has the user's email (signup contact)
+		contact_doc = None
+		for c_name in existing_contacts:
+			c = frappe.get_doc("Contact", c_name)
+			if c.email_id == frappe.session.user:
+				contact_doc = c
+				break
+		if not contact_doc:
+			contact_doc = frappe.get_doc("Contact", existing_contacts[0])
+		contact = contact_doc
 
 		# Ensure link to customer exists (add if missing)
 		has_customer_link = any(
@@ -163,17 +173,36 @@ def add_customer_info(address_data, contact_data):
 		if not contact.is_primary_contact:
 			contact.is_primary_contact = 1
 
-		# Unset existing primary mobile
-		for phone in contact.get("phone_nos", []):
-			if phone.is_primary_mobile_no:
-				phone.is_primary_mobile_no = 0
+		# Handle mobile number logic
+		user_mobile = frappe.db.get_value("User", frappe.session.user, "mobile_no")
+		new_mobile = contact_data.get("mobile_no")
 
-		# Add or update mobile number
-		if contact_data.get("mobile_no"):
-			contact.append("phone_nos", {
-				"phone": contact_data.get("mobile_no"),
-				"is_primary_mobile_no": 1
-			})
+		if new_mobile:
+			if not user_mobile or new_mobile == user_mobile:
+				# Signup mobile is empty or matches: this is the primary mobile
+				phone_found = False
+				for phone in contact.get("phone_nos", []):
+					if phone.phone == new_mobile:
+						phone.is_primary_mobile_no = 1
+						phone_found = True
+						break
+				if not phone_found:
+					contact.append("phone_nos", {
+						"phone": new_mobile,
+						"is_primary_mobile_no": 1
+					})
+			else:
+				# Different from signup mobile: keep signup row as primary mobile
+				for phone in contact.get("phone_nos", []):
+					if phone.phone == user_mobile:
+						phone.is_primary_mobile_no = 1
+
+				# Append new number as primary phone if not already present
+				if not any(p.phone == new_mobile for p in contact.get("phone_nos", [])):
+					contact.append("phone_nos", {
+						"phone": new_mobile,
+						"is_primary_phone": 1
+					})
 
 		contact.flags.ignore_permissions = True
 		contact.save()
@@ -250,17 +279,13 @@ def update_customer_info(address_name, address_data, contact_name, contact_data)
 	contact = frappe.get_doc("Contact", contact_name)
 	contact.first_name = contact_data.get("first_name") or contact.first_name
 
-	# Update primary mobile
+	# Replace mobile number: clear all and set new one as primary mobile
 	if contact_data.get("mobile_no"):
-		phone_rows = contact.get("phone_nos")
-		if phone_rows:
-			phone_rows[0].phone = contact_data.get("mobile_no")
-			phone_rows[0].is_primary_mobile_no = 1
-		else:
-			contact.append("phone_nos", {
-				"phone": contact_data.get("mobile_no"),
-				"is_primary_mobile_no": 1
-			})
+		contact.set("phone_nos", [])
+		contact.append("phone_nos", {
+			"phone": contact_data.get("mobile_no"),
+			"is_primary_mobile_no": 1
+		})
 
 	contact.flags.ignore_permissions = True
 	contact.save()
