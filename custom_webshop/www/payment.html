@@ -1,243 +1,115 @@
-{% extends "templates/web.html" %}
-
-{% block title %}{{ _("Payment") }}{% endblock %}
-
-{% block header %}
-<h3 class="mt-2 mb-4">{{ _("Order Payment") }}</h3>
-{% endblock %}
+{% extends "templates/webshop_base.html" %}
 
 {% block page_content %}
+<section id="payment-view" class="view-section active">
+    <div class="payment-container">
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-icon-wrapper">
+                    <i data-lucide="landmark" class="payment-icon"></i>
+                </div>
+                <h2 class="payment-title" data-i18n="payment_title">Checkout</h2>
+                <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing and trigger ERPNext packaging, please wire the total amount and upload your receipt screenshot below.</p>
+            </div>
 
-{% if invalid %}
-<div class="frappe-card p-5 text-center">
-	<div class="alert alert-warning">
-		{{ error }}
-	</div>
-	<a class="btn btn-primary mt-3" href="/orders">
-		{{ _("My Orders") }}
-	</a>
-</div>
-{% else %}
+            <div class="payment-amount-box">
+                <span class="amount-label">Amount Outstanding</span>
+                <span class="amount-val" id="payment-amount">{{ grand_total_formatted if grand_total_formatted else '$0.00' }}</span>
+                <span class="order-ref-label" id="payment-ref-text">Order Reference: #{{ order_id if order_id else 'CNC-XXXXX' }}</span>
+            </div>
 
-<div class="frappe-card p-5 mb-4">
-	<div class="alert alert-success">
-		<h5 class="alert-heading">{{ _("Order Created Successfully!") }}</h5>
-		<p class="mb-0">
-			{{ _("Your order <strong>{0}</strong> has been created.").format(sales_order.name) }}
-			{{ _("Please complete the payment to confirm your order.") }}
-		</p>
-	</div>
+            <!-- Choose Payment Method Section -->
+            <h3 class="payment-section-title" data-i18n="payment_method">Choose Payment Method</h3>
+            <div class="payment-methods-grid">
+                {% if payment_options %}
+                    {% for opt in payment_options %}
+                    <div class="payment-method-card {% if loop.first %}active{% endif %}" data-method="{{ opt.key }}" onclick="selectPaymentMethod('{{ opt.key }}')">
+                        <span class="payment-method-name">{{ opt.label }}</span>
+                        <span class="payment-method-lbl">Send to:</span>
+                        <span class="payment-method-val">{{ opt.number }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="payment-method-card active" data-method="instapay" onclick="selectPaymentMethod('instapay')">
+                        <span class="payment-method-name">InstaPay</span>
+                        <span class="payment-method-lbl">Send to:</span>
+                        <span class="payment-method-val">01555233700</span>
+                    </div>
+                    <div class="payment-method-card" data-method="vodafone" onclick="selectPaymentMethod('vodafone')">
+                        <span class="payment-method-name">Vodafone Cash</span>
+                        <span class="payment-method-lbl">Send to:</span>
+                        <span class="payment-method-val">12344565555</span>
+                    </div>
+                    <div class="payment-method-card" data-method="etisalat" onclick="selectPaymentMethod('etisalat')">
+                        <span class="payment-method-name">Etisalat Cash</span>
+                        <span class="payment-method-lbl">Send to:</span>
+                        <span class="payment-method-val">01234345435</span>
+                    </div>
+                    <div class="payment-method-card" data-method="bank" onclick="selectPaymentMethod('bank')">
+                        <span class="payment-method-name">Bank Wire</span>
+                        <span class="payment-method-lbl">Send to:</span>
+                        <span class="payment-method-val">ICB Bank</span>
+                    </div>
+                {% endif %}
+            </div>
 
-	<div class="order-summary mb-4">
-		<h5>{{ _("Order Summary") }}</h5>
-		<table class="table table-bordered">
-			<tbody>
-				<tr>
-					<td>{{ _("Total Weight") }}</td>
-					<td class="text-right">{{ total_weight }} {{ weight_uom }}</td>
-				</tr>
-				{% if shipping_destination %}
-				<tr>
-					<td>{{ _("Shipping Destination") }}</td>
-					<td class="text-right">{{ shipping_destination }}</td>
-				</tr>
-				{% endif %}
-				{% if shipping_amount %}
-				<tr>
-					<td>{{ _("Shipping Amount") }}</td>
-					<td class="text-right">{{ shipping_amount_formatted }}</td>
-				</tr>
-				{% endif %}
-				<tr>
-					<td><strong>{{ _("Grand Total") }}</strong></td>
-					<td class="text-right"><strong>{{ grand_total_formatted }}</strong></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
+            <!-- Selected Method Details Box -->
+            <div class="payment-details-box" id="payment-details-box">
+                <!-- Dynamic details populated via JS -->
+            </div>
 
-	<hr>
+            <!-- Upload Proof Field -->
+            <div class="upload-section">
+                <h3 class="upload-title" data-i18n="payment_upload_title">Provide Payment Confirmation</h3>
+                <div class="upload-zone" id="payment-drop-zone">
+                    <input type="file" id="payment-file-input" accept="image/*" class="file-input">
+                    <div class="upload-icon-wrapper">
+                        <i data-lucide="upload-cloud" class="upload-cloud-icon"></i>
+                    </div>
+                    <p class="upload-text" data-i18n="payment_upload_text">Drag and drop your bank slip screenshot or click to browse files</p>
+                    <p class="upload-note" data-i18n="payment_upload_note">Accepted formats: JPG, PNG (Max 5MB)</p>
+                    
+                    <!-- File Preview Area -->
+                    <div class="upload-preview-container" id="upload-preview-area" style="display:none;">
+                        <img src="" alt="Payment Receipt Preview" id="receipt-preview-img" class="receipt-preview-img">
+                        <div class="file-info-overlay">
+                            <span id="preview-filename">receipt.jpg</span>
+                            <button class="remove-file-btn" id="remove-file-btn"><i data-lucide="x"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-	<h5 class="mb-3">{{ _("Choose Payment Method") }}</h5>
-
-	<form id="payment-form" onsubmit="return false;">
-		<input type="hidden" id="order-id" value="{{ sales_order.name }}">
-
-		<div class="row payment-options">
-			{% for option in payment_options %}
-			<div class="col-md-4 mb-3">
-				<div class="payment-option card h-100" data-option="{{ option.key }}">
-					<div class="card-body text-center">
-						<h5 class="card-title">{{ option.label }}</h5>
-						{% if option.number %}
-						<p class="payment-number mb-0">
-							<span class="text-muted">{{ _("Send to:") }}</span><br>
-							<strong class="font-lg">{{ option.number }}</strong>
-						</p>
-						{% else %}
-						<p class="text-muted mb-0">{{ _("Number not configured") }}</p>
-						{% endif %}
-					</div>
-				</div>
-			</div>
-			{% endfor %}
-		</div>
-
-		<div class="form-group mt-4">
-			<label for="payment-proof">{{ _("Upload Payment Confirmation") }}</label>
-			<input type="file" class="form-control" id="payment-proof" name="payment_proof" accept="image/*,.pdf" required>
-			<small class="form-text text-muted">
-				{{ _("Please upload a screenshot or PDF of your payment confirmation.") }}
-			</small>
-		</div>
-
-		<div id="payment-error" class="alert alert-danger mt-3" style="display: none;"></div>
-		<div id="payment-success" class="alert alert-success mt-3" style="display: none;"></div>
-
-		<button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="submit-payment">
-			{{ _("Submit Payment Confirmation") }}
-		</button>
-	</form>
-</div>
-
-{% endif %}
-
+            <button class="btn btn-primary btn-full disabled" id="submit-payment-btn" disabled>
+                <i data-lucide="check-circle"></i> Sync Proof & Confirm Order
+            </button>
+            <div class="payment-disclaimer">
+                <i data-lucide="shield-check"></i>
+                <span data-i18n="payment_disclaimer">Transactions are end-to-end encrypted. False receipt uploads will flag the account.</span>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
 
-{% block base_scripts %}
-{{ include_script("frappe-web.bundle.js") }}
-{{ include_script("controls.bundle.js") }}
-{{ include_script("dialog.bundle.js") }}
+{% block script %}
 <script>
-(function() {
-	"use strict";
-
-	var selected_option = null;
-
-	function show_error(message) {
-		$("#payment-error").html(message).show();
-		$("#payment-success").hide();
-	}
-
-	function show_success(message) {
-		$("#payment-success").html(message).show();
-		$("#payment-error").hide();
-	}
-
-	function hide_messages() {
-		$("#payment-error, #payment-success").hide();
-	}
-
-	function show_loading(show) {
-		var btn = $("#submit-payment");
-		if (show) {
-			btn.prop("disabled", true).text(__("Submitting..."));
-		} else {
-			btn.prop("disabled", false).text(__("Submit Payment Confirmation"));
-		}
-	}
-
-	function bind_payment_options() {
-		$(".payment-option").on("click", function() {
-			$(".payment-option").removeClass("border-primary selected");
-			$(this).addClass("border-primary selected");
-			selected_option = $(this).data("option");
-		});
-
-		var first_option = $(".payment-option").first();
-		if (first_option.length) {
-			first_option.addClass("border-primary selected");
-			selected_option = first_option.data("option");
-		}
-	}
-
-	function submit_payment() {
-		var order_id = $("#order-id").val();
-		var file_input = $("#payment-proof")[0];
-
-		if (!selected_option) {
-			show_error(__("Please select a payment method."));
-			return;
-		}
-
-		if (!file_input.files || !file_input.files[0]) {
-			show_error(__("Please upload a payment confirmation document."));
-			return;
-		}
-
-		var file = file_input.files[0];
-
-		if (file.size > 5 * 1024 * 1024) {
-			show_error(__("File size must be less than 5MB."));
-			return;
-		}
-
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			var base64_content = e.target.result.split(",")[1];
-
-			show_loading(true);
-			hide_messages();
-
-			frappe.call({
-				type: "POST",
-				method: "custom_webshop.api.payment.confirm_payment",
-				args: {
-					order_id: order_id,
-					payment_method: selected_option,
-					filename: file.name,
-					file_content: base64_content
-				},
-				callback: function(r) {
-					show_loading(false);
-
-					if (r.exc) {
-						var msg = "";
-						if (r._server_messages) {
-							try {
-								msg = JSON.parse(r._server_messages || "[]").join("<br>");
-							} catch (e) {
-								msg = r._server_messages;
-							}
-						}
-						show_error(msg || __("Something went wrong. Please try again."));
-					} else if (r.message && r.message.success) {
-						show_success(__("Payment confirmation submitted successfully. Redirecting..."));
-						setTimeout(function() {
-							window.location.href = "/orders/" + encodeURIComponent(order_id);
-						}, 2000);
-					} else {
-						show_error((r.message && r.message.error) || __("Something went wrong. Please try again."));
-					}
-				},
-				error: function() {
-					show_loading(false);
-					show_error(__("Something went wrong. Please try again."));
-				}
-			});
-		};
-
-		reader.onerror = function() {
-			show_error(__("Failed to read the file. Please try again."));
-		};
-
-		reader.readAsDataURL(file);
-	}
-
-	function init() {
-		bind_payment_options();
-		$("#payment-form").on("submit", function(e) {
-			e.preventDefault();
-			submit_payment();
-			return false;
-		});
-	}
-
-	if (window.frappe && frappe.ready) {
-		frappe.ready(init);
-	} else {
-		$(document).ready(init);
-	}
-})();
+    window.CURRENT_ROUTE = 'payment';
+    window.PAYMENT_ORDER_ID = '{{ order_id if order_id else "" }}';
+    
+    // Inject Payment Methods for JS selection
+    {% if payment_options %}
+    window.PAYMENT_METHODS_FRAppe = {
+        {% for opt in payment_options %}
+        "{{ opt.key }}": {
+            name: "{{ opt.label }}",
+            label: "Number",
+            value: "{{ opt.number }}",
+            recipient: "CNCLeaders",
+            note: "Official payment channel."
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    {% endif %}
 </script>
 {% endblock %}

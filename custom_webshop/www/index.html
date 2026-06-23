@@ -1,0 +1,72 @@
+{% extends "templates/webshop_base.html" %}
+
+{% block page_content %}
+<section id="home-view" class="view-section active">
+    <!-- Hero with Canvas Toolpath -->
+    <div class="hero-container" id="hero-slider-container">
+        <canvas id="toolpath-canvas" class="hero-canvas"></canvas>
+        <div class="hero-overlay"></div>
+        <div class="hero-slides-wrapper" id="hero-slides-wrapper">
+            <!-- Dynamic Hero Slides rendered by JS -->
+        </div>
+        <div class="hero-slide-dots" id="hero-slide-dots">
+            <!-- Dynamic Dots rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Shop by Material Section -->
+    <div class="section-container">
+        <div class="section-header" style="text-align: center;">
+            <h2 class="section-title" data-i18n="home_shop_material" style="display: inline-block; border-bottom: 3px solid var(--accent-gold); padding-bottom: 8px;">Shop by Material</h2>
+        </div>
+        <div class="material-grid">
+            <a href="/all-products" class="material-card view-all-card">
+                <i data-lucide="layers" class="material-icon"></i>
+                <h3 data-i18n="material_all">View all categories</h3>
+            </a>
+            <a href="/all-products?material=metal" class="material-card" style="background-image: url('/assets/custom_webshop/images/carbide_end_mills.jpg'); background-color: #111;">
+                <h3 data-i18n="material_metal">Aluminum & Metals</h3>
+            </a>
+            <a href="/all-products?material=acrylic" class="material-card" style="background-image: url('/assets/custom_webshop/images/cnc_controller_board.jpg'); background-color: #444;">
+                <h3 data-i18n="material_acrylic">Acrylic & Plastic</h3>
+            </a>
+            <a href="/all-products?material=wood" class="material-card" style="background-image: url('/assets/custom_webshop/images/linear_guide_rail.jpg'); background-color: #666;">
+                <h3 data-i18n="material_wood">Wood & MDF</h3>
+            </a>
+        </div>
+    </div>
+
+    <!-- Shop by Brand Section -->
+    <div class="section-container bg-mutes">
+        <div class="section-header">
+            <h2 class="section-title" data-i18n="home_shop_brand">Shop by Certified Brand</h2>
+            <p class="section-subtitle" data-i18n="home_shop_brand_sub">Genuine mechanical components from authorized industrial manufacturers</p>
+        </div>
+        <div class="brand-grid" id="home-brand-grid">
+            <!-- Dynamic rendering in JS -->
+        </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title" data-i18n="home_shop_category">Shop by Category</h2>
+            <p class="section-subtitle" data-i18n="home_shop_category_sub">Swipe through certified high-precision parts by class</p>
+        </div>
+        <div id="home-category-carousels">
+            <!-- Dynamic carousels rendered in JS -->
+        </div>
+    </div>
+
+    <!-- Trending Equipment Section -->
+    <div class="section-container bg-mutes">
+        <div class="section-header">
+            <h2 class="section-title" data-i18n="home_trending">Trending Equipment</h2>
+            <p class="section-subtitle" data-i18n="home_trending_sub">Most demanded components based on active CNC machining workshop configurations</p>
+        </div>
+        <div class="featured-grid" id="home-trending-grid">
+            <!-- Dynamic rendering in JS -->
+        </div>
+    </div>
+</section>
+{% endblock %}

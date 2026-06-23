@@ -1,0 +1,16 @@
+{% extends "templates/webshop_base.html" %}
+
+{% block page_content %}
+<section id="detail-view" class="view-section active">
+    <div class="detail-container" id="product-detail-container">
+        <!-- Dynamic detail elements in JS -->
+    </div>
+</section>
+{% endblock %}
+
+{% block script %}
+<script>
+    window.INITIAL_PRODUCT = {{ product_json or 'null' }};
+    window.CURRENT_ROUTE = 'product';
+</script>
+{% endblock %}

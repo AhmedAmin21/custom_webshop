@@ -1,72 +1,39 @@
-{% extends "templates/web.html" %}
-
-{% block title %}{{ _("Orders") }}{% endblock %}
-
-{% block header %}
-<h3 class="mt-2 mb-4">{{ _("My Orders") }}</h3>
-{% endblock %}
+{% extends "templates/webshop_base.html" %}
 
 {% block page_content %}
+<section id="orders-view" class="view-section active">
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title" data-i18n="orders_title">Purchase & Machining Orders</h2>
+            <p class="section-subtitle" data-i18n="orders_subtitle">Real-time telemetry and order dispatch sync with ERPNext</p>
+        </div>
 
-{% if orders %}
-<div class="frappe-card p-5 mb-4">
-	<table class="table table-bordered">
-		<thead>
-			<tr>
-				<th>{{ _("Order #") }}</th>
-				<th>{{ _("Date") }}</th>
-				<th>{{ _("Total") }}</th>
-				<th>{{ _("Status") }}</th>
-				<th class="text-right">{{ _("Action") }}</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for order in orders %}
-			<tr>
-				<td>
-					<a href="/orders/{{ order.name }}">{{ order.name }}</a>
-				</td>
-				<td>{{ frappe.format_date(order.transaction_date) }}</td>
-				<td>{{ order.grand_total_formatted }}</td>
-				<td>
-					<span class="badge badge-{{ 'success' if order.status == 'Completed' else 'warning' if order.status == 'To Deliver and Bill' else 'info' }}">
-						{{ order.status }}
-					</span>
-				</td>
-				<td class="text-right">
-					{% if order.docstatus == 0 %}
-					<a class="btn btn-sm btn-primary" href="/payment?order_id={{ order.name }}">
-						{{ _("Pay Now") }}
-					</a>
-					{% endif %}
-					<a class="btn btn-sm btn-primary-light{% if order.docstatus != 0 %} ml-2{% endif %}" href="/orders/{{ order.name }}">
-						{{ _("View") }}
-					</a>
-				</td>
-			</tr>
-			{% endfor %}
-		</tbody>
-	</table>
-</div>
-{% else %}
-<div class="frappe-card p-5 text-center">
-	<div class="mb-3">
-		<svg class="icon icon-lg text-muted">
-			<use href="#icon-file"></use>
-		</svg>
-	</div>
-	<h5 class="text-muted">{{ _("No orders yet") }}</h5>
-	<p class="text-muted">{{ _("You haven't placed any orders.") }}</p>
-	<a class="btn btn-primary mt-3" href="/all-products">
-		{{ _("Start Shopping") }}
-	</a>
-</div>
-{% endif %}
-
+        <div class="orders-list-container" id="orders-history-list">
+            <!-- Dynamic Orders generated in JS -->
+        </div>
+    </div>
+</section>
 {% endblock %}
 
-{% block base_scripts %}
-{{ include_script("frappe-web.bundle.js") }}
-{{ include_script("controls.bundle.js") }}
-{{ include_script("dialog.bundle.js") }}
+{% block script %}
+<script>
+    window.CURRENT_ROUTE = 'orders';
+    
+    // Inject orders from ERPNext backend
+    {% set orders_json = [] %}
+    {% for o in orders %}
+        {% set _ = orders_json.append({
+            "id": o.name,
+            "date": o.transaction_date | string,
+            "status": "paid" if o.status in ("To Deliver and Bill", "Completed") else "pending",
+            "grandTotal": o.grand_total,
+            "customer": { "name": "", "address": "", "phone": "" },
+            "subtotal": o.grand_total,
+            "shipping": 0,
+            "items": []
+        }) %}
+    {% endfor %}
+    
+    window.INITIAL_ORDERS = {{ frappe.as_json(orders_json) if orders else '[]' }};
+</script>
 {% endblock %}

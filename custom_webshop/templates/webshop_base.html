@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Premium CNC Machining Components</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/assets/custom_webshop/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Glass Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo" dir="ltr">
+                <span class="logo-accent">CNC</span>Leaders
+            </a>
+            
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link" data-view="home" data-i18n="nav_home">Home</a></li>
+                <li><a href="/all-products" class="nav-link" data-view="catalog" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-view="orders" data-i18n="nav_orders">Track Orders</a></li>
+                <li><a href="/admin" class="nav-link" data-view="admin" data-i18n="nav_admin">Admin Panel</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language / تغيير اللغة">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size: 0.85rem; font-weight: 600; margin-left: 4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn" title="Toggle Visual Mode">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <button class="nav-btn cart-toggle-btn" id="cart-toggle-btn" onclick="window.location.href='/cart'">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="nav-btn" onclick="window.location.href='/me'" title="Login / Profile">
+                    <i data-lucide="user"></i>
+                </button>
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+        {% block page_content %}{% endblock %}
+    </main>
+
+    <!-- Blueprint Engineering Footer -->
+    <footer class="app-footer blueprint-footer">
+        <div class="footer-grid blueprint-grid">
+            <!-- Brand & Spec Column -->
+            <div class="footer-column brand-col">
+                <a href="/" class="footer-logo blueprint-logo" dir="ltr">
+                    <span class="logo-accent">CNC</span>LEADERS
+                </a>
+                <div class="spec-block">
+                    <div class="spec-line-row"><span class="spec-label">TYPE</span><span class="spec-val">Manufacturer and Distributer</span></div>
+                    <div class="spec-line-row"><span class="spec-label">SHIPPING</span><span class="spec-val">Worldwide Dispatch</span></div>
+                    <div class="spec-line-row"><span class="spec-label">WARRANTY</span><span class="spec-val">3-Year Industrial</span></div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="footer-column dir-col">
+                <h4 class="footer-title">Categories</h4>
+                <ul class="footer-links">
+                    <li><a href="/all-products?category=spindles">Spindle Systems</a></li>
+                    <li><a href="/all-products?category=guides">Linear Guides</a></li>
+                    <li><a href="/all-products?category=tooling">Carbide Tooling</a></li>
+                    <li><a href="/all-products?category=electronics">Controllers</a></li>
+                    <li><a href="/all-products">Interactive Catalog</a></li>
+                    <li><a href="/orders">Track Orders</a></li>
+                </ul>
+            </div>
+
+            <!-- Customer Support Column -->
+            <div class="footer-column telemetry-col">
+                <h4 class="footer-title">Customer Support</h4>
+                <div class="telemetry-block" style="background: rgba(15, 23, 42, 0.4);">
+                    <div class="status-row">
+                        <i data-lucide="headset" class="icon-sm" style="color: #3b82f6;"></i>
+                        <span style="color: #cbd5e1;">Available 24/7 for Technical Support</span>
+                    </div>
+                    <div class="ticker-box" style="color: #cbd5e1; border-color: rgba(59, 130, 246, 0.2); background: rgba(0, 0, 0, 0.2);">
+                        <span>sales@cncleaders.com</span>
+                    </div>
+                    <p class="depot-contact" style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                        Call us: +1 (555) 0103-882<br>
+                        Mon - Fri: 8:00 AM - 6:00 PM EST
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom blueprint-bottom">
+            <div class="footer-bottom-container">
+                <p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP. ALL RIGHTS RESERVED.</p>
+            </div>
+            <!-- The Signature Element -->
+            <div class="footer-signature">PRECISION ENGINEERED</div>
+        </div>
+    </footer>
+
+    <!-- Slide-over Right Cart Drawer (Now redirects to /cart on mobile, but keeping for desktop) -->
+    <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Active Cart</h2>
+            <button class="close-drawer-btn" id="close-drawer-btn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="drawer-body" id="cart-drawer-body">
+            <!-- Dynamic Cart Items inside drawer -->
+        </div>
+        <div class="drawer-footer">
+            <div class="drawer-summary">
+                <div class="drawer-summary-row">
+                    <span>Selected items (est.):</span>
+                    <span id="drawer-subtotal">$0.00</span>
+                </div>
+            </div>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">
+                Proceed to Full Form
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Frappe Scripts -->
+    <script type="text/javascript" src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/frappe/js/frappe.bundle.js"></script>
+    
+    <!-- Application Javascript Logic -->
+    <script src="/assets/custom_webshop/js/app.js"></script>
+    
+    {% block script %}{% endblock %}
+</body>
+</html>
