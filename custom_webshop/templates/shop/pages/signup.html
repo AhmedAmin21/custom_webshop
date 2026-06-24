@@ -1,0 +1,41 @@
+<section id="signup-view" class="view-section active">
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i data-lucide="user-plus" class="auth-icon"></i>
+                <h2 class="auth-title" data-i18n="auth_signup_title">New Account</h2>
+                <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial hardware procurement.</p>
+            </div>
+            <form id="signup-form" class="auth-form">
+                <div class="input-group">
+                    <i data-lucide="user" class="input-icon"></i>
+                    <input type="text" id="signup-name" required placeholder="Full Name / Company" data-i18n-placeholder="auth_name">
+                </div>
+                <div class="input-group">
+                    <i data-lucide="mail" class="input-icon"></i>
+                    <input type="email" id="signup-email" required placeholder="E-mail Address" data-i18n-placeholder="auth_email">
+                </div>
+                <div class="input-group">
+                    <i data-lucide="phone" class="input-icon"></i>
+                    <input type="tel" id="signup-phone" required placeholder="Mobile Number" data-i18n-placeholder="auth_phone">
+                </div>
+                <div class="input-group">
+                    <i data-lucide="key" class="input-icon"></i>
+                    <input type="password" id="signup-password" required placeholder="Password" data-i18n-placeholder="auth_password">
+                </div>
+                <div class="input-group">
+                    <i data-lucide="shield-check" class="input-icon"></i>
+                    <input type="password" id="signup-confirm-password" required placeholder="Confirm Password" data-i18n-placeholder="auth_confirm_password">
+                </div>
+                <button type="submit" class="auth-submit-btn">
+                    <span data-i18n="auth_signup_btn">Create Account</span>
+                    <i data-lucide="check-circle"></i>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <span data-i18n="auth_has_account">Already integrated?</span>
+                <a href="/shop/login" class="auth-link" data-i18n="auth_login_link">Sign In</a>
+            </div>
+        </div>
+    </div>
+</section>

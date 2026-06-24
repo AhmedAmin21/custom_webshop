@@ -1,0 +1,70 @@
+<section id="cart-view" class="view-section active">
+    <div class="cart-page-layout">
+        <div class="cart-items-panel">
+            <h2 class="section-title" data-i18n="cart_selected">Your Selected Hardware</h2>
+            <div class="cart-list" id="cart-page-list"></div>
+        </div>
+
+        <div class="cart-checkout-panel">
+            <div class="checkout-summary-card">
+                <h3 class="summary-title" data-i18n="cart_cost_structure">Order Cost Structure</h3>
+                <div class="summary-row">
+                    <span data-i18n="cart_subtotal">Subtotal</span>
+                    <span id="cart-subtotal">$0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span data-i18n="cart_shipping">Shipping (Simulated CNC Cargo)</span>
+                    <span id="cart-shipping">$0.00</span>
+                </div>
+                <hr class="summary-divider">
+                <div class="summary-row total-row">
+                    <span data-i18n="cart_total">Grand Total</span>
+                    <span id="cart-grandtotal">$0.00</span>
+                </div>
+            </div>
+
+            <div class="delivery-details-card">
+                <h3 class="summary-title" data-i18n="cart_delivery">Delivery & Shipping Address</h3>
+                <form id="checkout-delivery-form" class="delivery-form">
+                    <div class="form-group" id="saved-address-group" style="display:none;">
+                        <label for="saved-address-select">Saved Addresses</label>
+                        <select id="saved-address-select" class="form-input">
+                            <option value="">Enter new address</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cust-name" data-i18n="cart_name">Full Name / Company Name *</label>
+                        <input type="text" id="cust-name" required placeholder="e.g. John Doe, Machining LLC" data-i18n-placeholder="cart_name_placeholder" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="cust-phone" data-i18n="cart_phone">Contact Phone Number *</label>
+                        <input type="tel" id="cust-phone" required placeholder="e.g. +1 555-0199" data-i18n-placeholder="cart_phone_placeholder" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="cust-address" data-i18n="cart_address">Shipping Address *</label>
+                        <textarea id="cust-address" required placeholder="Street address, unit, city, state, zip code..." data-i18n-placeholder="cart_address_placeholder" class="form-input" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cart-shipping-rule">Shipping Company *</label>
+                        <select id="cart-shipping-rule" required class="form-input">
+                            <option value="">Select Shipping Company *</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cart-shipping-destination">Governorate *</label>
+                        <select id="cart-shipping-destination" required class="form-input">
+                            <option value="">Select Governorate *</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cust-notes" data-i18n="cart_notes">Machining Details / Delivery Instructions</label>
+                        <textarea id="cust-notes" placeholder="Notes (e.g. loading dock hours, fork-lift requirements)" data-i18n-placeholder="cart_notes_placeholder" class="form-input" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full checkout-submit-btn" data-i18n="cart_proceed">
+                        Proceed to checkout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

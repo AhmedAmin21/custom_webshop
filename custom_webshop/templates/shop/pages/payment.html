@@ -1,0 +1,73 @@
+<section id="payment-view" class="view-section active">
+    <div class="payment-container">
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-icon-wrapper">
+                    <i data-lucide="landmark" class="payment-icon"></i>
+                </div>
+                <h2 class="payment-title" data-i18n="payment_title">Checkout</h2>
+                <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing and trigger ERPNext packaging, please wire the total amount and upload your receipt screenshot below.</p>
+            </div>
+
+            <div class="payment-amount-box">
+                <span class="amount-label">Amount Outstanding</span>
+                <span class="amount-val" id="payment-amount">$0.00</span>
+                <span class="order-ref-label" id="payment-ref-text">Order Reference: #CNC-XXXXX</span>
+            </div>
+
+            <h3 class="payment-section-title" data-i18n="payment_method">Choose Payment Method</h3>
+            <div class="payment-methods-grid">
+                <div class="payment-method-card active" data-method="instapay" onclick="selectPaymentMethod('instapay')">
+                    <span class="payment-method-name">InstaPay</span>
+                    <span class="payment-method-lbl">Send to:</span>
+                    <span class="payment-method-val">01555233700</span>
+                </div>
+                <div class="payment-method-card" data-method="vodafone" onclick="selectPaymentMethod('vodafone')">
+                    <span class="payment-method-name">Vodafone Cash</span>
+                    <span class="payment-method-lbl">Send to:</span>
+                    <span class="payment-method-val">12344565555</span>
+                </div>
+                <div class="payment-method-card" data-method="etisalat" onclick="selectPaymentMethod('etisalat')">
+                    <span class="payment-method-name">Etisalat Cash</span>
+                    <span class="payment-method-lbl">Send to:</span>
+                    <span class="payment-method-val">01234345435</span>
+                </div>
+                <div class="payment-method-card" data-method="bank" onclick="selectPaymentMethod('bank')">
+                    <span class="payment-method-name">Bank Wire</span>
+                    <span class="payment-method-lbl">Send to:</span>
+                    <span class="payment-method-val">ICB Bank</span>
+                </div>
+            </div>
+
+            <div class="payment-details-box" id="payment-details-box"></div>
+
+            <div class="upload-section">
+                <h3 class="upload-title" data-i18n="payment_upload_title">Provide Payment Confirmation</h3>
+                <div class="upload-zone" id="payment-drop-zone">
+                    <input type="file" id="payment-file-input" accept="image/*" class="file-input">
+                    <div class="upload-icon-wrapper">
+                        <i data-lucide="upload-cloud" class="upload-cloud-icon"></i>
+                    </div>
+                    <p class="upload-text" data-i18n="payment_upload_text">Drag and drop your bank slip screenshot or click to browse files</p>
+                    <p class="upload-note" data-i18n="payment_upload_note">Accepted formats: JPG, PNG (Max 5MB)</p>
+                    <div class="upload-preview-container" id="upload-preview-area" style="display:none;">
+                        <img src="" alt="Payment Receipt Preview" id="receipt-preview-img" class="receipt-preview-img">
+                        <div class="file-info-overlay">
+                            <span class="file-name" id="receipt-file-name">receipt.png</span>
+                            <button class="remove-file-btn" id="remove-receipt-btn" type="button">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-actions">
+                <button class="btn btn-primary btn-full disabled" id="submit-payment-btn" data-i18n="payment_submit" disabled>
+                    Submit Payment Proof
+                </button>
+                <a href="/shop/orders" class="btn btn-secondary btn-full center-text" data-i18n="payment_track">Back</a>
+            </div>
+        </div>
+    </div>
+</section>

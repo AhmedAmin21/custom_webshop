@@ -29,7 +29,8 @@ app_license = "mit"
 # app_include_js = "/assets/custom_webshop/js/custom_webshop.js"
 
 # include js, css files in header of web template
-web_include_css = "/assets/custom_webshop/css/cart.css"
+# web_include_css = "/assets/custom_webshop/css/cart.css"
+# web_include_js = "/assets/custom_webshop/js/custom_signup.js"
 web_include_js = "/assets/custom_webshop/js/custom_signup.js"
 
 # Custom signup form template
@@ -207,6 +208,20 @@ custom_fields = {
 			"fieldtype": "Data",
 			"insert_after": "custom_vodafone_cash_number",
 		},
+		{
+			"fieldname": "custom_hero_slides_section",
+			"label": "Hero Slides (Shop SPA)",
+			"fieldtype": "Section Break",
+			"insert_after": "custom_etisalat_cash_number",
+			"collapsible": 1,
+		},
+		{
+			"fieldname": "custom_hero_slides_json",
+			"label": "Hero Slides JSON",
+			"fieldtype": "Long Text",
+			"insert_after": "custom_hero_slides_section",
+			"description": "JSON array of hero slides for the shop homepage SPA.",
+		},
 	],
 	"Sales Order": [
 		{
@@ -233,7 +248,7 @@ override_whitelisted_methods = {
 website_path_resolver = "custom_webshop.path_resolver.custom_resolve_path"
 
 role_home_page = {
-	"Customer": "/all-products"
+	"Customer": "/shop"
 }
 
 override_doctype_class = {
@@ -241,8 +256,13 @@ override_doctype_class = {
 }
 
 website_route_rules = [
-	{"from_route": "/orders", "to_route": "orders"},
-	{"from_route": "/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "orders"}]}},
+	{"from_route": "/shop", "to_route": "shop"},
+	{"from_route": "/shop/product/<item_code>", "to_route": "shop/product"},
+	{"from_route": "/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "shop"}]}},
+]
+
+website_redirects = [
+	{"source": "/orders", "target": "/shop/orders"},
 ]
 #
 # each overriding function accepts a `data` argument;

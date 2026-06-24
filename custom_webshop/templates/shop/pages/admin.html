@@ -1,0 +1,184 @@
+<section id="admin-view" class="view-section active">
+    <div class="admin-dashboard-container">
+        <div class="admin-sidebar">
+            <div class="admin-logo">
+                <i data-lucide="shield-alert" class="admin-icon-logo"></i>
+                <span>CNC Dashboard</span>
+            </div>
+            <ul class="admin-menu">
+                <li><a href="/shop/admin" class="admin-menu-link active" data-tab="analytics">Analytics telemetry</a></li>
+                <li><a href="/shop/admin" class="admin-menu-link" data-tab="inventory">ERPNext Inventory</a></li>
+                <li><a href="/shop/admin" class="admin-menu-link" data-tab="orders">Pending Receipts</a></li>
+                <li><a href="/shop/admin" class="admin-menu-link" data-tab="slideshow">Slide Customizer</a></li>
+            </ul>
+        </div>
+
+        <div class="admin-main-content">
+            <div class="admin-tab-content active" id="admin-tab-analytics">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-head">
+                            <span>Simulated Revenue</span>
+                            <i data-lucide="dollar-sign" class="met-icon text-orange"></i>
+                        </div>
+                        <div class="metric-value" id="admin-revenue-text">$0.00</div>
+                        <div class="metric-trend">
+                            <span class="trend-up">+14.2%</span> from last billing cycle
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-head">
+                            <span>Total Orders</span>
+                            <i data-lucide="package" class="met-icon text-orange"></i>
+                        </div>
+                        <div class="metric-value" id="admin-orders-text">0</div>
+                        <div class="metric-trend">
+                            <span>ERPNext Active Queues</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-head">
+                            <span>Cart Conversions</span>
+                            <i data-lucide="trending-up" class="met-icon text-orange"></i>
+                        </div>
+                        <div class="metric-value" id="admin-conversion-text">64.5%</div>
+                        <div class="metric-trend">
+                            <span class="trend-up">Outperforming</span> standard hardware
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-charts-container">
+                    <div class="chart-card">
+                        <h3 class="chart-title">Hourly Simulated G-Code Demand Trend</h3>
+                        <div class="svg-chart-container" id="sales-chart-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-tab-content" id="admin-tab-inventory">
+                <div class="inventory-table-card">
+                    <div class="card-header-flex">
+                        <h3>ERPNext Linked Products Catalog</h3>
+                        <button class="btn btn-secondary btn-sm" id="sync-erpnext-btn">
+                            <i data-lucide="refresh-cw" class="btn-icon"></i> Force ERPNext Sync
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Item ID</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Current Price</th>
+                                    <th>ERP Stock</th>
+                                    <th>Sync Status</th>
+                                    <th>Override Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-inventory-rows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-tab-content" id="admin-tab-orders">
+                <div class="inventory-table-card">
+                    <h3>Verify Manual Wire Receipts</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                    <th>Customer Details</th>
+                                    <th>Total Price</th>
+                                    <th>Receipt Proof</th>
+                                    <th>Action Controls</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-receipt-rows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-tab-content" id="admin-tab-slideshow">
+                <div class="inventory-table-card">
+                    <div class="card-header-flex">
+                        <h3>Manage Hero Slideshow</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Re-arrange, delete, or create new slides dynamically.</p>
+                    </div>
+                    <form id="admin-add-slide-form" class="delivery-form" style="margin-bottom:32px; border-bottom:1px dashed var(--border-subtle); padding-bottom:32px;">
+                        <h4 class="specs-table-title" style="margin-bottom:12px;">Add Custom Banner Slide</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div class="form-group">
+                                <label for="slide-eyebrow">Eyebrow Caption *</label>
+                                <input type="text" id="slide-eyebrow" required placeholder="e.g. HIGH ACCURACY MACHINERY" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="slide-title">Hero Title Text *</label>
+                                <input type="text" id="slide-title" required placeholder="e.g. Linear Motion Systems for micro-tolerances" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label for="slide-subtitle">Subtitle Description Text *</label>
+                            <textarea id="slide-subtitle" required placeholder="Describe details of this segment..." class="form-input" rows="2"></textarea>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+                            <div class="form-group">
+                                <label for="slide-link">CTA Button Target Link</label>
+                                <input type="text" id="slide-link" placeholder="e.g. /shop/catalog or /shop/catalog?category=motion" value="/shop/catalog" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="slide-image-select">Background Image Asset</label>
+                                <select id="slide-image-select" class="form-input" onchange="toggleCustomSlideImageUpload(this.value)">
+                                    <option value="assets/images/cnc_spindle_motor.jpg">Spindle Motor Image</option>
+                                    <option value="assets/images/linear_guide_rail.jpg">Linear Guide Rail Image</option>
+                                    <option value="assets/images/carbide_end_mills.jpg">Carbide Tooling Image</option>
+                                    <option value="assets/images/cnc_controller_board.jpg">CNC Breakout Board Image</option>
+                                    <option value="assets/images/ball_screw_assembly.jpg">Ball Screw Assembly Image</option>
+                                    <option value="custom">-- Upload Custom Slide Image --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" id="slide-custom-upload-group" style="display:none; margin-top:12px;">
+                            <label>Upload Custom Banner Photo</label>
+                            <div class="upload-zone" id="slide-upload-zone" style="padding:16px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                <input type="file" id="slide-file-input" accept="image/*" class="file-input">
+                                <i data-lucide="upload-cloud" style="width:24px; height:24px; color:var(--text-muted); margin-bottom:4px;"></i>
+                                <p class="upload-text" style="font-size:0.85rem;">Click or drop image to upload custom banner</p>
+                                <div class="upload-preview-container" id="slide-upload-preview" style="display:none;">
+                                    <img src="" alt="Slide Preview" id="slide-preview-img" class="receipt-preview-img" style="max-height:80px;">
+                                    <div class="file-info-overlay" style="padding:4px 8px;">
+                                        <span class="file-name" id="slide-file-name" style="font-size:0.7rem;">slide.png</span>
+                                        <button class="remove-file-btn" id="remove-slide-img-btn" type="button"><i data-lucide="x" style="width:12px; height:12px;"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top:16px; padding:10px 20px;">
+                            <i data-lucide="plus-circle" class="btn-icon"></i> Inject Slide to Live Hero
+                        </button>
+                    </form>
+                    <h4 class="specs-table-title">Live Slide Carousel Registry</h4>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Seq</th>
+                                    <th>Preview</th>
+                                    <th>Captions & Eyebrow</th>
+                                    <th>Order Sorter</th>
+                                    <th>CTA Target</th>
+                                    <th>Control Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-slides-rows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
