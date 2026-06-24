@@ -55,6 +55,7 @@ const TRANSLATIONS = {
         orders_subtitle: "Real-time telemetry and order dispatch sync with ERPNext", btn_add_to_cart: "Add to Cart",
         btn_out_of_stock: "Out of Stock", btn_remove: "Remove", btn_details: "View Details",
         toast_added_cart: "Added to Cart!", toast_removed_cart: "Component removed from cart.",
+        toast_product_not_found: "Product not found. Please refresh and try again.",
         catalog_results: "Showing {count} components",
         auth_login_title: "Client Portal", auth_login_sub: "Secure access to your telemetry dashboard.",
         auth_email: "E-mail Address", auth_password: "Password", auth_login_btn: "Authenticate",
@@ -88,6 +89,7 @@ const TRANSLATIONS = {
         orders_subtitle: "قياس عن بعد بالوقت الفعلي ومزامنة الإرسال مع نظام ERPNext", btn_add_to_cart: "أضف إلى السلة",
         btn_out_of_stock: "نفذت الكمية", btn_remove: "إزالة", btn_details: "عرض التفاصيل",
         toast_added_cart: "تمت الإضافة إلى السلة!", toast_removed_cart: "تم إزالة المكون من السلة.",
+        toast_product_not_found: "المنتج غير موجود. يرجى تحديث الصفحة والمحاولة مرة أخرى.",
         catalog_results: "عرض {count} مكونات",
         auth_login_title: "بوابة العملاء", auth_login_sub: "وصول آمن إلى لوحة القياس الخاصة بك.",
         auth_email: "البريد الإلكتروني", auth_password: "كلمة المرور", auth_login_btn: "تسجيل الدخول",
@@ -254,7 +256,7 @@ function renderHomeView() {
         categoryProducts.forEach(prod => {
             const card = document.createElement("div");
             card.className = "product-card carousel-product-card";
-            const isOutOfStock = prod.stock <= 0;
+            const isOutOfStock = !isProductPurchasable(prod);
             const badgeHTML = isOutOfStock 
                 ? `<span class="product-badge out-of-stock">DEPLETED</span>` 
                 : `<span class="product-badge" style="background:var(--primary-blue); border-color:var(--primary-blue);">STOCK</span>`;
@@ -275,7 +277,7 @@ function renderHomeView() {
                     </div>
                     <div class="product-bottom">
                         <span class="product-price">$${prod.price.toFixed(2)}</span>
-                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" onclick="addToCart('${prod.id}')" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
+                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" data-add-to-cart data-item-code="${escapeHtmlAttr(prod.id)}" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
                             <i data-lucide="shopping-cart"></i>
                         </button>
                     </div>
@@ -302,7 +304,7 @@ function renderHomeView() {
         trendingProducts.forEach(prod => {
             const card = document.createElement("div");
             card.className = "product-card";
-            const isOutOfStock = prod.stock <= 0;
+            const isOutOfStock = !isProductPurchasable(prod);
             const badgeHTML = isOutOfStock 
                 ? `<span class="product-badge out-of-stock">DEPLETED</span>` 
                 : `<span class="product-badge" style="background:var(--primary-blue); border-color:var(--primary-blue);">TRENDING</span>`;
@@ -327,7 +329,7 @@ function renderHomeView() {
                     </div>
                     <div class="product-bottom">
                         <span class="product-price">$${prod.price.toFixed(2)}</span>
-                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" onclick="addToCart('${prod.id}')" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
+                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" data-add-to-cart data-item-code="${escapeHtmlAttr(prod.id)}" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
                             <i data-lucide="shopping-cart"></i>
                         </button>
                     </div>
@@ -469,7 +471,7 @@ function filterAndRenderCatalog() {
                               
         const matchesCategory = (selectedCategory === "all" || prod.category === selectedCategory);
         const matchesBrand = (selectedBrand === "all" || prod.brand === selectedBrand);
-        const matchesStock = !inStockOnly || prod.stock > 0;
+        const matchesStock = !inStockOnly || isProductPurchasable(prod);
         const matchesPrice = prod.price <= maxPrice;
 
         return matchesSearch && matchesCategory && matchesBrand && matchesStock && matchesPrice;
@@ -508,7 +510,7 @@ function filterAndRenderCatalog() {
 
     filtered.forEach(prod => {
         const card = document.createElement("div");
-        const isOutOfStock = prod.stock <= 0;
+        const isOutOfStock = !isProductPurchasable(prod);
         const badgeHTML = isOutOfStock 
             ? `<span class="product-badge out-of-stock">DEPLETED</span>` 
             : ``;
@@ -544,7 +546,7 @@ function filterAndRenderCatalog() {
                     </div>
                     <div class="product-actions-list">
                         <span class="product-price">$${prod.price.toFixed(2)}</span>
-                        <button class="btn btn-primary btn-sm ${isOutOfStock ? 'disabled' : ''}" onclick="addToCart('${prod.id}')" ${isOutOfStock ? 'disabled' : ''}>
+                        <button class="btn btn-primary btn-sm ${isOutOfStock ? 'disabled' : ''}" data-add-to-cart data-item-code="${escapeHtmlAttr(prod.id)}" ${isOutOfStock ? 'disabled' : ''}>
                             <i data-lucide="shopping-cart" style="width:16px; height:16px; margin-right:6px; display:inline-block; vertical-align:middle;"></i>${t('btn_add_to_cart')}
                         </button>
                     </div>
@@ -572,7 +574,7 @@ function filterAndRenderCatalog() {
                     </div>
                     <div class="product-bottom">
                         <span class="product-price">$${prod.price.toFixed(2)}</span>
-                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" onclick="addToCart('${prod.id}')" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
+                        <button class="card-add-btn ${isOutOfStock ? 'disabled' : ''}" data-add-to-cart data-item-code="${escapeHtmlAttr(prod.id)}" ${isOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
                             <i data-lucide="shopping-cart"></i>
                         </button>
                     </div>
@@ -596,7 +598,7 @@ function renderDetailView(productId) {
         return;
     }
 
-    const isOutOfStock = prod.stock <= 0;
+    const isOutOfStock = !isProductPurchasable(prod);
 
     // Render specification table rows
     let specRows = "";
@@ -637,7 +639,7 @@ function renderDetailView(productId) {
                     <div class="stock-indicator">
                         <span class="dot-status ${isOutOfStock ? 'dot-outofstock' : 'dot-instock'}"></span>
                         <span style="color: ${isOutOfStock ? '#EF4444' : '#22C55E'}">
-                            ${isOutOfStock ? t('btn_out_of_stock') : `In Stock: ${prod.stock} units`}
+                            ${isOutOfStock ? t('btn_out_of_stock') : getStockStatusLabel(prod)}
                         </span>
                     </div>
                 </div>
@@ -661,7 +663,7 @@ function renderDetailView(productId) {
                         <input type="text" value="1" id="detail-qty-input" class="qty-val" readonly>
                         <button class="qty-btn" onclick="adjustDetailQty(1)">+</button>
                     </div>
-                    <button class="btn btn-primary ${isOutOfStock ? 'disabled' : ''}" style="flex-grow:1;" onclick="addDetailToCart('${prod.id}')" ${isOutOfStock ? 'disabled' : ''}>
+                    <button class="btn btn-primary ${isOutOfStock ? 'disabled' : ''}" style="flex-grow:1;" data-add-detail-to-cart data-item-code="${escapeHtmlAttr(prod.id)}" ${isOutOfStock ? 'disabled' : ''}>
                         <i data-lucide="shopping-cart"></i> ${t('btn_add_to_cart')}
                     </button>
                 </div>
@@ -689,6 +691,7 @@ function renderDetailView(productId) {
         items.forEach(item => {
             const card = document.createElement("div");
             card.className = "product-card";
+            const relatedOutOfStock = !isProductPurchasable(item);
             card.innerHTML = `
                 <div class="product-img-wrapper" onclick="ShopNav.go(ShopNav.product('${item.id}'))">
                     <img src="${item.image}" alt="${item.name}" class="product-img">
@@ -698,7 +701,7 @@ function renderDetailView(productId) {
                     <h4 class="product-name" onclick="ShopNav.go(ShopNav.product('${item.id}'))">${item.name}</h4>
                     <div class="product-bottom" style="margin-top: 12px;">
                         <span class="product-price">$${item.price.toFixed(2)}</span>
-                        <button class="card-add-btn" onclick="addToCart('${item.id}')">
+                        <button class="card-add-btn ${relatedOutOfStock ? 'disabled' : ''}" data-add-to-cart data-item-code="${escapeHtmlAttr(item.id)}" ${relatedOutOfStock ? 'disabled' : ''} title="${t('btn_add_to_cart')}">
                             <i data-lucide="shopping-cart"></i>
                         </button>
                     </div>
@@ -1207,6 +1210,49 @@ function renderAdminOrdersApproval() {
 
 // --- 6. INTERACTIVE UTILITIES & TRIGGERS (ADD TO CART, DRAWER ACTIONS, QUANTITIES) ---
 
+function escapeHtmlAttr(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function isProductPurchasable(prod) {
+    if (!prod) return false;
+    if (prod.on_backorder) return true;
+    if (prod.in_stock) return true;
+    return (prod.stock || 0) > 0;
+}
+
+function getStockStatusLabel(prod) {
+    if (!isProductPurchasable(prod)) return t("btn_out_of_stock");
+    if (prod.on_backorder) return "Available on backorder";
+    if ((prod.stock || 0) > 0) return `In Stock: ${prod.stock} units`;
+    return "In Stock";
+}
+
+window.isProductPurchasable = isProductPurchasable;
+window.escapeHtmlAttr = escapeHtmlAttr;
+
+function initAddToCartDelegation() {
+    document.addEventListener("click", (e) => {
+        const detailBtn = e.target.closest("[data-add-detail-to-cart]");
+        if (detailBtn && !detailBtn.disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            addDetailToCart(detailBtn.dataset.itemCode);
+            return;
+        }
+        const btn = e.target.closest("[data-add-to-cart]");
+        if (!btn || btn.disabled) return;
+        e.preventDefault();
+        e.stopPropagation();
+        addToCart(btn.dataset.itemCode);
+    });
+}
+
 // Dynamic popup toasts
 function showToast(message, icon = "info") {
     const container = document.getElementById("toast-container");
@@ -1313,11 +1359,19 @@ function updateCartBadgeCount() {
 // Add Item from Product Card Grid
 window.addToCart = function(productId) {
     const prod = state.products.find(p => p.id === productId);
-    if (!prod || prod.stock <= 0) return;
+    if (!prod) {
+        showToast(t("toast_product_not_found"), "info");
+        return;
+    }
+    if (!isProductPurchasable(prod)) {
+        showToast(t("btn_out_of_stock"), "info");
+        return;
+    }
 
     const existing = state.cart.find(item => item.productId === productId);
+    const stockCap = prod.stock > 0 ? prod.stock : null;
     if (existing) {
-        if (existing.qty < prod.stock) {
+        if (!stockCap || existing.qty < stockCap) {
             existing.qty++;
             showToast(`${prod.name} quantity increased.`, "success");
         } else {
@@ -1337,15 +1391,23 @@ window.addToCart = function(productId) {
 // Add Item from Detail View (with specific Qty Spinner)
 window.addDetailToCart = function(productId) {
     const prod = state.products.find(p => p.id === productId);
-    if (!prod || prod.stock <= 0) return;
+    if (!prod) {
+        showToast(t("toast_product_not_found"), "info");
+        return;
+    }
+    if (!isProductPurchasable(prod)) {
+        showToast(t("btn_out_of_stock"), "info");
+        return;
+    }
 
     const qtyInput = document.getElementById("detail-qty-input");
     const qtyToAdd = qtyInput ? parseInt(qtyInput.value) : 1;
 
     const existing = state.cart.find(item => item.productId === productId);
     const currentQty = existing ? existing.qty : 0;
+    const stockCap = prod.stock > 0 ? prod.stock : null;
 
-    if (currentQty + qtyToAdd > prod.stock) {
+    if (stockCap && currentQty + qtyToAdd > stockCap) {
         showToast(`Cannot exceed ERP stock limits. Active cap is ${prod.stock} units.`, "info");
         return;
     }
@@ -1370,7 +1432,7 @@ window.updateCartItemQty = function(productId, delta) {
 
     let newVal = item.qty + delta;
     
-    if (newVal > prod.stock) {
+    if (prod.stock > 0 && newVal > prod.stock) {
         showToast(`Cannot exceed ERP stock limits. Limit: ${prod.stock} units.`, "info");
         return;
     }
@@ -1636,6 +1698,20 @@ let slideshowTimer = null;
 let currentSlideIndex = 0;
 let pendingSlideImageFile = null;
 
+function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+}
+
+function sanitizeUrl(url) {
+    const value = (url || "/shop/catalog").trim();
+    if (value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://")) {
+        return value;
+    }
+    return "/shop/catalog";
+}
+
 function renderHeroSlides() {
     const wrapper = document.getElementById("hero-slides-wrapper");
     const dotsContainer = document.getElementById("hero-slide-dots");
@@ -1684,20 +1760,25 @@ function renderHeroSlides() {
         const slideDiv = document.createElement("div");
         slideDiv.className = `hero-slide ${idx === currentSlideIndex ? 'active' : ''}`;
         
-        const subtitleHTML = slide.subtitle 
-            ? slide.subtitle.split(" ").map((word, wordIdx) => {
+        const subtitleHTML = slide.subtitle
+            ? escapeHtml(slide.subtitle)
+                .split(" ")
+                .map((word, wordIdx) => {
                 return `<span class="reveal-word" style="animation-delay: ${wordIdx * 0.04}s">${word}</span>`;
             }).join(" ")
             : "";
 
+        const safeImage = sanitizeUrl(slide.image).replace(/'/g, "%27");
+        const safeLink = sanitizeUrl(slide.link);
+
         slideDiv.innerHTML = `
-            <div class="hero-slide-bg" style="background-image: url('${slide.image}');"></div>
+            <div class="hero-slide-bg" style="background-image: url('${safeImage}');"></div>
             <div class="hero-slide-content">
-                <span class="hero-eyebrow">${slide.eyebrow}</span>
-                <h1 class="hero-title" data-title="${slide.title.replace(/"/g, '&quot;')}"></h1>
+                <span class="hero-eyebrow">${escapeHtml(slide.eyebrow)}</span>
+                <h1 class="hero-title" data-title="${escapeHtml(slide.title).replace(/"/g, '&quot;')}"></h1>
                 <p class="hero-subtitle">${subtitleHTML}</p>
                 <div class="hero-actions">
-                    <a href="${slide.link || '/shop/catalog'}" class="btn btn-primary">Inspect Details</a>
+                    <a href="${safeLink}" class="btn btn-primary">Inspect Details</a>
                     <a href="/shop/catalog" class="btn btn-secondary">Browse All Catalog</a>
                 </div>
             </div>
@@ -2123,6 +2204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 4. Init Event Handlers
     initCartDrawer();
+    initAddToCartDelegation();
     initCheckoutForm();
     initPaymentSlipUpload();
     initThemeEngine();

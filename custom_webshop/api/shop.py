@@ -10,7 +10,11 @@ from frappe.utils import flt, get_fullname
 from webshop.webshop.api import get_product_filter_data
 from webshop.webshop.shopping_cart.cart import get_cart_quotation
 from webshop.webshop.shopping_cart.product_info import get_product_info_for_website
-from webshop.webshop.doctype.override_doctype.item_group import get_child_groups_for_website
+from custom_webshop.services.checkout import build_payment_preview, validate_cart_for_checkout
+from custom_webshop.services.customer_identity import (
+	get_portal_customer_names,
+	verify_sales_order_belongs_to_user,
+)
 
 
 def _map_product(item):
@@ -48,7 +52,7 @@ def _map_product(item):
 		"price": flt(item.get("price_list_rate") or 0),
 		"formatted_price": item.get("formatted_price") or "",
 		"image": image or "/assets/webshop/images/cart-empty-state.png",
-		"stock": flt(item.get("stock_qty") or (999 if item.get("in_stock") else 0)),
+		"stock": flt(item.get("stock_qty") or 0),
 		"in_stock": bool(item.get("in_stock") or item.get("on_backorder")),
 		"on_backorder": bool(item.get("on_backorder")),
 		"specs": specs,
@@ -178,7 +182,7 @@ def _fallback_product_query(query_args):
 			item.in_stock = stock.get("in_stock")
 			item.stock_qty = stock.get("stock_qty")
 		except Exception:
-			item.in_stock = True
+			item.in_stock = False
 			item.stock_qty = 0
 
 	count = frappe.db.count("Website Item", filters=filters)
@@ -272,11 +276,7 @@ def get_orders_json():
 	if frappe.session.user == "Guest":
 		return []
 
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": frappe.session.user, "parenttype": "Customer"},
-		pluck="parent",
-	)
+	customers = get_portal_customer_names()
 	if not customers:
 		return []
 
@@ -298,18 +298,34 @@ def get_orders_json():
 	)
 
 	has_payment_method = frappe.db.has_column("Sales Order", "custom_payment_method")
+	has_review_status = frappe.db.has_column("Sales Order", "custom_payment_review_status")
+
+	order_names = [o.name for o in orders]
+	items_by_order = {}
+	if order_names:
+		for row in frappe.get_all(
+			"Sales Order Item",
+			filters={"parent": ["in", order_names]},
+			fields=["parent", "item_code", "item_name", "qty", "rate", "amount"],
+		):
+			items_by_order.setdefault(row.parent, []).append(row)
+
+	extra_fields = {}
+	if has_payment_method or has_review_status:
+		fields = ["name"]
+		if has_payment_method:
+			fields.append("custom_payment_method")
+		if has_review_status:
+			fields.extend(["custom_payment_review_status", "custom_rejection_reason"])
+		for row in frappe.get_all("Sales Order", filters={"name": ["in", order_names]}, fields=fields):
+			extra_fields[row.name] = row
 
 	result = []
 	for order in orders:
-		payment_method = None
-		if has_payment_method:
-			payment_method = frappe.db.get_value("Sales Order", order.name, "custom_payment_method")
-		items = frappe.get_all(
-			"Sales Order Item",
-			filters={"parent": order.name},
-			fields=["item_code", "item_name", "qty", "rate", "amount"],
-		)
-		status = _map_order_status(order)
+		extra = extra_fields.get(order.name, frappe._dict())
+		payment_method = extra.get("custom_payment_method") if has_payment_method else None
+		items = items_by_order.get(order.name, [])
+		status = _map_order_status(order, extra)
 		result.append(
 			{
 				"id": order.name,
@@ -321,6 +337,7 @@ def get_orders_json():
 				"grandTotal": flt(order.grand_total),
 				"currency": order.currency,
 				"payment_method": payment_method,
+				"rejection_reason": extra.get("custom_rejection_reason") if has_review_status else None,
 				"items": [
 					{
 						"productId": i.item_code,
@@ -336,37 +353,53 @@ def get_orders_json():
 	return result
 
 
-def _map_order_status(order):
+def _map_order_status(order, extra=None):
+	extra = extra or frappe._dict()
+	review_status = extra.get("custom_payment_review_status")
+
 	if order.docstatus == 0:
-		return "pending"
+		if review_status == "Rejected":
+			return "rejected"
+		if review_status == "Pending Review":
+			return "under_review"
+		return "awaiting_payment"
+
 	if order.per_delivered >= 100:
 		return "delivered"
 	if order.per_delivered > 0:
 		return "shipped"
 	if order.docstatus == 1:
-		return "paid"
+		return "submitted"
 	return "pending"
 
 
 @frappe.whitelist()
-def get_order_for_payment(order_id):
+def get_payment_preview():
+	"""Return cart quotation totals for the payment page before a Sales Order exists."""
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Please log in to continue."), frappe.PermissionError)
 
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": frappe.session.user, "parenttype": "Customer"},
-		pluck="parent",
-	)
+	quotation = validate_cart_for_checkout()
+	return build_payment_preview(quotation)
+
+
+@frappe.whitelist()
+def get_order_for_payment(order_id=None):
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please log in to continue."), frappe.PermissionError)
+
 	if not order_id:
-		frappe.throw(_("No order specified."))
+		return get_payment_preview()
 
 	sales_order = frappe.get_doc("Sales Order", order_id)
-	if sales_order.customer not in customers:
-		frappe.throw(_("Order not found."), frappe.DoesNotExistError)
+	verify_sales_order_belongs_to_user(sales_order)
 
 	if sales_order.docstatus != 0:
 		frappe.throw(_("This order does not require payment."), frappe.ValidationError)
+
+	review_status = sales_order.get("custom_payment_review_status")
+	if review_status and review_status not in ("Pending Review", "Rejected"):
+		frappe.throw(_("This order is not awaiting payment proof."), frappe.ValidationError)
 
 	shipping_amount = 0
 	for tax in sales_order.get("taxes") or []:
@@ -440,20 +473,17 @@ def _get_hero_slides(settings):
 		if image and not image.startswith(("http", "/")):
 			slide["image"] = frappe.utils.get_url(image)
 	if not slides:
-		slides = [
-			{
-				"eyebrow": "CNC LEADERS",
-				"title": _("Industrial Components for precision machining"),
-				"subtitle": _("Browse our certified CNC parts catalog."),
-				"link": "/shop/catalog",
-				"image": "/assets/webshop/images/cart-empty-state.png",
-			}
-		]
+		return []
 	return slides
 
 
 @frappe.whitelist(allow_guest=True)
 def get_categories():
+	cache_key = "custom_webshop:website_categories"
+	cached = frappe.cache.get_value(cache_key)
+	if cached:
+		return cached
+
 	groups = frappe.get_all(
 		"Item Group",
 		filters={"show_in_website": 1},
@@ -463,6 +493,7 @@ def get_categories():
 	result = {"all": _("All Components")}
 	for g in groups:
 		if not g.is_group:
-			# slug -> Item Group doc name (used by product filters)
 			result[frappe.scrub(g.name)] = g.name
+
+	frappe.cache.set_value(cache_key, result, expires_in_sec=300)
 	return result

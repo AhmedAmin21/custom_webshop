@@ -8,7 +8,7 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["erpnext", "webshop", "custom_shipping_rule"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -156,23 +156,11 @@ signup_form_template = "custom_webshop/templates/signup.html"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"custom_webshop.tasks.all"
-# 	],
-# 	"daily": [
-# 		"custom_webshop.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"custom_webshop.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"custom_webshop.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"custom_webshop.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily": [
+		"custom_webshop.tasks.cancel_stale_draft_webshop_orders",
+	],
+}
 
 # Testing
 # -------
@@ -231,7 +219,37 @@ custom_fields = {
 			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
 			"insert_after": "payment_terms_section",
 			"read_only": 1,
-		}
+		},
+		{
+			"fieldname": "custom_payment_review_status",
+			"label": "Payment Review Status",
+			"fieldtype": "Select",
+			"options": "\nPending Review\nApproved\nRejected",
+			"insert_after": "custom_payment_method",
+			"read_only": 1,
+		},
+		{
+			"fieldname": "custom_reviewed_by",
+			"label": "Reviewed By",
+			"fieldtype": "Link",
+			"options": "User",
+			"insert_after": "custom_payment_review_status",
+			"read_only": 1,
+		},
+		{
+			"fieldname": "custom_reviewed_on",
+			"label": "Reviewed On",
+			"fieldtype": "Datetime",
+			"insert_after": "custom_reviewed_by",
+			"read_only": 1,
+		},
+		{
+			"fieldname": "custom_rejection_reason",
+			"label": "Rejection Reason",
+			"fieldtype": "Small Text",
+			"insert_after": "custom_reviewed_on",
+			"read_only": 1,
+		},
 	]
 }
 
@@ -263,6 +281,10 @@ website_route_rules = [
 
 website_redirects = [
 	{"source": "/orders", "target": "/shop/orders"},
+	{"source": "/cart", "target": "/shop/cart"},
+	{"source": "/payment", "target": "/shop/payment"},
+	{"source": "/all-products", "target": "/shop/catalog"},
+	{"source": r"/product/(.*)", "target": r"/shop/product/\1"},
 ]
 #
 # each overriding function accepts a `data` argument;

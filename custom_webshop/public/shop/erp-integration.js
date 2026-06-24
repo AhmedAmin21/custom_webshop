@@ -17,12 +17,69 @@
 		return sym + parseFloat(amount || 0).toFixed(2);
 	}
 
+	function parseApiError(err) {
+		if (!err) {
+			return "Could not add item to cart. Please try again.";
+		}
+		if (typeof err === "string") {
+			try {
+				const parsed = JSON.parse(err);
+				if (Array.isArray(parsed) && parsed[0]) return String(parsed[0]);
+			} catch (e) {
+				return err;
+			}
+			return err;
+		}
+		if (err._server_messages) {
+			try {
+				const messages = JSON.parse(err._server_messages);
+				if (Array.isArray(messages) && messages.length) {
+					const first = JSON.parse(messages[0]);
+					if (first && first.message) return first.message;
+				}
+			} catch (e) {
+				// fall through
+			}
+		}
+		if (err.message && typeof err.message === "string") {
+			return err.message;
+		}
+		if (err.exc && typeof err.exc === "string") {
+			const match = err.exc.match(/(?:ValidationError|PermissionError|DoesNotExistError):\s*(.+?)(?:\\n|$)/);
+			if (match && match[1]) return match[1];
+		}
+		return "Could not add item to cart. Please try again.";
+	}
+
 	function showApiError(err) {
-		const msg =
-			(typeof err === "string" && err) ||
-			(err && err.message) ||
-			"Something went wrong. Please try again.";
+		const msg = parseApiError(err);
 		if (typeof showToast === "function") showToast(msg, "info");
+	}
+
+	function getAddToCartButtons(productId) {
+		return Array.from(
+			document.querySelectorAll("[data-add-to-cart][data-item-code], [data-add-detail-to-cart][data-item-code]")
+		).filter(function (btn) {
+			return btn.dataset.itemCode === productId;
+		});
+	}
+
+	function setAddButtonLoading(productId, loading) {
+		getAddToCartButtons(productId).forEach(function (btn) {
+			btn.disabled = loading;
+			btn.classList.toggle("loading", loading);
+			btn.setAttribute("aria-busy", loading ? "true" : "false");
+		});
+	}
+
+	function isPurchasable(prod) {
+		if (typeof isProductPurchasable === "function") {
+			return isProductPurchasable(prod);
+		}
+		if (!prod) return false;
+		if (prod.on_backorder) return true;
+		if (prod.in_stock) return true;
+		return (prod.stock || 0) > 0;
 	}
 
 	async function bootstrapShop() {
@@ -97,8 +154,8 @@
 					name: i.name || id,
 					price: i.price || 0,
 					image: i.image || "",
-					stock: 999,
-					in_stock: true,
+					stock: i.stock || 0,
+					in_stock: i.in_stock !== false,
 				};
 				const idx = state.products.findIndex(function (p) {
 					return p.id === id;
@@ -156,13 +213,27 @@
 
 	// --- Patch cart operations ---
 	window.addToCart = async function (productId) {
+		if (!productId) return;
+		setAddButtonLoading(productId, true);
 		try {
 			const prod = await ensureProductInState(productId);
-			if (!prod || (prod.stock <= 0 && !prod.in_stock && !prod.on_backorder)) return;
+			if (!prod) {
+				showToast(t("toast_product_not_found"), "info");
+				return;
+			}
+			if (!isPurchasable(prod)) {
+				showToast(t("btn_out_of_stock"), "info");
+				return;
+			}
 			const existing = state.cart.find(function (i) {
 				return i.productId === productId;
 			});
 			const newQty = existing ? existing.qty + 1 : 1;
+			const stockCap = prod.stock > 0 ? prod.stock : null;
+			if (stockCap && newQty > stockCap) {
+				showToast("Cannot exceed current ERPNext stock limit (" + prod.stock + ").", "info");
+				return;
+			}
 			await ShopAPI.updateCart(productId, newQty);
 			await syncCartFromServer();
 			updateCartBadgeCount();
@@ -173,18 +244,39 @@
 			);
 		} catch (e) {
 			showApiError(e);
+		} finally {
+			setAddButtonLoading(productId, false);
 		}
 	};
 
 	window.addDetailToCart = async function (productId) {
+		if (!productId) return;
+		setAddButtonLoading(productId, true);
 		try {
 			const prod = await ensureProductInState(productId);
+			if (!prod) {
+				showToast(t("toast_product_not_found"), "info");
+				return;
+			}
+			if (!isPurchasable(prod)) {
+				showToast(t("btn_out_of_stock"), "info");
+				return;
+			}
 			const qtyInput = document.getElementById("detail-qty-input");
 			const qtyToAdd = qtyInput ? parseInt(qtyInput.value, 10) : 1;
+			if (!qtyToAdd || qtyToAdd < 1) {
+				showToast("Please select a valid quantity.", "info");
+				return;
+			}
 			const existing = state.cart.find(function (i) {
 				return i.productId === productId;
 			});
 			const newQty = (existing ? existing.qty : 0) + qtyToAdd;
+			const stockCap = prod.stock > 0 ? prod.stock : null;
+			if (stockCap && newQty > stockCap) {
+				showToast("Cannot exceed ERP stock limits. Active cap is " + prod.stock + " units.", "info");
+				return;
+			}
 			await ShopAPI.updateCart(productId, newQty);
 			await syncCartFromServer();
 			updateCartBadgeCount();
@@ -192,6 +284,8 @@
 			ShopNav.go(ShopNav.cart());
 		} catch (e) {
 			showApiError(e);
+		} finally {
+			setAddButtonLoading(productId, false);
 		}
 	};
 
@@ -247,7 +341,7 @@
 			});
 			if (inStock) {
 				state.products = state.products.filter(function (p) {
-					return p.in_stock || p.stock > 0;
+					return isPurchasable(p);
 				});
 			}
 			if (maxPrice) {
@@ -449,11 +543,9 @@
 				}
 				await ShopAPI.updateCartShipping(shippingRule, governorate);
 
-				const orderId = await ShopAPI.placeOrder();
-				shopState.currentPaymentOrder = { order_id: orderId };
-				state.cart = [];
-				updateCartBadgeCount();
-				ShopNav.go(ShopNav.payment(orderId));
+				await ShopAPI.prepareCheckout();
+				shopState.currentPaymentOrder = null;
+				ShopNav.go(ShopNav.payment());
 			} catch (err) {
 				showApiError(err);
 			} finally {
@@ -473,19 +565,16 @@
 			new URLSearchParams(window.location.search).get("order_id") ||
 			shopState.currentPaymentOrder?.order_id;
 
-		if (!orderId) {
-			showToast("No order found. Please complete checkout first.", "info");
-			ShopNav.go(ShopNav.cart());
-			return;
-		}
-
 		try {
-			const order = await ShopAPI.getOrderForPayment(orderId);
+			const order = orderId
+				? await ShopAPI.getOrderForPayment(orderId)
+				: await ShopAPI.getPaymentPreview();
 			shopState.currentPaymentOrder = order;
+			const refId = order.order_id || order.quotation_name || "Checkout";
 			document.getElementById("payment-amount").innerText =
 				order.grand_total_formatted || formatMoney(order.grand_total, order.currency);
 			document.getElementById("payment-ref-text").innerText =
-				"Order Reference ID: #" + order.order_id;
+				"Order Reference ID: #" + refId;
 			const submitBtn = document.getElementById("submit-payment-btn");
 			if (submitBtn) {
 				submitBtn.onclick = function () {
@@ -552,34 +641,45 @@
 	// --- Patch submitPaymentProof ---
 	window.submitPaymentProof = async function (orderData) {
 		if (!state.pendingReceiptFile) return;
-		const order = shopState.currentPaymentOrder;
-		if (!order || !order.order_id) {
-			showToast("No order to submit payment for.", "info");
-			return;
-		}
 		if (!state.selectedPaymentMethod) {
 			showToast("Please select a payment method.", "info");
 			return;
 		}
 
 		const file = state.pendingReceiptFile;
+		if (file.size > 5 * 1024 * 1024) {
+			showToast("File exceeds maximum size of 5MB.", "info");
+			return;
+		}
+		if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
+			showToast("Only JPG, PNG, and WEBP images are allowed.", "info");
+			return;
+		}
+
+		const submitBtn = document.getElementById("submit-payment-btn");
+		if (submitBtn) submitBtn.disabled = true;
+
 		const reader = new FileReader();
 		reader.onload = async function (ev) {
 			try {
 				const base64 = ev.target.result.split(",")[1];
-				await ShopAPI.confirmPayment(
-					order.order_id,
+				const result = await ShopAPI.confirmPayment(
 					state.selectedPaymentMethod,
 					file.name,
-					base64
+					base64,
+					orderData?.order_id || null
 				);
 				state.pendingReceiptFile = null;
-				showToast("Payment proof submitted successfully!", "success");
+				state.cart = [];
+				updateCartBadgeCount();
+				showToast(result.message || "Payment proof submitted successfully!", "success");
 				setTimeout(function () {
 					ShopNav.go(ShopNav.orders());
 				}, 1000);
 			} catch (e) {
 				showApiError(e);
+			} finally {
+				if (submitBtn) submitBtn.disabled = false;
 			}
 		};
 		reader.readAsDataURL(file);
@@ -665,6 +765,11 @@
 			}
 			pending.forEach(function (order) {
 				const tr = document.createElement("tr");
+				const receiptCell = order.receipt_url
+					? '<a href="' +
+					  order.receipt_url +
+					  '" target="_blank" rel="noopener">View receipt</a>'
+					: '<span class="badge-sync">No receipt</span>';
 				tr.innerHTML =
 					"<td><code>" +
 					order.id +
@@ -672,11 +777,18 @@
 					order.customer +
 					"</td><td>" +
 					formatMoney(order.grandTotal, order.currency) +
-					'</td><td><span class="badge-sync">Awaiting Payment</span></td><td>' +
+					"</td><td>" +
+					receiptCell +
+					"</td><td>" +
 					order.date +
 					'</td><td><button class="btn btn-primary btn-sm" onclick="window.approveAdminOrder(\'' +
 					order.id +
-					"')\">Approve & Submit</button></td>";
+					"')\" " +
+					(order.has_receipt ? "" : "disabled") +
+					'>Approve & Submit</button> ' +
+					'<button class="btn btn-secondary btn-sm" onclick="window.rejectAdminOrder(\'' +
+					order.id +
+					"')\">Reject</button></td>";
 				tableBody.appendChild(tr);
 			});
 		} catch (e) {
@@ -688,6 +800,18 @@
 		try {
 			await ShopAPI.admin.approveOrder(orderId);
 			showToast("Order submitted.", "success");
+			renderAdminOrdersApproval();
+		} catch (e) {
+			showApiError(e);
+		}
+	};
+
+	window.rejectAdminOrder = async function (orderId) {
+		const reason = prompt("Rejection reason for the customer:");
+		if (reason === null) return;
+		try {
+			await ShopAPI.admin.rejectOrder(orderId, reason);
+			showToast("Order rejected.", "info");
 			renderAdminOrdersApproval();
 		} catch (e) {
 			showApiError(e);

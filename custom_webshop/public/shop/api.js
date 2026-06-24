@@ -94,7 +94,10 @@
 				shipping_destination: shippingDestination,
 			});
 		},
-		placeOrder: function () {
+		getPaymentPreview: function () {
+			return call("custom_webshop.api.shop.get_payment_preview");
+		},
+		prepareCheckout: function () {
 			return call("webshop.webshop.shopping_cart.cart.place_order");
 		},
 		getOrders: function () {
@@ -103,12 +106,12 @@
 		getOrderForPayment: function (orderId) {
 			return call("custom_webshop.api.shop.get_order_for_payment", { order_id: orderId });
 		},
-		confirmPayment: function (orderId, paymentMethod, filename, fileContent) {
+		confirmPayment: function (paymentMethod, filename, fileContent, orderId) {
 			return call("custom_webshop.api.payment.confirm_payment", {
-				order_id: orderId,
 				payment_method: paymentMethod,
 				filename: filename,
 				file_content: fileContent,
+				order_id: orderId || undefined,
 			});
 		},
 		signUp: function (email, fullName, pwd, mobileNo) {
@@ -157,6 +160,12 @@
 			approveOrder: function (orderId) {
 				return call("custom_webshop.api.admin.approve_order", { order_id: orderId });
 			},
+			rejectOrder: function (orderId, reason) {
+				return call("custom_webshop.api.admin.reject_order", {
+					order_id: orderId,
+					reason: reason,
+				});
+			},
 			getSlides: function () {
 				return call("custom_webshop.api.admin.get_slides");
 			},
@@ -179,7 +188,5 @@
 		});
 	};
 
-	ShopAPI.placeOrder = function () {
-		return call("webshop.webshop.shopping_cart.cart.place_order");
-	};
+	ShopAPI.placeOrder = ShopAPI.prepareCheckout;
 })(window);

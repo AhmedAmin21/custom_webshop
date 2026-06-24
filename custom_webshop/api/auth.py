@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import escape_html, get_url
 from frappe.utils.data import cint
 from frappe.website.utils import is_signup_disabled
@@ -7,6 +8,7 @@ from frappe.core.doctype.user.user import test_password_strength, handle_passwor
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="custom_webshop_signup", limit=20, seconds=60 * 60)
 def custom_sign_up(
     email: str, full_name: str, redirect_to: str, pwd: str, mobile_no: str = None
 ):
@@ -95,23 +97,25 @@ def custom_sign_up(
 
 
 def _create_new_customer_for_user(user):
-    """Create a new Customer, Contact, and Portal User for a fresh signup.
-    If a Customer with the same name already exists, link to it instead."""
+    """Create a dedicated Customer, Contact, and Portal User for this signup.
 
-    customer_name = user.first_name or user.name
+    Never merge customers by display name — each portal user gets their own Customer
+    unless they are already linked via Portal User.
+    """
+    from custom_webshop.services.customer_identity import get_customer_for_user
 
-    # Check if Customer already exists with this name
-    existing_customer = frappe.db.get_value("Customer", {"customer_name": customer_name}, "name")
-
-    if existing_customer:
-        customer = frappe.get_doc("Customer", existing_customer)
+    existing = get_customer_for_user(user.name)
+    if existing:
+        customer = existing
     else:
-        # Create Customer
+        customer_name = user.first_name or user.email or user.name
         customer = frappe.new_doc("Customer")
         customer.update(
             {
                 "customer_name": customer_name,
                 "customer_type": "Individual",
+                "email_id": user.email,
+                "mobile_no": user.mobile_no,
             }
         )
         customer.flags.ignore_mandatory = True
