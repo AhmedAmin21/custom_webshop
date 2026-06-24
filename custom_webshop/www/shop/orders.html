@@ -1,0 +1,36 @@
+{% extends "templates/shop/web.html" %}
+{% block title %}{{ _("Orders") }}{% endblock %}
+{% block shop_page_content %}
+<section id="orders-view" class="view-section active">
+	<h2 class="section-title">{{ _("My Orders") }}</h2>
+	{% if orders %}
+	<div class="orders-list">
+		{% for order in orders %}
+		<div class="order-history-card frappe-card p-4 mb-3">
+			<div class="order-card-header">
+				<strong><a href="{{ shop_url('orders') }}/{{ order.name }}">{{ order.name }}</a></strong>
+				<span>{{ frappe.format_date(order.transaction_date) }}</span>
+				<span>{{ order.grand_total_formatted }}</span>
+				<span class="badge">{{ order.status }}</span>
+			</div>
+			{% include "templates/includes/cnc/order_stepper.html" %}
+			<div class="order-card-actions mt-3">
+				{% if order.docstatus == 0 %}
+				<a class="btn btn-primary btn-sm" href="{{ shop_url('payment') }}?order_id={{ order.name }}">{{ _("Pay Now") }}</a>
+				{% endif %}
+				<a class="btn btn-primary-light btn-sm" href="{{ shop_url('orders') }}/{{ order.name }}">{{ _("View") }}</a>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% else %}
+	<div class="frappe-card p-5 text-center">
+		<h5>{{ _("No orders yet") }}</h5>
+		<a class="btn btn-primary mt-3" href="{{ shop_url('all-products') }}">{{ _("Start Shopping") }}</a>
+	</div>
+	{% endif %}
+</section>
+{% endblock %}
+{% block base_scripts %}
+{{ include_script("frappe-web.bundle.js") }}
+{% endblock %}

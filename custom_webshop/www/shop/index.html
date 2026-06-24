@@ -1,0 +1,49 @@
+{% extends "templates/shop/web.html" %}
+{% block title %}{{ _("Shop") }}{% endblock %}
+{% block shop_page_content %}
+<section id="home-view" class="view-section active">
+	<div class="hero-container" id="hero-slider-container">
+		<canvas id="toolpath-canvas" class="hero-canvas"></canvas>
+		<div class="hero-overlay"></div>
+		<div class="hero-slides-wrapper" id="hero-slides-wrapper"></div>
+		<div class="hero-slide-dots" id="hero-slide-dots"></div>
+	</div>
+	<div class="section-container">
+		<div class="section-header" style="text-align: center;">
+			<h2 class="section-title" style="display: inline-block; border-bottom: 3px solid var(--accent-gold); padding-bottom: 8px;">{{ _("Shop by Category") }}</h2>
+		</div>
+		<div class="brand-grid" id="home-category-grid">
+			{% for group in featured_item_groups %}
+			<a href="{{ shop_url('all-products') }}?item_group={{ group.name }}" class="material-card">
+				<h3>{{ group.item_group_name or group.name }}</h3>
+			</a>
+			{% endfor %}
+		</div>
+	</div>
+	{% if trending_items %}
+	<div class="section-container bg-mutes">
+		<div class="section-header">
+			<h2 class="section-title">{{ _("Trending Equipment") }}</h2>
+		</div>
+		<div class="featured-grid" id="home-trending-grid">
+			{% for item in trending_items %}
+			<a href="{{ item.route or shop_url('all-products') }}" class="product-card">
+				<div class="product-img-wrapper">
+					{% if item.website_image %}
+					<img src="{{ item.website_image }}" alt="{{ item.web_item_name }}">
+					{% endif %}
+				</div>
+				<h3 class="product-name">{{ item.web_item_name }}</h3>
+			</a>
+			{% endfor %}
+		</div>
+	</div>
+	{% endif %}
+</section>
+{% endblock %}
+{% block shop_page_script %}
+<script src="/assets/custom_webshop/js/pages/home.js"></script>
+{% endblock %}
+{% block base_scripts %}
+{{ include_script("frappe-web.bundle.js") }}
+{% endblock %}

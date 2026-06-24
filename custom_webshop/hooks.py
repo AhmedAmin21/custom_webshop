@@ -29,8 +29,14 @@ app_license = "mit"
 # app_include_js = "/assets/custom_webshop/js/custom_webshop.js"
 
 # include js, css files in header of web template
-web_include_css = "/assets/custom_webshop/css/cart.css"
-web_include_js = "/assets/custom_webshop/js/custom_signup.js"
+web_include_css = [
+	"/assets/custom_webshop/css/cart.css",
+	"/assets/custom_webshop/css/cnc/base.css",
+]
+web_include_js = [
+	"/assets/custom_webshop/js/custom_signup.js",
+	"/assets/custom_webshop/js/shared/api.js",
+]
 
 # Custom signup form template
 signup_form_template = "custom_webshop/templates/signup.html"
@@ -77,10 +83,11 @@ signup_form_template = "custom_webshop/templates/signup.html"
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "custom_webshop.utils.jinja_methods",
-# 	"filters": "custom_webshop.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"custom_webshop.shop.routes.shop_url",
+	],
+}
 
 # Installation
 # ------------
@@ -233,7 +240,7 @@ override_whitelisted_methods = {
 website_path_resolver = "custom_webshop.path_resolver.custom_resolve_path"
 
 role_home_page = {
-	"Customer": "/all-products"
+	"Customer": "/shop/all-products"
 }
 
 override_doctype_class = {
@@ -241,8 +248,15 @@ override_doctype_class = {
 }
 
 website_route_rules = [
-	{"from_route": "/orders", "to_route": "orders"},
-	{"from_route": "/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "orders"}]}},
+	{"from_route": "/shop/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "shop/orders"}]}},
+]
+
+website_redirects = [
+	{"source": "/cart", "target": "/shop/cart"},
+	{"source": "/orders", "target": "/shop/orders"},
+	{"source": r"/orders/(.*)", "target": r"/shop/orders/\1"},
+	{"source": "/payment", "target": "/shop/payment"},
+	{"source": "/all-products", "target": "/shop/all-products"},
 ]
 #
 # each overriding function accepts a `data` argument;

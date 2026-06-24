@@ -1,0 +1,14 @@
+<div class="order-stepper">
+	{% set steps = [
+		(_("Pending"), order.docstatus == 0),
+		(_("Paid"), order.docstatus == 1 and order.per_billed < 100),
+		(_("Shipped"), order.per_delivered > 0 and order.per_delivered < 100),
+		(_("Delivered"), order.per_delivered >= 100),
+	] %}
+	{% for label, active in steps %}
+	<div class="stepper-step{% if active %} active{% endif %}">
+		<div class="stepper-dot"></div>
+		<span>{{ label }}</span>
+	</div>
+	{% endfor %}
+</div>

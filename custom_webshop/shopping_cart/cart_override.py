@@ -487,8 +487,8 @@ def _send_order_email(sales_order, email_type):
 		"site_name": frappe.db.get_default("site_name") or frappe.db.get_default("company") or site_url,
 		"first_name": user.first_name or user.full_name or user.name,
 		"sales_order": sales_order,
-		"payment_url": f"{site_url}/payment?order_id={sales_order.name}",
-		"order_url": f"{site_url}/orders/{sales_order.name}",
+		"payment_url": f"{site_url}/shop/payment?order_id={sales_order.name}",
+		"order_url": f"{site_url}/shop/orders/{sales_order.name}",
 	}
 
 	if email_type == "order_created":

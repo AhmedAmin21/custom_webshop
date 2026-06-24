@@ -1,0 +1,7 @@
+<div class="payment-method-card{% if active %} active{% endif %}" data-method="{{ option.key }}">
+	<div class="payment-method-icon"><i data-lucide="wallet"></i></div>
+	<h4>{{ option.label }}</h4>
+	{% if option.number %}
+	<p class="payment-number">{{ option.number }}</p>
+	{% endif %}
+</div>

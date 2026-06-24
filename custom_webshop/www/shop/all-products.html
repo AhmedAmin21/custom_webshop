@@ -1,0 +1,26 @@
+{% extends "templates/shop/web.html" %}
+{% from "webshop/templates/includes/macros.html" import attribute_filter_section, field_filter_section %}
+{% block title %}{{ _('All Products') }}{% endblock %}
+{% block shop_page_content %}
+<section id="catalog-view" class="view-section active">
+	<div class="catalog-page-container">
+		<aside class="catalog-sidebar">
+			<div class="filter-card">
+				<h3 class="filter-title">{{ _('Filters') }}</h3>
+				<a class="btn btn-secondary btn-sm" href="{{ shop_url('all-products') }}">{{ _('Clear All') }}</a>
+			</div>
+			<div class="collapse d-md-block filters-section" id="product-filters">
+				{% if field_filters %}{{ field_filter_section(field_filters) }}{% endif %}
+				{% if attribute_filters %}{{ attribute_filter_section(attribute_filters) }}{% endif %}
+			</div>
+		</aside>
+		<div class="catalog-content">
+			<h1 class="section-title">{{ _('All Products') }}</h1>
+			<div id="product-listing" class="product-grid item-card-group-section"></div>
+		</div>
+	</div>
+</section>
+{% endblock %}
+{% block base_scripts %}
+{{ include_script("frappe-web.bundle.js") }}
+{% endblock %}

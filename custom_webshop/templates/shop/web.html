@@ -1,0 +1,33 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+{{ super() }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/assets/custom_webshop/css/cnc/base.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+	window.cnc_shop_routes = { base: "{{ shop_base or '/shop' }}" };
+</script>
+{% endblock %}
+
+{% block page_content %}
+{% include "templates/includes/cnc/top_bar.html" %}
+{% include "templates/includes/cnc/navbar.html" %}
+<main class="main-content">
+	{% block shop_page_content %}{% endblock %}
+</main>
+{% include "templates/includes/cnc/footer.html" %}
+{% include "templates/includes/cnc/cart_drawer.html" %}
+{% include "templates/includes/cnc/toast_container.html" %}
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script src="/assets/custom_webshop/js/shared/ui.js"></script>
+<script src="/assets/custom_webshop/js/shared/i18n.js"></script>
+{% block shop_page_script %}{% endblock %}
+<script>if (window.lucide) lucide.createIcons();</script>
+{% endblock %}

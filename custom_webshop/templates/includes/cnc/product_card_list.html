@@ -1,0 +1,11 @@
+<a href="{{ product.route or shop_url('all-products') }}" class="product-card list-layout">
+	<div class="product-img-wrapper">
+		{% if product.website_image %}
+		<img src="{{ product.website_image }}" alt="{{ product.web_item_name }}">
+		{% endif %}
+	</div>
+	<div class="product-info">
+	<h3 class="product-name">{{ product.web_item_name }}</h3>
+	<p class="product-desc">{{ product.short_description or '' }}</p>
+	</div>
+</a>

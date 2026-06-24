@@ -1,0 +1,40 @@
+<footer class="app-footer blueprint-footer">
+	<div class="footer-grid blueprint-grid">
+		<div class="footer-column brand-col">
+			<a href="{{ shop_url() }}" class="footer-logo blueprint-logo" dir="ltr">
+				<span class="logo-accent">CNC</span>LEADERS
+			</a>
+			<div class="spec-block">
+				<div class="spec-line-row"><span class="spec-label">TYPE</span><span class="spec-val">Manufacturer and Distributer</span></div>
+				<div class="spec-line-row"><span class="spec-label">SHIPPING</span><span class="spec-val">Worldwide Dispatch</span></div>
+				<div class="spec-line-row"><span class="spec-label">WARRANTY</span><span class="spec-val">3-Year Industrial</span></div>
+			</div>
+		</div>
+		<div class="footer-column dir-col">
+			<h4 class="footer-title">{{ _("Categories") }}</h4>
+			<ul class="footer-links">
+				<li><a href="{{ shop_url('all-products') }}">{{ _("All Products") }}</a></li>
+				<li><a href="{{ shop_url('orders') }}">{{ _("Track Orders") }}</a></li>
+				<li><a href="{{ shop_url('cart') }}">{{ _("Cart") }}</a></li>
+			</ul>
+		</div>
+		<div class="footer-column telemetry-col">
+			<h4 class="footer-title">{{ _("Customer Support") }}</h4>
+			<div class="telemetry-block" style="background: rgba(15, 23, 42, 0.4);">
+				<div class="status-row">
+					<i data-lucide="headset" class="icon-sm" style="color: #3b82f6;"></i>
+					<span style="color: #cbd5e1;">{{ _("Available 24/7 for Technical Support") }}</span>
+				</div>
+				<div class="ticker-box" style="color: #cbd5e1; border-color: rgba(59, 130, 246, 0.2); background: rgba(0, 0, 0, 0.2);">
+					<span>sales@cncleaders.com</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="footer-bottom blueprint-bottom">
+		<div class="footer-bottom-container">
+			<p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP. ALL RIGHTS RESERVED.</p>
+		</div>
+		<div class="footer-signature">PRECISION ENGINEERED</div>
+	</div>
+</footer>

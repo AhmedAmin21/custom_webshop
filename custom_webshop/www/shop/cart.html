@@ -1,0 +1,10 @@
+{% extends "templates/shop/web.html" %}
+{% block title %}{{ _("Shopping Cart") }}{% endblock %}
+{% block shop_page_content %}
+{% include "templates/includes/shop/cart_page.html" %}
+{% endblock %}
+{% block base_scripts %}
+{{ include_script("frappe-web.bundle.js") }}
+{{ include_script("controls.bundle.js") }}
+{{ include_script("dialog.bundle.js") }}
+{% endblock %}

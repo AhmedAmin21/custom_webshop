@@ -1,0 +1,59 @@
+<input type="hidden" id="user-fullname" value="{{ user_fullname or '' }}">
+<input type="hidden" id="user-mobile" value="{{ frappe.db.get_value('Contact', {'email_id': frappe.session.user}, 'mobile_no') or '' }}">
+
+<section id="cart-view" class="view-section active">
+<div class="cart-page-layout">
+{% if doc.items %}
+<div class="cart-container">
+	<div class="row m-0">
+		<div class="col-md-8">
+			<div class="frappe-card p-5 mb-4">
+				<h2 class="section-title">{{ _('Your Selected Hardware') }}</h2>
+				<div id="cart-error" class="alert alert-danger" style="display: none;"></div>
+				<table class="table mt-3 cart-table">
+					<thead>
+						<tr>
+							<th class="item-column">{{ _('Item') }}</th>
+							<th width="20%">{{ _('Quantity') }}</th>
+							{% if cart_settings.enable_checkout or cart_settings.show_price_in_quotation %}
+							<th width="20%" class="text-right">{{ _('Subtotal') }}</th>
+							{% endif %}
+							<th width="10%"></th>
+						</tr>
+					</thead>
+					<tbody class="cart-items">
+						{% include "templates/includes/cart/cart_items.html" %}
+					</tbody>
+					{% if cart_settings.enable_checkout or cart_settings.show_price_in_quotation %}
+					<tfoot class="cart-tax-items">
+						{% include "templates/includes/cart/cart_items_total.html" %}
+					</tfoot>
+					{% endif %}
+				</table>
+				<div class="row mt-2">
+					<a class="btn btn-primary-light mr-2" href="{{ shop_url('orders') }}">{{ _('Past Orders') }}</a>
+					<a class="btn btn-primary-light" href="{{ shop_url('all-products') }}">{{ _('Continue Shopping') }}</a>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4 cart-checkout-panel">
+			<div class="checkout-summary-card frappe-card p-5">
+				<div class="payment-summary">
+					{% include "templates/includes/cart/cart_payment_summary.html" %}
+				</div>
+				<div class="place-order">
+					{% include "templates/includes/cart/place_order.html" %}
+				</div>
+			</div>
+			{% include "templates/includes/cart/cart_address.html" %}
+		</div>
+	</div>
+</div>
+{% else %}
+<div class="cart-empty frappe-card p-5 text-center">
+	<p>{{ _('Your cart is Empty') }}</p>
+	<a class="btn btn-primary" href="{{ shop_url('all-products') }}">{{ _('Start Shopping') }}</a>
+</div>
+{% endif %}
+</div>
+</section>

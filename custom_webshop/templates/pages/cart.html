@@ -49,14 +49,14 @@
 
 				<div class="row mt-2">
 					<div class="col-3">
-						<a class="btn btn-primary-light font-md" href="/orders">
+						<a class="btn btn-primary-light font-md" href="{{ shop_url('orders') if shop_url is defined else '/shop/orders' }}">
 							{{ _('Past Orders') }}
 						</a>
 					</div>
 					<div class="col-9">
 						{% if doc.items %}
 						<div class="place-order-container">
-							<a class="btn btn-primary-light mr-2 font-md" href="/all-products">
+							<a class="btn btn-primary-light mr-2 font-md" href="{{ shop_url('all-products') if shop_url is defined else '/shop/all-products' }}">
 								{{ _('Continue Shopping') }}
 							</a>
 						</div>
@@ -112,7 +112,7 @@
 		<img src="/assets/webshop/images/cart-empty-state.png" alt="Empty State">
 	</div>
 	<div class="cart-empty-message mt-4">{{ _('Your cart is Empty') }}</p>
-	<a class="btn btn-outline-primary" href="/orders" style="font-size: 16px;">
+	<a class="btn btn-outline-primary" href="{{ shop_url('orders') if shop_url is defined else '/shop/orders' }}" style="font-size: 16px;">
 		{{ _('See past orders') }}
 	</a>
 </div>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Premium CNC Machining Components</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Glass Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#home" class="logo" dir="ltr">
+                <span class="logo-accent">CNC</span>Leaders
+            </a>
+            
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link active" data-view="home" data-i18n="nav_home">Home</a></li>
+                <li><a href="#catalog" class="nav-link" data-view="catalog" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="#orders" class="nav-link" data-view="orders" data-i18n="nav_orders">Track Orders</a></li>
+                <li><a href="#admin" class="nav-link" data-view="admin" data-i18n="nav_admin">Admin Panel</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language / تغيير اللغة">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size: 0.85rem; font-weight: 600; margin-left: 4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn" title="Toggle Visual Mode">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <button class="nav-btn cart-toggle-btn" id="cart-toggle-btn">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="nav-btn" onclick="window.location.hash='#login'" title="Login / Profile">
+                    <i data-lucide="user"></i>
+                </button>
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+
+        <!-- 1. HOME VIEW -->
+        <section id="home-view" class="view-section active">
+            <!-- Hero with Canvas Toolpath -->
+            <div class="hero-container" id="hero-slider-container">
+                <canvas id="toolpath-canvas" class="hero-canvas"></canvas>
+                <div class="hero-overlay"></div>
+                <div class="hero-slides-wrapper" id="hero-slides-wrapper">
+                    <!-- Dynamic Hero Slides rendered by JS -->
+                </div>
+                <div class="hero-slide-dots" id="hero-slide-dots">
+                    <!-- Dynamic Dots rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Shop by Material Section -->
+            <div class="section-container">
+                <div class="section-header" style="text-align: center;">
+                    <h2 class="section-title" data-i18n="home_shop_material" style="display: inline-block; border-bottom: 3px solid var(--accent-gold); padding-bottom: 8px;">Shop by Material</h2>
+                </div>
+                <div class="material-grid">
+                    <a href="#catalog" class="material-card view-all-card">
+                        <i data-lucide="layers" class="material-icon"></i>
+                        <h3 data-i18n="material_all">View all categories</h3>
+                    </a>
+                    <a href="#catalog?material=metal" class="material-card" style="background-image: url('assets/images/carbide_end_mills.jpg'); background-color: #111;">
+                        <h3 data-i18n="material_metal">Aluminum & Metals</h3>
+                    </a>
+                    <a href="#catalog?material=acrylic" class="material-card" style="background-image: url('assets/images/cnc_controller_board.jpg'); background-color: #444;">
+                        <h3 data-i18n="material_acrylic">Acrylic & Plastic</h3>
+                    </a>
+                    <a href="#catalog?material=wood" class="material-card" style="background-image: url('assets/images/linear_guide_rail.jpg'); background-color: #666;">
+                        <h3 data-i18n="material_wood">Wood & MDF</h3>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Shop by Brand Section -->
+            <div class="section-container bg-mutes">
+                <div class="section-header">
+                    <h2 class="section-title" data-i18n="home_shop_brand">Shop by Certified Brand</h2>
+                    <p class="section-subtitle" data-i18n="home_shop_brand_sub">Genuine mechanical components from authorized industrial manufacturers</p>
+                </div>
+                <div class="brand-grid" id="home-brand-grid">
+                    <!-- Dynamic rendering in JS -->
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title" data-i18n="home_shop_category">Shop by Category</h2>
+                    <p class="section-subtitle" data-i18n="home_shop_category_sub">Swipe through certified high-precision parts by class</p>
+                </div>
+                <div id="home-category-carousels">
+                    <!-- Dynamic carousels rendered in JS -->
+                </div>
+            </div>
+
+            <!-- Trending Equipment Section -->
+            <div class="section-container bg-mutes">
+                <div class="section-header">
+                    <h2 class="section-title" data-i18n="home_trending">Trending Equipment</h2>
+                    <p class="section-subtitle" data-i18n="home_trending_sub">Most demanded components based on active CNC machining workshop configurations</p>
+                </div>
+                <div class="featured-grid" id="home-trending-grid">
+                    <!-- Dynamic rendering in JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ALL PRODUCTS (CATALOG) VIEW -->
+        <section id="catalog-view" class="view-section">
+            <div class="catalog-page-container">
+                <!-- Sidebar Filters -->
+                <aside class="catalog-sidebar">
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_search">Search</h3>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="catalog-search" placeholder="Search by model or spec..." data-i18n-placeholder="filter_search_placeholder" class="search-input">
+                            <i data-lucide="search" class="search-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_category">Category</h3>
+                        <div class="filter-options" id="category-filter-list">
+                            <!-- Categories generated dynamically in JS -->
+                        </div>
+                    </div>
+
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_stock">Stock Status</h3>
+                        <div class="filter-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="filter-instock" checked>
+                                <span data-i18n="filter_instock_only">In Stock Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_max_price">Max Price ($)</h3>
+                        <div class="price-slider-container">
+                            <input type="range" id="filter-price-range" min="0" max="2000" step="50" value="2000" class="range-slider">
+                            <div class="price-labels">
+                                <span>$0</span>
+                                <span id="price-slider-value" class="price-slider-val">$2000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_brand">Brand</h3>
+                        <div class="filter-options" id="brand-filter-list">
+                            <!-- Brands generated dynamically in JS -->
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary btn-full" id="clear-filters-btn" data-i18n="btn_reset_filters">Reset Filters</button>
+                </aside>
+
+                <!-- Products Grid Column -->
+                <div class="catalog-content">
+                    <div class="catalog-header-bar">
+                        <div class="results-count" id="results-count-text">Showing 0 components</div>
+                        
+                        <div class="catalog-header-actions" style="display:flex; align-items:center; gap:20px;">
+                            <!-- Premium Sliding View Toggle Switcher -->
+                            <div class="view-toggle-container" id="catalog-view-toggle">
+                                <div class="toggle-slider" id="toggle-slider"></div>
+                                <button class="toggle-btn active" id="grid-toggle-btn" title="Grid Layout">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                                </button>
+                                <button class="toggle-btn" id="list-toggle-btn" title="List Layout">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                                </button>
+                            </div>
+
+                            <div class="sort-selector-wrapper">
+                                <label for="sort-select" data-i18n="catalog_sort">Sort: </label>
+                                <select id="sort-select" class="sort-select">
+                                    <option value="default" data-i18n="sort_default">Default Sync Order</option>
+                                    <option value="price-asc" data-i18n="sort_price_asc">Price: Low to High</option>
+                                    <option value="price-desc" data-i18n="sort_price_desc">Price: High to Low</option>
+                                    <option value="alpha" data-i18n="sort_alpha">A-Z Name</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product-grid" id="catalog-product-grid">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. ITEM (PRODUCT DETAIL) VIEW -->
+        <section id="detail-view" class="view-section">
+            <div class="detail-container" id="product-detail-container">
+                <!-- Dynamic detail elements in JS -->
+            </div>
+        </section>
+
+        <!-- 4. CART VIEW -->
+        <section id="cart-view" class="view-section">
+            <div class="cart-page-layout">
+                <!-- Cart Items List -->
+                <div class="cart-items-panel">
+                    <h2 class="section-title" data-i18n="cart_selected">Your Selected Hardware</h2>
+                    <div class="cart-list" id="cart-page-list">
+                        <!-- Dynamic Cart items -->
+                    </div>
+                </div>
+
+                <!-- Order Prep Details -->
+                <div class="cart-checkout-panel">
+                    <div class="checkout-summary-card">
+                        <h3 class="summary-title" data-i18n="cart_cost_structure">Order Cost Structure</h3>
+                        <div class="summary-row">
+                            <span data-i18n="cart_subtotal">Subtotal</span>
+                            <span id="cart-subtotal">$0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span data-i18n="cart_shipping">Shipping (Simulated CNC Cargo)</span>
+                            <span id="cart-shipping">$0.00</span>
+                        </div>
+                        <hr class="summary-divider">
+                        <div class="summary-row total-row">
+                            <span data-i18n="cart_total">Grand Total</span>
+                            <span id="cart-grandtotal">$0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="delivery-details-card">
+                        <h3 class="summary-title" data-i18n="cart_delivery">Delivery & Shipping Address</h3>
+                        <form id="checkout-delivery-form" class="delivery-form">
+                            <div class="form-group">
+                                <label for="cust-name" data-i18n="cart_name">Full Name / Company Name *</label>
+                                <input type="text" id="cust-name" required placeholder="e.g. John Doe, Machining LLC" data-i18n-placeholder="cart_name_placeholder" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-phone" data-i18n="cart_phone">Contact Phone Number *</label>
+                                <input type="tel" id="cust-phone" required placeholder="e.g. +1 555-0199" data-i18n-placeholder="cart_phone_placeholder" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-address" data-i18n="cart_address">Shipping Address *</label>
+                                <textarea id="cust-address" required placeholder="Street address, unit, city, state, zip code..." data-i18n-placeholder="cart_address_placeholder" class="form-input" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-notes" data-i18n="cart_notes">Machining Details / Delivery Instructions</label>
+                                <textarea id="cust-notes" placeholder="Notes (e.g. loading dock hours, fork-lift requirements)" data-i18n-placeholder="cart_notes_placeholder" class="form-input" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-full checkout-submit-btn" data-i18n="cart_proceed">
+                                Proceed to checkout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. PAYMENT VIEW -->
+        <section id="payment-view" class="view-section">
+            <div class="payment-container">
+                <div class="payment-card">
+                    <div class="payment-header">
+                        <div class="payment-icon-wrapper">
+                            <i data-lucide="landmark" class="payment-icon"></i>
+                        </div>
+                        <h2 class="payment-title" data-i18n="payment_title">Checkout</h2>
+                        <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing and trigger ERPNext packaging, please wire the total amount and upload your receipt screenshot below.</p>
+                    </div>
+
+                    <div class="payment-amount-box">
+                        <span class="amount-label">Amount Outstanding</span>
+                        <span class="amount-val" id="payment-amount">$0.00</span>
+                        <span class="order-ref-label" id="payment-ref-text">Order Reference: #CNC-XXXXX</span>
+                    </div>
+
+                    <!-- Choose Payment Method Section -->
+                    <h3 class="payment-section-title" data-i18n="payment_method">Choose Payment Method</h3>
+                    <div class="payment-methods-grid">
+                        <div class="payment-method-card active" data-method="instapay" onclick="selectPaymentMethod('instapay')">
+                            <span class="payment-method-name">InstaPay</span>
+                            <span class="payment-method-lbl">Send to:</span>
+                            <span class="payment-method-val">01555233700</span>
+                        </div>
+                        <div class="payment-method-card" data-method="vodafone" onclick="selectPaymentMethod('vodafone')">
+                            <span class="payment-method-name">Vodafone Cash</span>
+                            <span class="payment-method-lbl">Send to:</span>
+                            <span class="payment-method-val">12344565555</span>
+                        </div>
+                        <div class="payment-method-card" data-method="etisalat" onclick="selectPaymentMethod('etisalat')">
+                            <span class="payment-method-name">Etisalat Cash</span>
+                            <span class="payment-method-lbl">Send to:</span>
+                            <span class="payment-method-val">01234345435</span>
+                        </div>
+                        <div class="payment-method-card" data-method="bank" onclick="selectPaymentMethod('bank')">
+                            <span class="payment-method-name">Bank Wire</span>
+                            <span class="payment-method-lbl">Send to:</span>
+                            <span class="payment-method-val">ICB Bank</span>
+                        </div>
+                    </div>
+
+                    <!-- Selected Method Details Box -->
+                    <div class="payment-details-box" id="payment-details-box">
+                        <!-- Dynamic details populated via JS -->
+                    </div>
+
+                    <!-- Upload Proof Field -->
+                    <div class="upload-section">
+                        <h3 class="upload-title" data-i18n="payment_upload_title">Provide Payment Confirmation</h3>
+                        <div class="upload-zone" id="payment-drop-zone">
+                            <input type="file" id="payment-file-input" accept="image/*" class="file-input">
+                            <div class="upload-icon-wrapper">
+                                <i data-lucide="upload-cloud" class="upload-cloud-icon"></i>
+                            </div>
+                            <p class="upload-text" data-i18n="payment_upload_text">Drag and drop your bank slip screenshot or click to browse files</p>
+                            <p class="upload-note" data-i18n="payment_upload_note">Accepted formats: JPG, PNG (Max 5MB)</p>
+                            
+                            <!-- File Preview Area -->
+                            <div class="upload-preview-container" id="upload-preview-area" style="display:none;">
+                                <img src="" alt="Payment Receipt Preview" id="receipt-preview-img" class="receipt-preview-img">
+                                <div class="file-info-overlay">
+                                    <span class="file-name" id="receipt-file-name">receipt.png</span>
+                                    <button class="remove-file-btn" id="remove-receipt-btn" type="button">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-actions">
+                        <button class="btn btn-primary btn-full disabled" id="submit-payment-btn" data-i18n="payment_submit" disabled>
+                            Submit Payment Proof
+                        </button>
+                        <a href="#orders" class="btn btn-secondary btn-full center-text" data-i18n="payment_track">Back</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. ORDERS HISTORY VIEW -->
+        <section id="orders-view" class="view-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title" data-i18n="orders_title">Purchase & Machining Orders</h2>
+                    <p class="section-subtitle" data-i18n="orders_subtitle">Real-time telemetry and order dispatch sync with ERPNext</p>
+                </div>
+
+                <div class="orders-list-container" id="orders-history-list">
+                    <!-- Dynamic Orders generated in JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. ADMIN PANEL VIEW -->
+        <section id="admin-view" class="view-section">
+            <div class="admin-dashboard-container">
+                <div class="admin-sidebar">
+                    <div class="admin-logo">
+                        <i data-lucide="shield-alert" class="admin-icon-logo"></i>
+                        <span>CNC Dashboard</span>
+                    </div>
+                    <ul class="admin-menu">
+                        <li><a href="#admin" class="admin-menu-link active" data-tab="analytics">Analytics telemetry</a></li>
+                        <li><a href="#admin" class="admin-menu-link" data-tab="inventory">ERPNext Inventory</a></li>
+                        <li><a href="#admin" class="admin-menu-link" data-tab="orders">Pending Receipts</a></li>
+                        <li><a href="#admin" class="admin-menu-link" data-tab="slideshow">Slide Customizer</a></li>
+                    </ul>
+                </div>
+
+                <div class="admin-main-content">
+                    <!-- Sub-view 1: Analytics -->
+                    <div class="admin-tab-content active" id="admin-tab-analytics">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-head">
+                                    <span>Simulated Revenue</span>
+                                    <i data-lucide="dollar-sign" class="met-icon text-orange"></i>
+                                </div>
+                                <div class="metric-value" id="admin-revenue-text">$0.00</div>
+                                <div class="metric-trend">
+                                    <span class="trend-up">+14.2%</span> from last billing cycle
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-head">
+                                    <span>Total Orders</span>
+                                    <i data-lucide="package" class="met-icon text-orange"></i>
+                                </div>
+                                <div class="metric-value" id="admin-orders-text">0</div>
+                                <div class="metric-trend">
+                                    <span>ERPNext Active Queues</span>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-head">
+                                    <span>Cart Conversions</span>
+                                    <i data-lucide="trending-up" class="met-icon text-orange"></i>
+                                </div>
+                                <div class="metric-value" id="admin-conversion-text">64.5%</div>
+                                <div class="metric-trend">
+                                    <span class="trend-up">Outperforming</span> standard hardware
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="admin-charts-container">
+                            <div class="chart-card">
+                                <h3 class="chart-title">Hourly Simulated G-Code Demand Trend</h3>
+                                <div class="svg-chart-container" id="sales-chart-container">
+                                    <!-- Rendered in JS with beautiful SVG curves -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-view 2: Inventory -->
+                    <div class="admin-tab-content" id="admin-tab-inventory">
+                        <div class="inventory-table-card">
+                            <div class="card-header-flex">
+                                <h3>ERPNext Linked Products Catalog</h3>
+                                <button class="btn btn-secondary btn-sm" id="sync-erpnext-btn">
+                                    <i data-lucide="refresh-cw" class="btn-icon"></i> Force ERPNext Sync
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item ID</th>
+                                            <th>Product Name</th>
+                                            <th>Category</th>
+                                            <th>Current Price</th>
+                                            <th>ERP Stock</th>
+                                            <th>Sync Status</th>
+                                            <th>Override Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-inventory-rows">
+                                        <!-- Rendered in JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-view 3: Orders Approval -->
+                    <div class="admin-tab-content" id="admin-tab-orders">
+                        <div class="inventory-table-card">
+                            <h3>Verify Manual Wire Receipts</h3>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Date</th>
+                                            <th>Customer Details</th>
+                                            <th>Total Price</th>
+                                            <th>Receipt Proof</th>
+                                            <th>Action Controls</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-receipt-rows">
+                                        <!-- Rendered in JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-view 4: Slide Customizer -->
+                    <div class="admin-tab-content" id="admin-tab-slideshow">
+                        <div class="inventory-table-card">
+                            <div class="card-header-flex">
+                                <h3>Manage Hero Slideshow</h3>
+                                <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Re-arrange, delete, or create new slides dynamically.</p>
+                            </div>
+                            
+                            <!-- Add slide form -->
+                            <form id="admin-add-slide-form" class="delivery-form" style="margin-bottom:32px; border-bottom:1px dashed var(--border-subtle); padding-bottom:32px;">
+                                <h4 class="specs-table-title" style="margin-bottom:12px;">Add Custom Banner Slide</h4>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                    <div class="form-group">
+                                        <label for="slide-eyebrow">Eyebrow Caption *</label>
+                                        <input type="text" id="slide-eyebrow" required placeholder="e.g. HIGH ACCURACY MACHINERY" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="slide-title">Hero Title Text *</label>
+                                        <input type="text" id="slide-title" required placeholder="e.g. Linear Motion Systems for micro-tolerances" class="form-input">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top:12px;">
+                                    <label for="slide-subtitle">Subtitle Description Text *</label>
+                                    <textarea id="slide-subtitle" required placeholder="Describe details of this segment..." class="form-input" rows="2"></textarea>
+                                </div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+                                    <div class="form-group">
+                                        <label for="slide-link">CTA Button Target Link</label>
+                                        <input type="text" id="slide-link" placeholder="e.g. #catalog or #catalog?category=motion" value="#catalog" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="slide-image-select">Background Image Asset</label>
+                                        <select id="slide-image-select" class="form-input" onchange="toggleCustomSlideImageUpload(this.value)">
+                                            <option value="assets/images/cnc_spindle_motor.jpg">Spindle Motor Image</option>
+                                            <option value="assets/images/linear_guide_rail.jpg">Linear Guide Rail Image</option>
+                                            <option value="assets/images/carbide_end_mills.jpg">Carbide Tooling Image</option>
+                                            <option value="assets/images/cnc_controller_board.jpg">CNC Breakout Board Image</option>
+                                            <option value="assets/images/ball_screw_assembly.jpg">Ball Screw Assembly Image</option>
+                                            <option value="custom">-- Upload Custom Slide Image --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" id="slide-custom-upload-group" style="display:none; margin-top:12px;">
+                                    <label>Upload Custom Banner Photo</label>
+                                    <div class="upload-zone" id="slide-upload-zone" style="padding:16px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                        <input type="file" id="slide-file-input" accept="image/*" class="file-input">
+                                        <i data-lucide="upload-cloud" style="width:24px; height:24px; color:var(--text-muted); margin-bottom:4px;"></i>
+                                        <p class="upload-text" style="font-size:0.85rem;">Click or drop image to upload custom banner</p>
+                                        
+                                        <div class="upload-preview-container" id="slide-upload-preview" style="display:none;">
+                                            <img src="" alt="Slide Preview" id="slide-preview-img" class="receipt-preview-img" style="max-height:80px;">
+                                            <div class="file-info-overlay" style="padding:4px 8px;">
+                                                <span class="file-name" id="slide-file-name" style="font-size:0.7rem;">slide.png</span>
+                                                <button class="remove-file-btn" id="remove-slide-img-btn" type="button"><i data-lucide="x" style="width:12px; height:12px;"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary" style="margin-top:16px; padding:10px 20px;">
+                                    <i data-lucide="plus-circle" class="btn-icon"></i> Inject Slide to Live Hero
+                                </button>
+                            </form>
+
+                            <!-- Slide management list -->
+                            <h4 class="specs-table-title">Live Slide Carousel Registry</h4>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Seq</th>
+                                            <th>Preview</th>
+                                            <th>Captions & Eyebrow</th>
+                                            <th>Order Sorter</th>
+                                            <th>CTA Target</th>
+                                            <th>Control Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-slides-rows">
+                                        <!-- Rendered dynamically in JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        </section>
+
+        <!-- 8. LOGIN VIEW -->
+        <section id="login-view" class="view-section">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <i data-lucide="lock" class="auth-icon"></i>
+                        <h2 class="auth-title" data-i18n="auth_login_title">Client Portal</h2>
+                        <p class="auth-subtitle" data-i18n="auth_login_sub">Secure access to your telemetry dashboard.</p>
+                    </div>
+                    <form id="login-form" class="auth-form" onsubmit="event.preventDefault(); window.location.hash='#home';">
+                        <div class="input-group">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" id="login-email" required placeholder="E-mail Address" data-i18n-placeholder="auth_email">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="key" class="input-icon"></i>
+                            <input type="password" id="login-password" required placeholder="Password" data-i18n-placeholder="auth_password">
+                        </div>
+                        <button type="submit" class="auth-submit-btn">
+                            <span data-i18n="auth_login_btn">Authenticate</span>
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </form>
+                    <div class="auth-footer">
+                        <span data-i18n="auth_no_account">No manufacturing account?</span>
+                        <a href="#signup" class="auth-link" data-i18n="auth_signup_link">Create one</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. SIGNUP VIEW -->
+        <section id="signup-view" class="view-section">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <i data-lucide="user-plus" class="auth-icon"></i>
+                        <h2 class="auth-title" data-i18n="auth_signup_title">New Account</h2>
+                        <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial hardware procurement.</p>
+                    </div>
+                    <form id="signup-form" class="auth-form" onsubmit="event.preventDefault(); window.location.hash='#home';">
+                        <div class="input-group">
+                            <i data-lucide="user" class="input-icon"></i>
+                            <input type="text" id="signup-name" required placeholder="Full Name / Company" data-i18n-placeholder="auth_name">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" id="signup-email" required placeholder="E-mail Address" data-i18n-placeholder="auth_email">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="phone" class="input-icon"></i>
+                            <input type="tel" id="signup-phone" required placeholder="Mobile Number" data-i18n-placeholder="auth_phone">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="key" class="input-icon"></i>
+                            <input type="password" id="signup-password" required placeholder="Password" data-i18n-placeholder="auth_password">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="shield-check" class="input-icon"></i>
+                            <input type="password" id="signup-confirm-password" required placeholder="Confirm Password" data-i18n-placeholder="auth_confirm_password">
+                        </div>
+                        <button type="submit" class="auth-submit-btn">
+                            <span data-i18n="auth_signup_btn">Create Account</span>
+                            <i data-lucide="check-circle"></i>
+                        </button>
+                    </form>
+                    <div class="auth-footer">
+                        <span data-i18n="auth_has_account">Already integrated?</span>
+                        <a href="#login" class="auth-link" data-i18n="auth_login_link">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Blueprint Engineering Footer -->
+    <footer class="app-footer blueprint-footer">
+        <div class="footer-grid blueprint-grid">
+            <!-- Brand & Spec Column -->
+            <div class="footer-column brand-col">
+                <a href="#home" class="footer-logo blueprint-logo" dir="ltr">
+                    <span class="logo-accent">CNC</span>LEADERS
+                </a>
+                <div class="spec-block">
+                    <div class="spec-line-row"><span class="spec-label">TYPE</span><span class="spec-val">Manufacturer and Distributer</span></div>
+                    <div class="spec-line-row"><span class="spec-label">SHIPPING</span><span class="spec-val">Worldwide Dispatch</span></div>
+                    <div class="spec-line-row"><span class="spec-label">WARRANTY</span><span class="spec-val">3-Year Industrial</span></div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="footer-column dir-col">
+                <h4 class="footer-title">Categories</h4>
+                <ul class="footer-links">
+                    <li><a href="#catalog?category=spindles">Spindle Systems</a></li>
+                    <li><a href="#catalog?category=guides">Linear Guides</a></li>
+                    <li><a href="#catalog?category=tooling">Carbide Tooling</a></li>
+                    <li><a href="#catalog?category=electronics">Controllers</a></li>
+                    <li><a href="#catalog">Interactive Catalog</a></li>
+                    <li><a href="#orders">Track Orders</a></li>
+                </ul>
+            </div>
+
+            <!-- Customer Support Column -->
+            <div class="footer-column telemetry-col">
+                <h4 class="footer-title">Customer Support</h4>
+                <div class="telemetry-block" style="background: rgba(15, 23, 42, 0.4);">
+                    <div class="status-row">
+                        <i data-lucide="headset" class="icon-sm" style="color: #3b82f6;"></i>
+                        <span style="color: #cbd5e1;">Available 24/7 for Technical Support</span>
+                    </div>
+                    <div class="ticker-box" style="color: #cbd5e1; border-color: rgba(59, 130, 246, 0.2); background: rgba(0, 0, 0, 0.2);">
+                        <span>sales@cncleaders.com</span>
+                    </div>
+                    <p class="depot-contact" style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                        Call us: +1 (555) 0103-882<br>
+                        Mon - Fri: 8:00 AM - 6:00 PM EST
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom blueprint-bottom">
+            <div class="footer-bottom-container">
+                <p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP. ALL RIGHTS RESERVED.</p>
+            </div>
+            <!-- The Signature Element -->
+            <div class="footer-signature">PRECISION ENGINEERED</div>
+        </div>
+    </footer>
+
+    <!-- Slide-over Right Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Active Cart</h2>
+            <button class="close-drawer-btn" id="close-drawer-btn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="drawer-body" id="cart-drawer-body">
+            <!-- Dynamic Cart Items inside drawer -->
+        </div>
+        <div class="drawer-footer">
+            <div class="drawer-summary">
+                <div class="drawer-summary-row">
+                    <span>Selected items (est.):</span>
+                    <span id="drawer-subtotal">$0.00</span>
+                </div>
+            </div>
+            <a href="#cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">
+                Proceed to Full Form
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Application Javascript Logic -->
+    <script src="app.js?v=6"></script>
+</body>
+</html>

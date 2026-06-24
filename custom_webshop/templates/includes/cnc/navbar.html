@@ -1,0 +1,35 @@
+<nav class="navbar">
+	<div class="nav-container">
+		<a href="{{ shop_url() }}" class="logo" dir="ltr">
+			<span class="logo-accent">CNC</span>Leaders
+		</a>
+		<ul class="nav-links">
+			<li><a href="{{ shop_url() }}" class="nav-link{% if pathname == shop_url() %} active{% endif %}" data-i18n="nav_home">{{ _("Home") }}</a></li>
+			<li><a href="{{ shop_url('all-products') }}" class="nav-link" data-i18n="nav_catalog">{{ _("All Products") }}</a></li>
+			<li><a href="{{ shop_url('orders') }}" class="nav-link" data-i18n="nav_orders">{{ _("Track Orders") }}</a></li>
+		</ul>
+		<div class="nav-actions">
+			<button class="nav-btn lang-toggle" id="lang-btn" type="button" title="Switch Language">
+				<i data-lucide="globe"></i>
+				<span id="lang-btn-text" style="font-size: 0.85rem; font-weight: 600; margin-left: 4px;">AR</span>
+			</button>
+			<button class="nav-btn theme-toggle" id="theme-btn" type="button" title="Toggle Theme">
+				<i data-lucide="sun" class="icon-sun"></i>
+				<i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+			</button>
+			<button class="nav-btn cart-toggle-btn" id="cart-toggle-btn" type="button">
+				<i data-lucide="shopping-cart"></i>
+				<span class="cart-badge" id="cart-badge">0</span>
+			</button>
+			{% if frappe.session.user == "Guest" %}
+			<a class="nav-btn" href="{{ shop_url('login') }}" title="Login"><i data-lucide="user"></i></a>
+			{% else %}
+			<a class="nav-btn" href="/logout" title="Logout"><i data-lucide="log-out"></i></a>
+			{% endif %}
+			<button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" type="button" style="display:none;">
+				<i data-lucide="menu" class="icon-menu"></i>
+				<i data-lucide="x" class="icon-x" style="display:none;"></i>
+			</button>
+		</div>
+	</div>
+</nav>
