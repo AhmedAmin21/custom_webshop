@@ -52,7 +52,7 @@ function buildCatalogCard(item, mode) {
         return `
         <div class="product-card list-layout">
             <div class="product-img-wrapper" onclick="window.location.href='${productHref}'">
-                <img src="${img}" alt="${displayName}" class="product-img" loading="lazy">
+                <img src="${img}" alt="${displayName}" class="product-img" loading="eager" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.jpg';">
                 ${badgeHTML}
             </div>
             <div class="product-info-list">
@@ -81,7 +81,7 @@ function buildCatalogCard(item, mode) {
     return `
     <div class="product-card">
         <div class="product-img-wrapper" onclick="window.location.href='${productHref}'">
-            <img src="${img}" alt="${displayName}" class="product-img" loading="lazy">
+            <img src="${img}" alt="${displayName}" class="product-img" loading="eager" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.jpg';">
             ${badgeHTML}
         </div>
         <div class="product-info">

@@ -76,7 +76,7 @@ function buildOrderCard(order) {
                     </div>
                     <div class="track-step ${stepClass(2)}">
                         <div class="step-node">2</div>
-                        <span class="step-label">ERP Sync</span>
+                        <span class="step-label">Order Confirmed</span>
                     </div>
                     <div class="track-step ${stepClass(3)}">
                         <div class="step-node">3</div>

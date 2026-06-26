@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNCLeaders | Client Portal</title>
+    <title>CNCLeaders | Log in</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,13 +68,13 @@
     <div class="top-bar">
         <div class="top-bar-container">
             <div class="top-bar-left">
-                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
-                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="https://www.instagram.com/cncleaderscuttingtools/" class="top-bar-link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="https://www.facebook.com/CncLeaders/" class="top-bar-link" target="_blank" rel="noopener"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
                 <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
             </div>
             <div class="top-bar-right">
-                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
-                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+                <span class="top-bar-contact">cncleaderssales@gmail.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">+201283229286 <i data-lucide="phone" class="icon-sm"></i></span>
             </div>
         </div>
     </div>
@@ -106,7 +106,7 @@
         </div>
     </nav>
 
-    <main>
+    <main style="padding-top: 140px;">
         <!-- Status banner -->
         <div class="auth-status" id="auth-status"></div>
 
@@ -116,8 +116,7 @@
                 <div class="auth-card">
                     <div class="auth-header">
                         <i data-lucide="lock" class="auth-icon"></i>
-                        <h2 class="auth-title" data-i18n="auth_login_title">Client Portal</h2>
-                        <p class="auth-subtitle" data-i18n="auth_login_sub">Secure access to your telemetry dashboard.</p>
+                        <h2 class="auth-title" data-i18n="auth_login_title">Log in</h2>
                     </div>
                     <form id="login-form" class="auth-form" novalidate>
                         <div class="input-group">
@@ -140,7 +139,7 @@
                     </form>
                     {% if not disable_signup %}
                     <div class="auth-footer">
-                        <span data-i18n="auth_no_account">No manufacturing account?</span>
+                        <span data-i18n="auth_no_account">No account?</span>
                         <a href="#signup" class="auth-link" data-i18n="auth_signup_link" onclick="switchTab('signup');return false;">Create one</a>
                     </div>
                     {% endif %}
@@ -159,7 +158,7 @@
                     <div class="auth-header">
                         <i data-lucide="user-plus" class="auth-icon"></i>
                         <h2 class="auth-title" data-i18n="auth_signup_title">New Account</h2>
-                        <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial hardware procurement.</p>
+                        <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial product procurement.</p>
                     </div>
                     <form id="signup-form" class="auth-form form-signup" novalidate>
                         <div class="input-group">
@@ -199,7 +198,7 @@
                         </button>
                     </form>
                     <div class="auth-footer">
-                        <span data-i18n="auth_has_account">Already integrated?</span>
+                        <span data-i18n="auth_has_account">Already have an account?</span>
                         <a href="#login" class="auth-link" data-i18n="auth_login_link" onclick="switchTab('login');return false;">Sign In</a>
                     </div>
                 </div>
