@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | All Products</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+
+    <script>
+        window.FRAPPE_SESSION = {
+            user: "{{ session_user }}",
+            csrf_token: "{{ csrf_token }}",
+            is_guest: {{ 'true' if is_guest else 'false' }}
+        };
+    </script>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/shop" class="logo" dir="ltr"><span class="logo-accent">CNC</span>Leaders</a>
+            <ul class="nav-links">
+                <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
+                <li><a href="/catalog" class="nav-link active" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size:0.85rem;font-weight:600;margin-left:4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn" title="Toggle Theme">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <button class="nav-btn cart-toggle-btn" id="cart-toggle-btn">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                {% if is_guest %}
+                <a href="/login?redirect-to=/catalog" class="nav-btn" title="Login"><i data-lucide="user"></i></a>
+                {% else %}
+                <a href="/me" class="nav-btn" title="My Account"><i data-lucide="user"></i></a>
+                {% endif %}
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section id="catalog-view" class="view-section active">
+            <div class="catalog-page-container">
+
+                <!-- Sidebar Filters -->
+                <aside class="catalog-sidebar">
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_search">Search</h3>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="catalog-search" data-i18n-placeholder="filter_search_placeholder" placeholder="Search by model or spec..." class="search-input">
+                            <i data-lucide="search" class="search-icon"></i>
+                        </div>
+                    </div>
+
+                    <div id="attribute-filters-container">
+                        <!-- Populated by page-catalog.js: one filter-card per attribute -->
+                    </div>
+
+                    <div class="filter-card">
+                        <h3 class="filter-title" data-i18n="filter_brand">Brand</h3>
+                        <div class="filter-options" id="brand-filter-list">
+                            <p style="color:var(--text-muted);font-size:0.85rem;" data-i18n="loading">Loading...</p>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary btn-full" id="clear-filters-btn" data-i18n="btn_reset_filters">Reset Filters</button>
+                </aside>
+
+                <!-- Products Grid -->
+                <div class="catalog-content">
+                    <div class="catalog-header-bar">
+                        <div class="results-count" id="results-count-text">—</div>
+                        <div class="catalog-header-actions" style="display:flex;align-items:center;gap:20px;">
+                            <div class="view-toggle-container" id="catalog-view-toggle">
+                                <div class="toggle-slider" id="toggle-slider"></div>
+                                <button class="toggle-btn active" id="grid-toggle-btn" title="Grid Layout">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                                </button>
+                                <button class="toggle-btn" id="list-toggle-btn" title="List Layout">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            <div class="sort-selector-wrapper">
+                                <label for="sort-select" data-i18n="catalog_sort">Sort: </label>
+                                <select id="sort-select" class="sort-select">
+                                    <option value="default" data-i18n="sort_default">Default Sync Order</option>
+                                    <option value="price-asc" data-i18n="sort_price_asc">Price: Low to High</option>
+                                    <option value="price-desc" data-i18n="sort_price_desc">Price: High to Low</option>
+                                    <option value="alpha" data-i18n="sort_alpha">A-Z Name</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Load more pagination -->
+                    <div class="product-grid" id="catalog-product-grid">
+                        <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);" data-i18n="loading">Loading...</div>
+                    </div>
+
+                    <div style="text-align:center;margin:32px 0;display:none;" id="load-more-container">
+                        <button class="btn btn-secondary" id="load-more-btn">Load More</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer blueprint-footer">
+        <div class="footer-grid blueprint-grid">
+            <div class="footer-column brand-col">
+                <a href="/shop" class="footer-logo blueprint-logo" dir="ltr"><span class="logo-accent">CNC</span>LEADERS</a>
+            </div>
+            <div class="footer-column dir-col">
+                <h4 class="footer-title">Categories</h4>
+                <ul class="footer-links">
+                    <li><a href="/catalog">All Products</a></li>
+                    <li><a href="/orders">Track Orders</a></li>
+                </ul>
+            </div>
+            <div class="footer-column telemetry-col">
+                <h4 class="footer-title">Customer Support</h4>
+                <div class="telemetry-block" style="background:rgba(15,23,42,0.4);">
+                    <div class="status-row"><span style="color:#cbd5e1;">sales@cncleaders.com</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom blueprint-bottom">
+            <div class="footer-bottom-container"><p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP.</p></div>
+            <div class="footer-signature">PRECISION ENGINEERED</div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Active Cart</h2>
+            <button class="close-drawer-btn" id="close-drawer-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="drawer-body" id="cart-drawer-body"></div>
+        <div class="drawer-footer">
+            <div class="drawer-summary">
+                <div class="drawer-summary-row"><span>Est. Total:</span><span id="drawer-subtotal">—</span></div>
+            </div>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">Proceed to Full Form</a>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/assets/custom_webshop/js/store.js"></script>
+    <script src="/assets/custom_webshop/js/page-catalog.js"></script>
+</body>
+</html>

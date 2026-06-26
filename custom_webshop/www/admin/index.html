@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Admin Panel</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+
+    <!-- Session data for JS -->
+    <script>
+        window.FRAPPE_SESSION = {
+            user: "{{ session_user }}",
+            csrf_token: "{{ csrf_token }}",
+            is_guest: false
+        };
+    </script>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Glass Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/shop" class="logo" dir="ltr">
+                <span class="logo-accent">CNC</span>Leaders
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
+                <li><a href="/catalog" class="nav-link" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
+                <li><a href="/admin" class="nav-link active" data-i18n="nav_admin">Admin Panel</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language / تغيير اللغة">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size: 0.85rem; font-weight: 600; margin-left: 4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn" title="Toggle Visual Mode">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <a href="/me" class="nav-btn" title="My Account">
+                    <i data-lucide="user"></i>
+                </a>
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding-top: 80px; min-height: 100vh;">
+
+        <div class="admin-dashboard-container">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <div class="admin-logo">
+                    <i data-lucide="shield-alert" class="admin-icon-logo"></i>
+                    <span>CNC Dashboard</span>
+                </div>
+                <ul class="admin-menu">
+                    <li><a href="#" class="admin-menu-link active" data-tab="slideshow">Slide Customizer</a></li>
+                    <li><a href="#" class="admin-menu-link" data-tab="attributes">Attribute Display</a></li>
+                </ul>
+            </div>
+
+            <!-- Main content area -->
+            <div class="admin-main-content">
+
+                <!-- Tab: Slide Customizer -->
+                <div class="admin-tab-content active" id="admin-tab-slideshow">
+                    <div class="inventory-table-card">
+                        <div class="card-header-flex">
+                            <h3>Manage Hero Slideshow</h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Re-arrange, delete, or create new slides dynamically.</p>
+                        </div>
+
+                        <!-- Add slide form + live preview side by side -->
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:32px; border-bottom:1px dashed var(--border-subtle); padding-bottom:32px;">
+                            <!-- Form -->
+                            <form id="admin-add-slide-form" class="delivery-form" style="margin:0;">
+                                <h4 class="specs-table-title" style="margin-bottom:12px;">Add Custom Banner Slide</h4>
+                                <div class="form-group">
+                                    <label for="slide-eyebrow">Eyebrow Caption *</label>
+                                    <input type="text" id="slide-eyebrow" required placeholder="e.g. HIGH ACCURACY MACHINERY" class="form-input">
+                                </div>
+                                <div class="form-group" style="margin-top:10px;">
+                                    <label for="slide-title">Hero Title Text *</label>
+                                    <input type="text" id="slide-title" required placeholder="e.g. Linear Motion Systems for micro-tolerances" class="form-input">
+                                </div>
+                                <div class="form-group" style="margin-top:10px;">
+                                    <label for="slide-subtitle">Subtitle Description Text *</label>
+                                    <textarea id="slide-subtitle" required placeholder="Describe details of this segment..." class="form-input" rows="2"></textarea>
+                                </div>
+                                <div class="form-group" style="margin-top:10px;">
+                                    <label for="slide-link">CTA Button Target Link</label>
+                                    <input type="text" id="slide-link" placeholder="e.g. /catalog" value="/catalog" class="form-input">
+                                </div>
+                                <div class="form-group" style="margin-top:10px;">
+                                    <label for="slide-image-url">Background Image URL</label>
+                                    <input type="text" id="slide-image-url" placeholder="e.g. /assets/custom_webshop/images/spindle.jpg" class="form-input">
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="margin-top:16px; width:100%;">
+                                    <i data-lucide="plus-circle" class="btn-icon"></i> Add Slide to Hero
+                                </button>
+                            </form>
+
+                            <!-- Live preview -->
+                            <div>
+                                <h4 class="specs-table-title" style="margin-bottom:12px;">Live Preview</h4>
+                                <div id="slide-preview-panel" style="position:relative;width:100%;aspect-ratio:16/7;border-radius:8px;overflow:hidden;background:#111;border:1px solid var(--border-subtle);">
+                                    <div id="slide-preview-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;transition:background-image 0.3s;"></div>
+                                    <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.3) 60%,transparent 100%);"></div>
+                                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:24px;">
+                                        <span id="slide-preview-eyebrow" style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;color:var(--primary-blue,#2563eb);text-transform:uppercase;margin-bottom:8px;">EYEBROW CAPTION</span>
+                                        <div id="slide-preview-title" style="font-size:1.3rem;font-weight:800;color:#fff;line-height:1.25;margin-bottom:8px;font-family:var(--font-heading,sans-serif);">Hero Title Text</div>
+                                        <div id="slide-preview-subtitle" style="font-size:0.8rem;color:rgba(255,255,255,0.75);line-height:1.5;margin-bottom:14px;max-width:80%;">Subtitle description goes here.</div>
+                                        <div style="display:flex;gap:8px;">
+                                            <span id="slide-preview-cta" style="display:inline-block;padding:6px 14px;background:var(--primary-blue,#2563eb);color:#fff;border-radius:4px;font-size:0.75rem;font-weight:600;">/catalog</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">Preview updates as you type.</p>
+                            </div>
+                        </div>
+
+                        <!-- Slide management list -->
+                        <h4 class="specs-table-title">Live Slide Carousel Registry</h4>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Seq</th>
+                                        <th>Preview</th>
+                                        <th>Captions &amp; Eyebrow</th>
+                                        <th>CTA Target</th>
+                                        <th>Control Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-slides-rows">
+                                    <!-- Populated by page-admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Attribute Display Manager -->
+                <div class="admin-tab-content" id="admin-tab-attributes">
+                    <div class="inventory-table-card">
+                        <div class="card-header-flex">
+                            <h3>Shop Page Attribute Carousels</h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Select which attributes appear on the home page and set their display order. Unchecked attributes are hidden.</p>
+                        </div>
+
+                        <div id="admin-attributes-list" style="margin:16px 0;">
+                            <p style="color:var(--text-muted);">Loading attributes…</p>
+                        </div>
+
+                        <div style="display:flex;gap:12px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border-subtle);">
+                            <button class="btn btn-primary" id="save-attributes-btn" style="padding:10px 24px;">
+                                <i data-lucide="save" class="btn-icon"></i> Save Display Order
+                            </button>
+                            <span id="save-attributes-status" style="font-size:0.85rem;color:var(--text-muted);"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /admin-main-content -->
+        </div><!-- /admin-dashboard-container -->
+
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Shared store -->
+    <script src="/assets/custom_webshop/js/store.js"></script>
+    <!-- Admin page controller -->
+    <script src="/assets/custom_webshop/js/page-admin.js"></script>
+
+</body>
+</html>

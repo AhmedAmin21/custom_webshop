@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Client Portal</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+
+    <script>
+        window.FRAPPE_SESSION = {
+            user: "Guest",
+            csrf_token: "{{ csrf_token }}",
+            is_guest: true
+        };
+        window.LOGIN_CONTEXT = {
+            redirect_to: "{{ redirect_to | e }}",
+            disable_signup: {{ 'true' if disable_signup else 'false' }},
+            csrf_token: "{{ csrf_token }}"
+        };
+    </script>
+
+    <style>
+        .auth-status {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto 16px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: none;
+            text-align: center;
+        }
+        .auth-status.error {
+            display: block;
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .auth-status.success {
+            display: block;
+            background: rgba(34,197,94,0.1);
+            color: #22c55e;
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+        .auth-view { display: none; }
+        .auth-view.active { display: block; }
+        .auth-forgot-link {
+            display: block;
+            text-align: end;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-top: -8px;
+        }
+        .auth-forgot-link:hover { color: var(--primary-blue); }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+                <span class="top-bar-contact">7890 456 123 20+ <i data-lucide="phone" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/shop" class="logo" dir="ltr">
+                <span class="logo-accent">CNC</span>Leaders
+            </a>
+            <ul class="nav-links">
+                <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
+                <li><a href="/catalog" class="nav-link" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size:0.85rem;font-weight:600;margin-left:4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn" title="Toggle Theme">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <a href="/login" class="nav-btn active" title="Login">
+                    <i data-lucide="user"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Status banner -->
+        <div class="auth-status" id="auth-status"></div>
+
+        <!-- LOGIN VIEW -->
+        <section id="login-view" class="auth-view active">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <i data-lucide="lock" class="auth-icon"></i>
+                        <h2 class="auth-title" data-i18n="auth_login_title">Client Portal</h2>
+                        <p class="auth-subtitle" data-i18n="auth_login_sub">Secure access to your telemetry dashboard.</p>
+                    </div>
+                    <form id="login-form" class="auth-form" novalidate>
+                        <div class="input-group">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" id="login-email" required
+                                   placeholder="E-mail Address" data-i18n-placeholder="auth_email"
+                                   autocomplete="username">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="key" class="input-icon"></i>
+                            <input type="password" id="login-password" required
+                                   placeholder="Password" data-i18n-placeholder="auth_password"
+                                   autocomplete="current-password">
+                        </div>
+                        <a href="#forgot" class="auth-forgot-link" id="forgot-link" onclick="switchTab('forgot');return false;">Forgot Password?</a>
+                        <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+                            <span data-i18n="auth_login_btn">Authenticate</span>
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </form>
+                    {% if not disable_signup %}
+                    <div class="auth-footer">
+                        <span data-i18n="auth_no_account">No manufacturing account?</span>
+                        <a href="#signup" class="auth-link" data-i18n="auth_signup_link" onclick="switchTab('signup');return false;">Create one</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Status banner (signup) -->
+        <div class="auth-status" id="auth-status-signup" style="max-width:480px;margin:0 auto 12px;"></div>
+
+        <!-- SIGNUP VIEW -->
+        {% if not disable_signup %}
+        <section id="signup-view" class="auth-view">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <i data-lucide="user-plus" class="auth-icon"></i>
+                        <h2 class="auth-title" data-i18n="auth_signup_title">New Account</h2>
+                        <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial hardware procurement.</p>
+                    </div>
+                    <form id="signup-form" class="auth-form form-signup" novalidate>
+                        <div class="input-group">
+                            <i data-lucide="user" class="input-icon"></i>
+                            <input type="text" id="signup_fullname" required
+                                   placeholder="Full Name / Company" data-i18n-placeholder="auth_name"
+                                   autocomplete="name">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" id="signup_email" required
+                                   placeholder="E-mail Address" data-i18n-placeholder="auth_email"
+                                   autocomplete="username">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="phone" class="input-icon"></i>
+                            <input type="tel" id="signup_mobile" required
+                                   placeholder="Mobile Number" data-i18n-placeholder="auth_phone"
+                                   autocomplete="tel">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="key" class="input-icon"></i>
+                            <input type="password" id="signup_password" required
+                                   placeholder="Password" data-i18n-placeholder="auth_password"
+                                   autocomplete="new-password">
+                        </div>
+                        <div class="input-group">
+                            <i data-lucide="shield-check" class="input-icon"></i>
+                            <input type="password" id="signup_confirm_password" required
+                                   placeholder="Confirm Password" data-i18n-placeholder="auth_confirm_password"
+                                   autocomplete="new-password">
+                        </div>
+                        <div id="password-strength-message" style="display:none;font-size:0.82rem;color:var(--text-muted);"></div>
+                        <button type="submit" class="auth-submit-btn" id="signup-submit-btn">
+                            <span data-i18n="auth_signup_btn">Create Account</span>
+                            <i data-lucide="check-circle"></i>
+                        </button>
+                    </form>
+                    <div class="auth-footer">
+                        <span data-i18n="auth_has_account">Already integrated?</span>
+                        <a href="#login" class="auth-link" data-i18n="auth_login_link" onclick="switchTab('login');return false;">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- FORGOT PASSWORD VIEW -->
+        <section id="forgot-view" class="auth-view">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <i data-lucide="mail" class="auth-icon"></i>
+                        <h2 class="auth-title">Reset Password</h2>
+                        <p class="auth-subtitle">Enter your email and we'll send a reset link.</p>
+                    </div>
+                    <form id="forgot-form" class="auth-form" novalidate>
+                        <div class="input-group">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" id="forgot-email" required placeholder="E-mail Address">
+                        </div>
+                        <button type="submit" class="auth-submit-btn" id="forgot-submit-btn">
+                            <span>Send Reset Link</span>
+                            <i data-lucide="send"></i>
+                        </button>
+                    </form>
+                    <div class="auth-footer">
+                        <a href="#login" class="auth-link" onclick="switchTab('login');return false;">Back to Login</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/assets/custom_webshop/js/store.js"></script>
+    <script src="/assets/custom_webshop/js/page-login.js"></script>
+</body>
+</html>

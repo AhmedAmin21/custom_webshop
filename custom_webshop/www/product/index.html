@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNCLeaders | My Orders</title>
+    <title>CNCLeaders | Product Detail</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,12 @@
 
     <script>
         window.FRAPPE_SESSION = {
-            user: "{{ frappe.session.user }}",
-            csrf_token: "{{ frappe.session.csrf_token }}",
-            is_guest: {{ 'true' if frappe.session.user == 'Guest' else 'false' }}
+            user: "{{ session_user }}",
+            csrf_token: "{{ csrf_token }}",
+            is_guest: {{ 'true' if is_guest else 'false' }}
         };
-        window.ORDERS_DATA = {{ orders | tojson }};
+        window.ITEM_NAME = "{{ item_name | replace('"', '\\"') }}";
+        window.PRODUCT_BOOTSTRAP = {{ product_bootstrap | safe }};
     </script>
 </head>
 <body>
@@ -42,10 +43,10 @@
             <ul class="nav-links">
                 <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
                 <li><a href="/catalog" class="nav-link" data-i18n="nav_catalog">All Products</a></li>
-                <li><a href="/orders" class="nav-link active" data-i18n="nav_orders">Track Orders</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
             </ul>
             <div class="nav-actions">
-                <button class="nav-btn lang-toggle" id="lang-btn">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language">
                     <i data-lucide="globe"></i>
                     <span id="lang-btn-text" style="font-size:0.85rem;font-weight:600;margin-left:4px;">AR</span>
                 </button>
@@ -57,7 +58,11 @@
                     <i data-lucide="shopping-cart"></i>
                     <span class="cart-badge" id="cart-badge">0</span>
                 </button>
+                {% if is_guest %}
+                <a href="/login?redirect-to=/catalog" class="nav-btn"><i data-lucide="user"></i></a>
+                {% else %}
                 <a href="/me" class="nav-btn"><i data-lucide="user"></i></a>
+                {% endif %}
                 <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
                     <i data-lucide="menu" class="icon-menu"></i>
                     <i data-lucide="x" class="icon-x" style="display:none;"></i>
@@ -66,17 +71,19 @@
         </div>
     </nav>
 
-    <main class="main-content" style="padding-top:80px;">
-        <section class="view-section active">
-            <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title" data-i18n="orders_title">Purchase &amp; Machining Orders</h2>
-                    <p class="section-subtitle" data-i18n="orders_subtitle">Real-time telemetry and order dispatch sync with ERPNext</p>
-                </div>
+    <main class="main-content" style="padding-top: 80px;">
+        <section class="view-section active" style="padding: 24px 0;">
+            <!-- Breadcrumb -->
+            <div style="max-width:1400px;margin:0 auto;padding:0 24px 16px;">
+                <a href="/catalog" style="color:var(--primary-blue);text-decoration:none;font-size:0.9rem;">
+                    <i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                    Back to Catalog
+                </a>
+            </div>
 
-                <div class="orders-list-container" id="orders-history-list">
-                    <!-- Populated by page-orders.js -->
-                </div>
+            <!-- Product Detail Container -->
+            <div class="detail-container" id="product-detail-container">
+                <div style="text-align:center;padding:80px;color:var(--text-muted);" data-i18n="loading">Loading...</div>
             </div>
         </section>
     </main>
@@ -85,13 +92,6 @@
         <div class="footer-grid blueprint-grid">
             <div class="footer-column brand-col">
                 <a href="/shop" class="footer-logo blueprint-logo" dir="ltr"><span class="logo-accent">CNC</span>LEADERS</a>
-            </div>
-            <div class="footer-column dir-col">
-                <h4 class="footer-title">Navigation</h4>
-                <ul class="footer-links">
-                    <li><a href="/catalog">All Products</a></li>
-                    <li><a href="/cart">Cart</a></li>
-                </ul>
             </div>
         </div>
         <div class="footer-bottom blueprint-bottom">
@@ -112,13 +112,13 @@
             <div class="drawer-summary">
                 <div class="drawer-summary-row"><span>Est. Total:</span><span id="drawer-subtotal">—</span></div>
             </div>
-            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">Go to Cart</a>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">Proceed to Checkout</a>
         </div>
     </div>
 
     <div class="toast-container" id="toast-container"></div>
 
     <script src="/assets/custom_webshop/js/store.js"></script>
-    <script src="/assets/custom_webshop/js/page-orders.js"></script>
+    <script src="/assets/custom_webshop/js/page-product.js"></script>
 </body>
 </html>

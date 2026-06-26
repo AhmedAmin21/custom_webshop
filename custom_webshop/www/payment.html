@@ -1,243 +1,190 @@
-{% extends "templates/web.html" %}
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Payment</title>
 
-{% block title %}{{ _("Payment") }}{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
 
-{% block header %}
-<h3 class="mt-2 mb-4">{{ _("Order Payment") }}</h3>
-{% endblock %}
+    <script>
+        window.FRAPPE_SESSION = {
+            user: "{{ frappe.session.user }}",
+            csrf_token: "{{ frappe.session.csrf_token }}",
+            is_guest: false
+        };
+        {% if not invalid %}
+        window.PAYMENT_DATA = {
+            order_id: "{{ sales_order.name }}",
+            grand_total: {{ sales_order.grand_total or 0 }},
+            grand_total_formatted: "{{ grand_total_formatted }}",
+            currency: "{{ sales_order.currency or 'EGP' }}",
+            shipping_destination: "{{ shipping_destination or '' }}",
+            payment_options: {{ payment_options | tojson }}
+        };
+        {% else %}
+        window.PAYMENT_DATA = null;
+        {% endif %}
+    </script>
+</head>
+<body>
 
-{% block page_content %}
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
 
-{% if invalid %}
-<div class="frappe-card p-5 text-center">
-	<div class="alert alert-warning">
-		{{ error }}
-	</div>
-	<a class="btn btn-primary mt-3" href="/orders">
-		{{ _("My Orders") }}
-	</a>
-</div>
-{% else %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/shop" class="logo" dir="ltr"><span class="logo-accent">CNC</span>Leaders</a>
+            <ul class="nav-links">
+                <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
+                <li><a href="/catalog" class="nav-link" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size:0.85rem;font-weight:600;margin-left:4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <a href="/me" class="nav-btn"><i data-lucide="user"></i></a>
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
 
-<div class="frappe-card p-5 mb-4">
-	<div class="alert alert-success">
-		<h5 class="alert-heading">{{ _("Order Created Successfully!") }}</h5>
-		<p class="mb-0">
-			{{ _("Your order <strong>{0}</strong> has been created.").format(sales_order.name) }}
-			{{ _("Please complete the payment to confirm your order.") }}
-		</p>
-	</div>
+    <main class="main-content" style="padding-top:80px;">
+        <section class="view-section active">
 
-	<div class="order-summary mb-4">
-		<h5>{{ _("Order Summary") }}</h5>
-		<table class="table table-bordered">
-			<tbody>
-				<tr>
-					<td>{{ _("Total Weight") }}</td>
-					<td class="text-right">{{ total_weight }} {{ weight_uom }}</td>
-				</tr>
-				{% if shipping_destination %}
-				<tr>
-					<td>{{ _("Shipping Destination") }}</td>
-					<td class="text-right">{{ shipping_destination }}</td>
-				</tr>
-				{% endif %}
-				{% if shipping_amount %}
-				<tr>
-					<td>{{ _("Shipping Amount") }}</td>
-					<td class="text-right">{{ shipping_amount_formatted }}</td>
-				</tr>
-				{% endif %}
-				<tr>
-					<td><strong>{{ _("Grand Total") }}</strong></td>
-					<td class="text-right"><strong>{{ grand_total_formatted }}</strong></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
+            {% if invalid %}
+            <!-- Error state -->
+            <div class="payment-container">
+                <div class="payment-card">
+                    <div class="payment-header">
+                        <div class="payment-icon-wrapper">
+                            <i data-lucide="alert-circle" class="payment-icon" style="color:#EF4444;"></i>
+                        </div>
+                        <h2 class="payment-title">Order Not Found</h2>
+                        <p class="payment-subtitle">{{ error }}</p>
+                    </div>
+                    <div class="payment-actions">
+                        <a href="/orders" class="btn btn-primary btn-full center-text" data-i18n="payment_track">Back to Orders</a>
+                    </div>
+                </div>
+            </div>
 
-	<hr>
+            {% else %}
+            <!-- Payment UI -->
+            <div class="payment-container">
+                <div class="payment-card">
+                    <div class="payment-header">
+                        <div class="payment-icon-wrapper">
+                            <i data-lucide="landmark" class="payment-icon"></i>
+                        </div>
+                        <h2 class="payment-title" data-i18n="payment_title">Checkout</h2>
+                        <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing, please transfer the total amount and upload your receipt screenshot below.</p>
+                    </div>
 
-	<h5 class="mb-3">{{ _("Choose Payment Method") }}</h5>
+                    <div class="payment-amount-box">
+                        <span class="amount-label" data-i18n="payment_amount_label">Amount Outstanding</span>
+                        <span class="amount-val" id="payment-amount">{{ grand_total_formatted }}</span>
+                        <span class="order-ref-label" id="payment-ref-text">Order Reference: #{{ sales_order.name }}</span>
+                        {% if shipping_destination %}
+                        <span style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">Shipping to: {{ shipping_destination }}</span>
+                        {% endif %}
+                    </div>
 
-	<form id="payment-form" onsubmit="return false;">
-		<input type="hidden" id="order-id" value="{{ sales_order.name }}">
+                    <h3 class="payment-section-title" data-i18n="payment_method">Choose Payment Method</h3>
+                    <div class="payment-methods-grid" id="payment-methods-grid">
+                        {% for opt in payment_options %}
+                        <div class="payment-method-card {% if loop.first %}active{% endif %}"
+                             data-method="{{ opt.key }}"
+                             data-number="{{ opt.number }}"
+                             data-label="{{ opt.label }}"
+                             onclick="selectPaymentMethodUI('{{ opt.key }}')">
+                            <span class="payment-method-name">{{ opt.label }}</span>
+                            <span class="payment-method-lbl">Send to:</span>
+                            <span class="payment-method-val">{{ opt.number or '—' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
 
-		<div class="row payment-options">
-			{% for option in payment_options %}
-			<div class="col-md-4 mb-3">
-				<div class="payment-option card h-100" data-option="{{ option.key }}">
-					<div class="card-body text-center">
-						<h5 class="card-title">{{ option.label }}</h5>
-						{% if option.number %}
-						<p class="payment-number mb-0">
-							<span class="text-muted">{{ _("Send to:") }}</span><br>
-							<strong class="font-lg">{{ option.number }}</strong>
-						</p>
-						{% else %}
-						<p class="text-muted mb-0">{{ _("Number not configured") }}</p>
-						{% endif %}
-					</div>
-				</div>
-			</div>
-			{% endfor %}
-		</div>
+                    <div class="payment-details-box" id="payment-details-box">
+                        <!-- Populated by JS on method select -->
+                    </div>
 
-		<div class="form-group mt-4">
-			<label for="payment-proof">{{ _("Upload Payment Confirmation") }}</label>
-			<input type="file" class="form-control" id="payment-proof" name="payment_proof" accept="image/*,.pdf" required>
-			<small class="form-text text-muted">
-				{{ _("Please upload a screenshot or PDF of your payment confirmation.") }}
-			</small>
-		</div>
+                    <div class="upload-section">
+                        <h3 class="upload-title" data-i18n="payment_upload_title">Provide Payment Confirmation</h3>
+                        <div class="upload-zone" id="payment-drop-zone">
+                            <!-- Full-area transparent input — most reliable on iOS/Android -->
+                            <input type="file" id="payment-file-input"
+                                   accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/*"
+                                   class="file-input-hidden">
+                            <div class="upload-trigger" id="upload-zone-trigger">
+                                <div class="upload-icon-wrapper">
+                                    <i data-lucide="upload-cloud" class="upload-cloud-icon"></i>
+                                </div>
+                                <p class="upload-text" data-i18n="payment_upload_text">Tap to choose or take a photo</p>
+                                <p class="upload-note" data-i18n="payment_upload_note">Accepted formats: JPG, PNG (Max 5MB)</p>
+                            </div>
+                            <div class="upload-preview-container" id="upload-preview-area" style="display:none;">
+                                <img src="" alt="Payment Receipt Preview" id="receipt-preview-img" class="receipt-preview-img">
+                                <div class="file-info-overlay">
+                                    <span class="file-name" id="receipt-file-name">receipt.png</span>
+                                    <button class="remove-file-btn" id="remove-receipt-btn" type="button">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-		<div id="payment-error" class="alert alert-danger mt-3" style="display: none;"></div>
-		<div id="payment-success" class="alert alert-success mt-3" style="display: none;"></div>
+                    <div class="payment-actions">
+                        <button class="btn btn-primary btn-full" id="submit-payment-btn" data-i18n="payment_submit" disabled style="opacity:0.5;cursor:not-allowed;">
+                            Submit Payment Proof
+                        </button>
+                        <a href="/orders" class="btn btn-secondary btn-full center-text" data-i18n="payment_track">Back to Orders</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
-		<button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="submit-payment">
-			{{ _("Submit Payment Confirmation") }}
-		</button>
-	</form>
-</div>
+        </section>
+    </main>
 
-{% endif %}
+    <footer class="app-footer blueprint-footer">
+        <div class="footer-grid blueprint-grid">
+            <div class="footer-column brand-col">
+                <a href="/shop" class="footer-logo blueprint-logo" dir="ltr"><span class="logo-accent">CNC</span>LEADERS</a>
+            </div>
+        </div>
+        <div class="footer-bottom blueprint-bottom">
+            <div class="footer-bottom-container"><p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP.</p></div>
+            <div class="footer-signature">PRECISION ENGINEERED</div>
+        </div>
+    </footer>
 
-{% endblock %}
+    <div class="toast-container" id="toast-container"></div>
 
-{% block base_scripts %}
-{{ include_script("frappe-web.bundle.js") }}
-{{ include_script("controls.bundle.js") }}
-{{ include_script("dialog.bundle.js") }}
-<script>
-(function() {
-	"use strict";
-
-	var selected_option = null;
-
-	function show_error(message) {
-		$("#payment-error").html(message).show();
-		$("#payment-success").hide();
-	}
-
-	function show_success(message) {
-		$("#payment-success").html(message).show();
-		$("#payment-error").hide();
-	}
-
-	function hide_messages() {
-		$("#payment-error, #payment-success").hide();
-	}
-
-	function show_loading(show) {
-		var btn = $("#submit-payment");
-		if (show) {
-			btn.prop("disabled", true).text(__("Submitting..."));
-		} else {
-			btn.prop("disabled", false).text(__("Submit Payment Confirmation"));
-		}
-	}
-
-	function bind_payment_options() {
-		$(".payment-option").on("click", function() {
-			$(".payment-option").removeClass("border-primary selected");
-			$(this).addClass("border-primary selected");
-			selected_option = $(this).data("option");
-		});
-
-		var first_option = $(".payment-option").first();
-		if (first_option.length) {
-			first_option.addClass("border-primary selected");
-			selected_option = first_option.data("option");
-		}
-	}
-
-	function submit_payment() {
-		var order_id = $("#order-id").val();
-		var file_input = $("#payment-proof")[0];
-
-		if (!selected_option) {
-			show_error(__("Please select a payment method."));
-			return;
-		}
-
-		if (!file_input.files || !file_input.files[0]) {
-			show_error(__("Please upload a payment confirmation document."));
-			return;
-		}
-
-		var file = file_input.files[0];
-
-		if (file.size > 5 * 1024 * 1024) {
-			show_error(__("File size must be less than 5MB."));
-			return;
-		}
-
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			var base64_content = e.target.result.split(",")[1];
-
-			show_loading(true);
-			hide_messages();
-
-			frappe.call({
-				type: "POST",
-				method: "custom_webshop.api.payment.confirm_payment",
-				args: {
-					order_id: order_id,
-					payment_method: selected_option,
-					filename: file.name,
-					file_content: base64_content
-				},
-				callback: function(r) {
-					show_loading(false);
-
-					if (r.exc) {
-						var msg = "";
-						if (r._server_messages) {
-							try {
-								msg = JSON.parse(r._server_messages || "[]").join("<br>");
-							} catch (e) {
-								msg = r._server_messages;
-							}
-						}
-						show_error(msg || __("Something went wrong. Please try again."));
-					} else if (r.message && r.message.success) {
-						show_success(__("Payment confirmation submitted successfully. Redirecting..."));
-						setTimeout(function() {
-							window.location.href = "/orders/" + encodeURIComponent(order_id);
-						}, 2000);
-					} else {
-						show_error((r.message && r.message.error) || __("Something went wrong. Please try again."));
-					}
-				},
-				error: function() {
-					show_loading(false);
-					show_error(__("Something went wrong. Please try again."));
-				}
-			});
-		};
-
-		reader.onerror = function() {
-			show_error(__("Failed to read the file. Please try again."));
-		};
-
-		reader.readAsDataURL(file);
-	}
-
-	function init() {
-		bind_payment_options();
-		$("#payment-form").on("submit", function(e) {
-			e.preventDefault();
-			submit_payment();
-			return false;
-		});
-	}
-
-	if (window.frappe && frappe.ready) {
-		frappe.ready(init);
-	} else {
-		$(document).ready(init);
-	}
-})();
-</script>
-{% endblock %}
+    <script src="/assets/custom_webshop/js/store.js"></script>
+    <script src="/assets/custom_webshop/js/page-payment.js"></script>
+</body>
+</html>

@@ -94,6 +94,24 @@ def custom_sign_up(
     return 1, {"status": "created", "message": _("Account created successfully! Please log in.")}
 
 
+def _default_customer_group():
+	"""Return a non-group Customer Group (global default may be a group node)."""
+	if frappe.db.exists("Customer Group", "Individual"):
+		return "Individual"
+	group = frappe.db.get_default("customer_group") or "Individual"
+	if frappe.db.get_value("Customer Group", group, "is_group"):
+		group = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+	return group or "Individual"
+
+
+def _default_territory():
+	"""Return a non-group Territory (global default may be a group node)."""
+	territory = frappe.db.get_default("territory") or "Egypt"
+	if frappe.db.get_value("Territory", territory, "is_group"):
+		territory = frappe.db.get_value("Territory", {"is_group": 0}, "name")
+	return territory or "Egypt"
+
+
 def _create_new_customer_for_user(user):
     """Create a new Customer, Contact, and Portal User for a fresh signup.
     If a Customer with the same name already exists, link to it instead."""
@@ -112,6 +130,8 @@ def _create_new_customer_for_user(user):
             {
                 "customer_name": customer_name,
                 "customer_type": "Individual",
+                "customer_group": _default_customer_group(),
+                "territory": _default_territory(),
             }
         )
         customer.flags.ignore_mandatory = True

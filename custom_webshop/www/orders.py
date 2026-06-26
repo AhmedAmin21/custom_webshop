@@ -7,6 +7,22 @@ import frappe
 from frappe import _
 
 
+def _debug_log(message, data=None, hypothesis_id="H1"):
+	import json, time
+	try:
+		with open("/home/erpnext/frappe-bench/.cursor/debug-edf32e.log", "a") as f:
+			f.write(json.dumps({
+				"sessionId": "edf32e",
+				"location": "orders.py:get_context",
+				"message": message,
+				"data": data or {},
+				"timestamp": int(time.time() * 1000),
+				"hypothesisId": hypothesis_id,
+			}) + "\n")
+	except Exception:
+		pass
+
+
 def get_context(context):
 	context.no_cache = 1
 	context.show_sidebar = True
@@ -49,6 +65,10 @@ def get_context(context):
 		order.grand_total_formatted = frappe.format_value(
 			order.grand_total, {"fieldtype": "Currency", "options": order.currency}
 		)
+		# Serialize date for Jinja tojson in orders.html
+		if order.transaction_date:
+			order.transaction_date = str(order.transaction_date)
 
 	context.orders = orders
+	_debug_log("orders context built", {"count": len(orders), "sample_date": str(orders[0].transaction_date) if orders else None})
 	return context

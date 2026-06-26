@@ -387,7 +387,10 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 		quotation.delete()
 		quotation = None
 
-	set_cart_count(quotation)
+	if quotation:
+		set_cart_count(quotation)
+	elif hasattr(frappe.local, "cookie_manager"):
+		frappe.local.cookie_manager.set_cookie("cart_count", "0")
 
 	if cint(with_items):
 		context = get_cart_quotation(quotation)
@@ -405,7 +408,7 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 			),
 		}
 	else:
-		return {"name": quotation.name}
+		return {"name": quotation.name if quotation else ""}
 
 
 @frappe.whitelist()

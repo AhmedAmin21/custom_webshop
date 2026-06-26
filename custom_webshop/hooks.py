@@ -32,6 +32,9 @@ app_license = "mit"
 web_include_css = "/assets/custom_webshop/css/cart.css"
 web_include_js = "/assets/custom_webshop/js/custom_signup.js"
 
+# Custom shop pages — assets are loaded directly in each page's HTML,
+# not via web_include, to keep the custom pages fully standalone.
+
 # Custom signup form template
 signup_form_template = "custom_webshop/templates/signup.html"
 
@@ -207,6 +210,13 @@ custom_fields = {
 			"fieldtype": "Data",
 			"insert_after": "custom_vodafone_cash_number",
 		},
+		{
+			"fieldname": "custom_display_attributes",
+			"label": "Display Attributes (JSON)",
+			"fieldtype": "Small Text",
+			"insert_after": "custom_etisalat_cash_number",
+			"description": "JSON list of attribute names to show on the shop page carousels, in order. Managed by the admin panel.",
+		},
 	],
 	"Sales Order": [
 		{
@@ -233,7 +243,7 @@ override_whitelisted_methods = {
 website_path_resolver = "custom_webshop.path_resolver.custom_resolve_path"
 
 role_home_page = {
-	"Customer": "/all-products"
+	"Customer": "/shop"
 }
 
 override_doctype_class = {
@@ -243,7 +253,15 @@ override_doctype_class = {
 website_route_rules = [
 	{"from_route": "/orders", "to_route": "orders"},
 	{"from_route": "/orders/<path:name>", "to_route": "order", "defaults": {"doctype": "Sales Order", "parents": [{"label": "Orders", "route": "orders"}]}},
+	{"from_route": "/shop", "to_route": "shop"},
+	{"from_route": "/catalog", "to_route": "catalog"},
+	{"from_route": "/product", "to_route": "product"},
+	{"from_route": "/cart", "to_route": "cart"},
+	{"from_route": "/admin", "to_route": "admin"},
 ]
+
+# Default home page for all users
+home_page = "shop"
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

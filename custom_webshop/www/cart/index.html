@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNCLeaders | Cart</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+
+    <script>
+        window.FRAPPE_SESSION = {
+            user: "{{ session_user }}",
+            csrf_token: "{{ csrf_token }}",
+            is_guest: false
+        };
+        window.CART_BOOTSTRAP = {{ cart_bootstrap | safe }};
+    </script>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-left">
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-instagram icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-facebook-f icon-sm-fa"></i></a>
+                <a href="#" class="top-bar-link"><i class="fa-brands fa-whatsapp icon-sm-fa"></i></a>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-contact">sales@cncleaders.com <i data-lucide="mail" class="icon-sm"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/shop" class="logo" dir="ltr"><span class="logo-accent">CNC</span>Leaders</a>
+            <ul class="nav-links">
+                <li><a href="/shop" class="nav-link" data-i18n="nav_home">Home</a></li>
+                <li><a href="/catalog" class="nav-link" data-i18n="nav_catalog">All Products</a></li>
+                <li><a href="/orders" class="nav-link" data-i18n="nav_orders">Track Orders</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="nav-btn lang-toggle" id="lang-btn" title="Switch Language">
+                    <i data-lucide="globe"></i>
+                    <span id="lang-btn-text" style="font-size:0.85rem;font-weight:600;margin-left:4px;">AR</span>
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-btn">
+                    <i data-lucide="sun" class="icon-sun"></i>
+                    <i data-lucide="moon" class="icon-moon" style="display:none;"></i>
+                </button>
+                <button class="nav-btn cart-toggle-btn" id="cart-toggle-btn">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <a href="/me" class="nav-btn" title="My Account"><i data-lucide="user"></i></a>
+                <button class="nav-btn mobile-menu-btn" id="mobile-menu-btn" style="display:none;">
+                    <i data-lucide="menu" class="icon-menu"></i>
+                    <i data-lucide="x" class="icon-x" style="display:none;"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content" style="padding-top:80px;">
+        <section class="view-section active">
+            <div class="cart-page-layout">
+
+                <!-- Cart Items List -->
+                <div class="cart-items-panel">
+                    <h2 class="section-title" data-i18n="cart_selected">Your Selected Hardware</h2>
+                    <div class="cart-list" id="cart-page-list">
+                        <div style="padding:48px;text-align:center;color:var(--text-muted);" data-i18n="loading">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Order Summary & Checkout Form -->
+                <div class="cart-checkout-panel">
+                    <div class="checkout-summary-card">
+                        <h3 class="summary-title" data-i18n="cart_cost_structure">Order Cost Structure</h3>
+                        <div class="summary-row">
+                            <span data-i18n="cart_subtotal">Subtotal</span>
+                            <span id="cart-subtotal">—</span>
+                        </div>
+                        <div class="summary-row">
+                            <span data-i18n="cart_total_weight">Total Weight</span>
+                            <span id="cart-total-weight">—</span>
+                        </div>
+                        <div class="summary-row">
+                            <span data-i18n="cart_shipping">Shipping</span>
+                            <span id="cart-shipping">—</span>
+                        </div>
+                        <hr class="summary-divider">
+                        <div class="summary-row total-row">
+                            <span data-i18n="cart_total">Grand Total</span>
+                            <span id="cart-grandtotal">—</span>
+                        </div>
+                    </div>
+
+                    <div class="delivery-details-card">
+                        <h3 class="summary-title" data-i18n="cart_delivery">Delivery &amp; Shipping Address</h3>
+
+                        <!-- Shipping company + governorate -->
+                        <div class="form-group" id="shipping-company-group">
+                            <label for="shipping-company" data-i18n="cart_shipping_company">Shipping Company</label>
+                            <select id="shipping-company" class="form-input">
+                                <option value="" data-i18n="shipping_company_select">Select shipping company...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="shipping-dest-group">
+                            <label for="shipping-dest" data-i18n="shipping_destination">Shipping Destination (Governorate)</label>
+                            <select id="shipping-dest" class="form-input">
+                                <option value="" data-i18n="shipping_select">Select governorate...</option>
+                            </select>
+                        </div>
+
+                        <form id="checkout-delivery-form" class="delivery-form">
+                            <div class="form-group">
+                                <label for="cust-name" data-i18n="cart_name">Full Name / Company Name *</label>
+                                <input type="text" id="cust-name" required class="form-input" data-i18n-placeholder="cart_name_placeholder" placeholder="e.g. John Doe, Machining LLC">
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-phone" data-i18n="cart_phone">Contact Phone Number *</label>
+                                <input type="tel" id="cust-phone" required class="form-input" data-i18n-placeholder="cart_phone_placeholder" placeholder="e.g. +1 555-0199">
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-address" data-i18n="cart_address">Shipping Address *</label>
+                                <textarea id="cust-address" required class="form-input" rows="3" data-i18n-placeholder="cart_address_placeholder" placeholder="Street address, unit, city, state, zip code..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="cust-notes" data-i18n="cart_notes">Machining Details / Delivery Instructions</label>
+                                <textarea id="cust-notes" class="form-input" rows="2" data-i18n-placeholder="cart_notes_placeholder" placeholder="Notes (e.g. loading dock hours)"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-full checkout-submit-btn" id="place-order-btn" data-i18n="cart_proceed">
+                                Proceed to checkout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer blueprint-footer">
+        <div class="footer-grid blueprint-grid">
+            <div class="footer-column brand-col">
+                <a href="/shop" class="footer-logo blueprint-logo" dir="ltr"><span class="logo-accent">CNC</span>LEADERS</a>
+            </div>
+        </div>
+        <div class="footer-bottom blueprint-bottom">
+            <div class="footer-bottom-container"><p class="copyright-text">COPYRIGHT 2026 CNCLEADERS CORP.</p></div>
+            <div class="footer-signature">PRECISION ENGINEERED</div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer (mini) -->
+    <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Active Cart</h2>
+            <button class="close-drawer-btn" id="close-drawer-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="drawer-body" id="cart-drawer-body"></div>
+        <div class="drawer-footer">
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">View Full Cart</a>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/assets/custom_webshop/js/store.js"></script>
+    <script src="/assets/custom_webshop/js/page-cart.js"></script>
+</body>
+</html>
