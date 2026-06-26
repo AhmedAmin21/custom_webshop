@@ -12,6 +12,8 @@ const TRANSLATIONS = {
         home_shop_category_sub: "Swipe through certified high-precision parts by class",
         home_shop_attribute: "Shop by Attribute", home_shop_attribute_sub: "Browse products grouped by their attributes",
         filter_attribute: "Attribute",
+        home_shop_tool_family: "Shop by Tool Family", home_shop_tool_family_sub: "Browse products by cutting tool family",
+        filter_tool_family: "Tool Family", filter_material: "Material",
         home_trending: "Trending Equipment", home_trending_sub: "Most demanded components based on active CNC machining workshop configurations",
         home_shop_brand: "Shop by Certified Brand", home_shop_brand_sub: "Genuine mechanical components from authorized industrial manufacturers",
         filter_search: "Search", filter_search_placeholder: "Search by model or spec...",
@@ -58,6 +60,8 @@ const TRANSLATIONS = {
         home_shop_category_sub: "تصفح أجزاء عالية الدقة معتمدة حسب الفئة",
         home_shop_attribute: "تسوق حسب الخصائص", home_shop_attribute_sub: "تصفح المنتجات مجمعةً حسب خصائصها",
         filter_attribute: "الخصائص",
+        home_shop_tool_family: "تسوق حسب عائلة الأداة", home_shop_tool_family_sub: "تصفح المنتجات حسب عائلة أداة القطع",
+        filter_tool_family: "عائلة الأداة", filter_material: "الخامة",
         home_trending: "المعدات الشائعة",
         home_trending_sub: "المكونات الأكثر طلباً بناءً على تكوينات ورش الآلات النشطة", home_shop_brand: "تسوق حسب العلامة التجارية المعتمدة",
         home_shop_brand_sub: "مكونات ميكانيكية أصلية من الشركات المصنعة الصناعية المعتمدة", filter_search: "بحث",
@@ -98,6 +102,18 @@ const TRANSLATIONS = {
 };
 
 /* --------------------------------------------------------------------------
+   Material label map — mirrors item_parser.py MATERIAL_LABELS
+   -------------------------------------------------------------------------- */
+const MATERIAL_LABELS_JS = {
+    "C":   { en: "Carbide",                                 ar: "كربيد" },
+    "HSS": { en: "HSS",                                     ar: "صلب عالي السرعات" },
+    "TCT": { en: "TCT",                                     ar: "عود كربيد ملحوم في جسم صلب" },
+    "CW":  { en: "CW",                                      ar: "شفرات كربيد ملحومة فى جسم صلب" },
+    "CM":  { en: "CM",                                      ar: "كربيد يستخدم فى المعادن" },
+    "M&G": { en: "M&G",                                     ar: "رخام و زجاج" },
+};
+
+/* --------------------------------------------------------------------------
    Store — singleton state container
    -------------------------------------------------------------------------- */
 const Store = {
@@ -117,6 +133,15 @@ const Store = {
             str = str.replace(`{${k}}`, v);
         }
         return str;
+    },
+
+    /* ------------------------------------------------------------------
+       Material label helper
+       ------------------------------------------------------------------ */
+    materialLabel(code) {
+        const entry = MATERIAL_LABELS_JS[code];
+        if (!entry) return code;
+        return entry[this.lang] || entry["en"] || code;
     },
 
     /* ------------------------------------------------------------------

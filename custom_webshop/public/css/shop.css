@@ -825,8 +825,8 @@ body {
 }
 
 .filter-card {
-    margin-bottom: 24px;
-    padding-bottom: 20px;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
     border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -903,6 +903,30 @@ body {
     width: 16px;
     height: 16px;
     cursor: pointer;
+}
+
+.filter-view-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--primary-blue);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: var(--transition-fast);
+}
+.filter-view-more-btn:hover {
+    color: var(--primary-blue-hover);
+}
+.filter-collapse-extra {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .price-slider-container {

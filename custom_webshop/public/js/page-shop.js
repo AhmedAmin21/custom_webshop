@@ -289,34 +289,35 @@ function loadBrands() {
         .catch(() => {});
 }
 
-/* Load attribute carousels: one carousel per attribute (Colour, Size, …) */
-function loadAttributeCarousels() {
+/* Load tool-family carousels: one carousel per tool family (SEM, FEM, …) */
+function loadToolFamilyCarousels() {
     const container = document.getElementById("home-category-carousels");
     if (!container) return;
 
-    Store.call("custom_webshop.api.catalog.get_display_attributes")
-        .then(attrs => {
-            if (!attrs || !attrs.length) {
-                container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">No attributes found.</p>`;
+    Store.call("custom_webshop.api.catalog.get_display_tool_families")
+        .then(families => {
+            if (!families || !families.length) {
+                container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">No tool families found.</p>`;
                 return;
             }
 
             container.innerHTML = "";
 
-            const renderAttrCarousel = (attrName, products) => {
+            const renderFamilyCarousel = (familyName, products) => {
                 if (!products.length) return;
-                const trackId = `carousel-track-${attrName.replace(/\s+/g, "-")}`;
+                const safeId = familyName.replace(/[^a-zA-Z0-9]/g, "-");
+                const trackId = `carousel-track-${safeId}`;
                 const section = document.createElement("div");
                 section.className = "category-carousel-section";
                 section.innerHTML = `
                     <div class="category-carousel-header">
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <h3 class="carousel-title">${attrName}</h3>
-                            <a href="/catalog?attribute=${encodeURIComponent(attrName)}" class="carousel-view-all">View All</a>
+                            <h3 class="carousel-title">${familyName}</h3>
+                            <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">View More →</a>
                         </div>
                         <div class="carousel-nav">
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${attrName}',-1)"><i data-lucide="chevron-left"></i></button>
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${attrName}',1)"><i data-lucide="chevron-right"></i></button>
+                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)"><i data-lucide="chevron-left"></i></button>
+                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',1)"><i data-lucide="chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="category-carousel-track-wrapper">
@@ -328,27 +329,25 @@ function loadAttributeCarousels() {
                 if (window.lucide) lucide.createIcons({ nodes: [section] });
             };
 
-            // Fetch products for each attribute in parallel
-            const promises = attrs.map(attr =>
-                Store.call("webshop.webshop.api.get_product_filter_data", {
-                    query_args: JSON.stringify({
-                        attribute_filters: { [attr.attribute]: attr.values },
-                        field_filters: {},
-                        start: 0,
-                    })
-                }).then(data => ({ attr: attr.attribute, products: (data && data.items) || [] }))
-                  .catch(() => ({ attr: attr.attribute, products: [] }))
+            // Fetch products for each tool family in parallel (limited preview)
+            const promises = families.map(f =>
+                Store.call("custom_webshop.api.catalog.get_items_by_tool_family", {
+                    tool_family: f.tool_family,
+                    start: 0,
+                    page_length: 8,
+                }).then(data => ({ family: f.tool_family, products: (data && data.items) || [] }))
+                  .catch(() => ({ family: f.tool_family, products: [] }))
             );
 
             Promise.all(promises).then(results => {
-                results.forEach(r => renderAttrCarousel(r.attr, r.products));
+                results.forEach(r => renderFamilyCarousel(r.family, r.products));
             });
         })
         .catch(() => {});
 }
 
-window.scrollCarousel = function(attrName, dir) {
-    const track = document.getElementById(`carousel-track-${attrName.replace(/\s+/g, "-")}`);
+window.scrollCarousel = function(safeId, dir) {
+    const track = document.getElementById(`carousel-track-${safeId}`);
     if (!track) return;
     track.scrollBy({ left: dir * 300, behavior: "smooth" });
 };
@@ -422,8 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loadHomeProducts();
     // Load brands from dedicated API
     loadBrands();
-    // Load attribute-based carousels
-    loadAttributeCarousels();
+    // Load tool-family-based carousels
+    loadToolFamilyCarousels();
 
     // Check admin access after a tick
     setTimeout(checkAdminAccess, 500);

@@ -11,6 +11,10 @@ let catalogViewMode = "grid";
 let activeAttributeFilter = {};
 // Currently active brand filter: null = all brands, string = brand name
 let activeBrandFilter = null;
+// Currently active tool family filter: null or string e.g. "SEM"
+let activeToolFamilyFilter = null;
+// Currently active material filter: null or string e.g. "C"
+let activeMaterialFilter = null;
 
 function getCatalogQueryArgs(extraArgs = {}) {
     const field_filters = { ...(extraArgs.field_filters || {}) };
@@ -27,6 +31,8 @@ function getCatalogQueryArgs(extraArgs = {}) {
         start: 0,
         search: extraArgs.search || null,
         item_group: extraArgs.item_group || null,
+        tool_family: activeToolFamilyFilter || null,
+        material: activeMaterialFilter || null,
     };
 }
 
@@ -115,6 +121,51 @@ function renderCatalogGrid(products) {
     if (window.lucide) lucide.createIcons({ nodes: [grid] });
 }
 
+/* ── Shared: render a filter option list with "View More" collapse ──────── */
+const FILTER_VISIBLE_LIMIT = 6;
+
+/**
+ * Render radio-button options into `parentEl`, collapsing anything beyond
+ * FILTER_VISIBLE_LIMIT behind a "View More" toggle.
+ *
+ * @param {HTMLElement} parentEl   - The .filter-options div to populate.
+ * @param {string[]}    htmlItems  - Pre-built <label> HTML strings, one per option.
+ * @param {string}      groupName  - The radio `name` attribute (used as a unique key).
+ */
+function renderFilterOptions(parentEl, htmlItems, groupName) {
+    if (htmlItems.length <= FILTER_VISIBLE_LIMIT) {
+        parentEl.innerHTML = htmlItems.join("");
+        return;
+    }
+
+    const visible = htmlItems.slice(0, FILTER_VISIBLE_LIMIT);
+    const hidden  = htmlItems.slice(FILTER_VISIBLE_LIMIT);
+    const collapseId = `filter-more-${groupName}`;
+
+    parentEl.innerHTML =
+        visible.join("") +
+        `<div class="filter-collapse-extra" id="${collapseId}" style="display:none;">` +
+        hidden.join("") +
+        `</div>` +
+        `<button type="button" class="filter-view-more-btn" data-collapse="${collapseId}"
+            onclick="toggleFilterCollapse(this)">
+            View More <i data-lucide="chevron-down" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-left:3px;pointer-events:none;"></i>
+        </button>`;
+
+    if (window.lucide) lucide.createIcons({ nodes: [parentEl] });
+}
+
+window.toggleFilterCollapse = function(btn) {
+    const collapseEl = document.getElementById(btn.dataset.collapse);
+    if (!collapseEl) return;
+    const isOpen = collapseEl.style.display === "flex";
+    collapseEl.style.display = isOpen ? "none" : "flex";
+    btn.innerHTML = isOpen
+        ? `View More <i data-lucide="chevron-down" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-left:3px;pointer-events:none;"></i>`
+        : `View Less <i data-lucide="chevron-up"   style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-left:3px;pointer-events:none;"></i>`;
+    if (window.lucide) lucide.createIcons({ nodes: [btn] });
+};
+
 /* ── Build attribute filter sidebar ──────────────────────────────────────── */
 function buildAttributeFilters(attrs) {
     const container = document.getElementById("attribute-filters-container");
@@ -130,19 +181,25 @@ function buildAttributeFilters(attrs) {
         return `
         <div class="filter-card">
             <h3 class="filter-title">${attr.attribute}</h3>
-            <div class="filter-options">
-                <label class="checkbox-label">
-                    <input type="radio" name="attr-filter-${safeName}" value="all" checked onchange="onAttributeFilterChange('${attr.attribute}', 'all')">
-                    <span>All</span>
-                </label>
-                ${attr.values.map(v => `
-                <label class="checkbox-label">
-                    <input type="radio" name="attr-filter-${safeName}" value="${v}" onchange="onAttributeFilterChange('${attr.attribute}', '${v}')">
-                    <span>${v}</span>
-                </label>`).join("")}
-            </div>
+            <div class="filter-options" id="filter-opts-attr-${safeName}"></div>
         </div>`;
     }).join("");
+
+    attrs.forEach(attr => {
+        const safeName = attr.attribute.replace(/\s+/g, "-");
+        const optionsEl = document.getElementById(`filter-opts-attr-${safeName}`);
+        if (!optionsEl) return;
+        const allLabel = `<label class="checkbox-label">
+            <input type="radio" name="attr-filter-${safeName}" value="all" checked onchange="onAttributeFilterChange('${attr.attribute}', 'all')">
+            <span>All</span>
+        </label>`;
+        const valueLabels = attr.values.map(v => `
+            <label class="checkbox-label">
+                <input type="radio" name="attr-filter-${safeName}" value="${v}" onchange="onAttributeFilterChange('${attr.attribute}', '${v}')">
+                <span>${v}</span>
+            </label>`);
+        renderFilterOptions(optionsEl, [allLabel, ...valueLabels], `attr-${safeName}`);
+    });
 }
 
 /* ── Build brand filter sidebar ──────────────────────────────────────────── */
@@ -155,16 +212,18 @@ function buildBrandFilters(brands) {
         return;
     }
 
-    brandList.innerHTML = `
-        <label class="checkbox-label">
+    const brandItems = [
+        `<label class="checkbox-label">
             <input type="radio" name="brand-filter" value="all" checked onchange="onBrandFilterChange('all')">
             <span>All Brands</span>
-        </label>` +
-        brands.map(b => `
+        </label>`,
+        ...brands.map(b => `
         <label class="checkbox-label">
             <input type="radio" name="brand-filter" value="${Store.escapeAttr(b)}" onchange="onBrandFilterChange('${Store.escapeAttr(b)}')">
             <span>${b}</span>
-        </label>`).join("");
+        </label>`),
+    ];
+    renderFilterOptions(brandList, brandItems, "brand");
 }
 
 function loadBrandFilters(initialBrand) {
@@ -186,6 +245,75 @@ function loadBrandFilters(initialBrand) {
         });
 }
 
+/* ── Build tool-family filter sidebar ────────────────────────────────────── */
+function buildToolFamilyFilters(families, initialValue) {
+    const container = document.getElementById("tool-family-filters-container");
+    if (!container) return;
+
+    if (!families || !families.length) {
+        container.innerHTML = "";
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="filter-card">
+            <h3 class="filter-title">${Store.t("filter_tool_family")}</h3>
+            <div class="filter-options" id="filter-opts-tool-family"></div>
+        </div>`;
+
+    const tfItems = [
+        `<label class="checkbox-label">
+            <input type="radio" name="tool-family-filter" value="all" ${!initialValue ? "checked" : ""} onchange="onToolFamilyFilterChange('all')">
+            <span>All</span>
+        </label>`,
+        ...families.map(f => `
+        <label class="checkbox-label">
+            <input type="radio" name="tool-family-filter" value="${Store.escapeAttr(f.tool_family)}"
+                ${initialValue === f.tool_family ? "checked" : ""}
+                onchange="onToolFamilyFilterChange('${Store.escapeAttr(f.tool_family)}')">
+            <span>${f.tool_family}</span>
+        </label>`),
+    ];
+    const tfOptsEl = document.getElementById("filter-opts-tool-family");
+    if (tfOptsEl) renderFilterOptions(tfOptsEl, tfItems, "tool-family");
+}
+
+/* ── Build material filter sidebar ──────────────────────────────────────── */
+function buildMaterialFilters(materials, initialValue) {
+    const container = document.getElementById("material-filters-container");
+    if (!container) return;
+
+    if (!materials || !materials.length) {
+        container.innerHTML = "";
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="filter-card">
+            <h3 class="filter-title">${Store.t("filter_material")}</h3>
+            <div class="filter-options" id="filter-opts-material"></div>
+        </div>`;
+
+    const matItems = [
+        `<label class="checkbox-label">
+            <input type="radio" name="material-filter" value="all" ${!initialValue ? "checked" : ""} onchange="onMaterialFilterChange('all')">
+            <span>All</span>
+        </label>`,
+        ...materials.map(m => {
+            const label = Store.materialLabel(m.material);
+            return `
+        <label class="checkbox-label">
+            <input type="radio" name="material-filter" value="${Store.escapeAttr(m.material)}"
+                ${initialValue === m.material ? "checked" : ""}
+                onchange="onMaterialFilterChange('${Store.escapeAttr(m.material)}')">
+            <span>${label}</span>
+        </label>`;
+        }),
+    ];
+    const matOptsEl = document.getElementById("filter-opts-material");
+    if (matOptsEl) renderFilterOptions(matOptsEl, matItems, "material");
+}
+
 /* ── Attribute filter change → server re-fetch ────────────────────────────── */
 window.onAttributeFilterChange = function(attrName, value) {
     if (value === "all") {
@@ -198,6 +326,16 @@ window.onAttributeFilterChange = function(attrName, value) {
 
 window.onBrandFilterChange = function(value) {
     activeBrandFilter = value === "all" ? null : value;
+    loadCatalogProducts();
+};
+
+window.onToolFamilyFilterChange = function(value) {
+    activeToolFamilyFilter = value === "all" ? null : value;
+    loadCatalogProducts();
+};
+
+window.onMaterialFilterChange = function(value) {
+    activeMaterialFilter = value === "all" ? null : value;
     loadCatalogProducts();
 };
 
@@ -224,9 +362,29 @@ function loadCatalogProducts(queryArgs = {}) {
     const grid = document.getElementById("catalog-product-grid");
     if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);" data-i18n="loading">${Store.t("loading")}</div>`;
 
-    Store.call("webshop.webshop.api.get_product_filter_data", {
-        query_args: JSON.stringify(getCatalogQueryArgs(queryArgs))
-    }).then(data => {
+    const args = getCatalogQueryArgs(queryArgs);
+
+    // Use the custom endpoint when tool_family or material filters are active,
+    // because the standard webshop API has no item_name awareness.
+    const useCustomApi = !!(args.tool_family || args.material);
+
+    let apiCall;
+    if (useCustomApi) {
+        apiCall = Store.call("custom_webshop.api.catalog.get_catalog_products", {
+            tool_family: args.tool_family || null,
+            material: args.material || null,
+            attribute_filters: JSON.stringify(args.attribute_filters || {}),
+            field_filters: JSON.stringify(args.field_filters || {}),
+            search: args.search || null,
+            start: args.start || 0,
+        });
+    } else {
+        apiCall = Store.call("webshop.webshop.api.get_product_filter_data", {
+            query_args: JSON.stringify(args),
+        });
+    }
+
+    apiCall.then(data => {
         allProducts = (data && data.items) ? data.items : [];
         applyLocalFilters();
     }).catch(err => {
@@ -302,43 +460,56 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const allBrandRadio = document.querySelector('input[name="brand-filter"][value="all"]');
         if (allBrandRadio) allBrandRadio.checked = true;
+        const allTfRadio = document.querySelector('input[name="tool-family-filter"][value="all"]');
+        if (allTfRadio) allTfRadio.checked = true;
+        const allMatRadio = document.querySelector('input[name="material-filter"][value="all"]');
+        if (allMatRadio) allMatRadio.checked = true;
         activeAttributeFilter = {};
         activeBrandFilter = null;
+        activeToolFamilyFilter = null;
+        activeMaterialFilter = null;
         loadCatalogProducts({});
     });
-
-    // Load attribute filter options from API (sidebar structure, once)
-    Store.call("custom_webshop.api.catalog.get_item_attributes")
-        .then(attrs => buildAttributeFilters(attrs))
-        .catch(() => {});
 
     // Read URL params for initial filters
     const urlParams = new URLSearchParams(window.location.search);
     const itemGroup = urlParams.get("item_group");
-    const attrName = urlParams.get("attribute");
+    const attrName  = urlParams.get("attribute");
     const attrValue = urlParams.get("value");
-    const brand = urlParams.get("brand");
+    const brand     = urlParams.get("brand");
+    const toolFamily = urlParams.get("tool_family");
+    const material   = urlParams.get("material");
 
     const queryArgs = {};
     if (itemGroup) queryArgs.item_group = itemGroup;
-    if (attrName && attrValue) {
-        activeAttributeFilter[attrName] = [attrValue];
-    }
-    if (brand) {
-        activeBrandFilter = brand;
-    }
+    if (attrName && attrValue) activeAttributeFilter[attrName] = [attrValue];
+    if (brand)       activeBrandFilter       = brand;
+    if (toolFamily)  activeToolFamilyFilter  = toolFamily;
+    if (material)    activeMaterialFilter    = material;
 
-    loadBrandFilters(brand);
-
-    // Pre-select the attribute radio after the sidebar is built
-    if (attrName && attrValue) {
-        // Wait a tick for buildAttributeFilters to finish
-        setTimeout(() => {
+    // Load sidebar filter panels in parallel
+    Promise.all([
+        Store.call("custom_webshop.api.catalog.get_item_attributes"),
+        Store.call("custom_webshop.api.catalog.get_all_tool_families"),
+        Store.call("custom_webshop.api.catalog.get_all_materials"),
+        Store.call("custom_webshop.api.catalog.get_brands"),
+    ]).then(([attrs, families, materials, brandRows]) => {
+        buildToolFamilyFilters(families || [], toolFamily);
+        buildMaterialFilters(materials || [], material);
+        buildAttributeFilters(attrs || []);
+        buildBrandFilters((brandRows || []).map(r => r.brand).filter(Boolean));
+        if (brand) {
+            activeBrandFilter = brand;
+            const radio = document.querySelector(`input[name="brand-filter"][value="${brand}"]`);
+            if (radio) radio.checked = true;
+        }
+        // Pre-select attribute radio
+        if (attrName && attrValue) {
             const safeName = attrName.replace(/\s+/g, "-");
             const radio = document.querySelector(`input[name="attr-filter-${safeName}"][value="${attrValue}"]`);
             if (radio) radio.checked = true;
-        }, 100);
-    }
+        }
+    }).catch(() => {});
 
     loadCatalogProducts(queryArgs);
 });

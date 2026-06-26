@@ -19,8 +19,9 @@ function initAdminTabs() {
             const panel = document.getElementById(`admin-tab-${tab}`);
             if (panel) panel.classList.add("active");
 
-            if (tab === "slideshow") loadAdminSlides();
-            if (tab === "attributes") loadAdminAttributes();
+            if (tab === "slideshow")   loadAdminSlides();
+            if (tab === "attributes")  loadAdminAttributes();
+            if (tab === "toolfamilies") loadAdminToolFamilies();
         });
     });
 }
@@ -286,6 +287,110 @@ function initAttributeTab() {
     });
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TOOL FAMILY DISPLAY MANAGER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let adminToolFamilyList = [];
+
+function renderAdminToolFamilyList() {
+    const container = document.getElementById("admin-tool-families-list");
+    if (!container) return;
+
+    if (!adminToolFamilyList.length) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No tool families found in your product catalog.</p>`;
+        return;
+    }
+
+    container.innerHTML = adminToolFamilyList.map((row, idx) => `
+        <div class="admin-attr-row" data-idx="${idx}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:6px;margin-bottom:8px;background:var(--bg-card,#fff);">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;">
+                <input type="checkbox" class="tf-enabled-cb" data-idx="${idx}" ${row.enabled ? "checked" : ""} style="width:16px;height:16px;accent-color:var(--primary-blue);">
+                <span style="font-weight:600;font-size:0.95rem;">${row.tool_family}</span>
+            </label>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+                <button class="btn btn-secondary btn-sm tf-move-btn" data-idx="${idx}" data-dir="up" title="Move Up" ${idx === 0 ? "disabled" : ""}>
+                    <i data-lucide="arrow-up" style="width:14px;height:14px;pointer-events:none;"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm tf-move-btn" data-idx="${idx}" data-dir="down" title="Move Down" ${idx === adminToolFamilyList.length - 1 ? "disabled" : ""}>
+                    <i data-lucide="arrow-down" style="width:14px;height:14px;pointer-events:none;"></i>
+                </button>
+            </div>
+        </div>`).join("");
+
+    if (window.lucide) lucide.createIcons({ nodes: [container] });
+
+    container.querySelectorAll(".tf-enabled-cb").forEach(cb => {
+        cb.addEventListener("change", () => {
+            adminToolFamilyList[parseInt(cb.dataset.idx, 10)].enabled = cb.checked;
+        });
+    });
+
+    container.querySelectorAll(".tf-move-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const i = parseInt(btn.dataset.idx, 10);
+            const newIdx = btn.dataset.dir === "up" ? i - 1 : i + 1;
+            if (newIdx < 0 || newIdx >= adminToolFamilyList.length) return;
+            [adminToolFamilyList[i], adminToolFamilyList[newIdx]] = [adminToolFamilyList[newIdx], adminToolFamilyList[i]];
+            renderAdminToolFamilyList();
+        });
+    });
+}
+
+function loadAdminToolFamilies() {
+    const container = document.getElementById("admin-tool-families-list");
+    if (container) container.innerHTML = `<p style="color:var(--text-muted);">Loading…</p>`;
+
+    Promise.all([
+        Store.call("custom_webshop.api.catalog.get_all_tool_families"),
+        Store.call("custom_webshop.api.catalog.get_display_tool_families"),
+    ]).then(([allFamilies, displayFamilies]) => {
+        const displayNames = (displayFamilies || []).map(f => f.tool_family);
+        const displaySet   = new Set(displayNames);
+        const orderMap     = {};
+        displayNames.forEach((n, i) => { orderMap[n] = i; });
+
+        const inDisplay = (allFamilies || [])
+            .filter(f => displaySet.has(f.tool_family))
+            .sort((a, b) => orderMap[a.tool_family] - orderMap[b.tool_family])
+            .map(f => ({ ...f, enabled: true }));
+
+        const notInDisplay = (allFamilies || [])
+            .filter(f => !displaySet.has(f.tool_family))
+            .map(f => ({ ...f, enabled: false }));
+
+        adminToolFamilyList = [...inDisplay, ...notInDisplay];
+        renderAdminToolFamilyList();
+    }).catch(() => {
+        if (container) container.innerHTML = `<p style="color:#EF4444;">Failed to load tool families.</p>`;
+    });
+}
+
+function initToolFamilyTab() {
+    const saveBtn = document.getElementById("save-tool-families-btn");
+    if (!saveBtn) return;
+
+    saveBtn.addEventListener("click", () => {
+        const enabledNames = adminToolFamilyList.filter(f => f.enabled).map(f => f.tool_family);
+        const statusEl = document.getElementById("save-tool-families-status");
+        saveBtn.disabled = true;
+        if (statusEl) statusEl.textContent = "Saving…";
+
+        Store.call("custom_webshop.api.catalog.save_display_tool_families", {
+            tool_family_names: JSON.stringify(enabledNames),
+        }).then(() => {
+            Store.toast("Tool family display order saved!", "success");
+            if (statusEl) statusEl.textContent = "Saved.";
+        }).catch(err => {
+            Store.toast(err.message || Store.t("error_generic"), "error");
+            if (statusEl) statusEl.textContent = "Error saving.";
+        }).finally(() => {
+            saveBtn.disabled = false;
+            setTimeout(() => { if (statusEl) statusEl.textContent = ""; }, 3000);
+        });
+    });
+}
+
 /* ── Entry point ─────────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
     Store.init();
@@ -294,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initAdminSlideForm();
     initSlidePreview();
     initAttributeTab();
+    initToolFamilyTab();
     // Load data for the default (first) tab
     loadAdminSlides();
 });

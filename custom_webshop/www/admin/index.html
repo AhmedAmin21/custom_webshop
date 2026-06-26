@@ -91,6 +91,7 @@
                 <ul class="admin-menu">
                     <li><a href="#" class="admin-menu-link active" data-tab="slideshow">Slide Customizer</a></li>
                     <li><a href="#" class="admin-menu-link" data-tab="attributes">Attribute Display</a></li>
+                    <li><a href="#" class="admin-menu-link" data-tab="toolfamilies">Tool Family Display</a></li>
                 </ul>
             </div>
 
@@ -192,6 +193,27 @@
                                 <i data-lucide="save" class="btn-icon"></i> Save Display Order
                             </button>
                             <span id="save-attributes-status" style="font-size:0.85rem;color:var(--text-muted);"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Tool Family Display Manager -->
+                <div class="admin-tab-content" id="admin-tab-toolfamilies">
+                    <div class="inventory-table-card">
+                        <div class="card-header-flex">
+                            <h3>Home Page Tool Family Carousels</h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Select which tool families appear on the home page and set their display order. Unchecked families are hidden from the shop carousels.</p>
+                        </div>
+
+                        <div id="admin-tool-families-list" style="margin:16px 0;">
+                            <p style="color:var(--text-muted);">Loading tool families…</p>
+                        </div>
+
+                        <div style="display:flex;gap:12px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border-subtle);">
+                            <button class="btn btn-primary" id="save-tool-families-btn" style="padding:10px 24px;">
+                                <i data-lucide="save" class="btn-icon"></i> Save Display Order
+                            </button>
+                            <span id="save-tool-families-status" style="font-size:0.85rem;color:var(--text-muted);"></span>
                         </div>
                     </div>
                 </div>
