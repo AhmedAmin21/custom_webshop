@@ -388,17 +388,25 @@ def get_catalog_products(
 	start = int(start)
 	page_length = int(page_length)
 
-	# Build WHERE clauses for item_name-based filters
+	# Build WHERE clauses for item_name-based filters.
+	# Both tool_family and material accept comma-separated lists for OR logic
+	# (e.g. "SEM,FEM,EM") as well as single values.
 	name_clauses = []
 	params = []
 
 	if tool_family:
-		name_clauses.append("i.item_name LIKE %s")
-		params.append(build_tool_family_like_pattern(tool_family))
+		tf_list = [t.strip() for t in str(tool_family).split(",") if t.strip()]
+		if tf_list:
+			or_parts = " OR ".join(["i.item_name LIKE %s"] * len(tf_list))
+			name_clauses.append(f"({or_parts})")
+			params.extend([build_tool_family_like_pattern(tf) for tf in tf_list])
 
 	if material:
-		name_clauses.append("i.item_name LIKE %s")
-		params.append(build_material_like_pattern(material))
+		mat_list = [m.strip() for m in str(material).split(",") if m.strip()]
+		if mat_list:
+			or_parts = " OR ".join(["i.item_name LIKE %s"] * len(mat_list))
+			name_clauses.append(f"({or_parts})")
+			params.extend([build_material_like_pattern(m) for m in mat_list])
 
 	# Brand field filter
 	brand_clause = ""

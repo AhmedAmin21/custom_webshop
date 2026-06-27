@@ -246,7 +246,8 @@ function loadBrandFilters(initialBrand) {
 }
 
 /* ── Build tool-family filter sidebar ────────────────────────────────────── */
-function buildToolFamilyFilters(families, initialValue) {
+// initialValues: null | string (single) | comma-separated string (multi)
+function buildToolFamilyFilters(families, initialValues) {
     const container = document.getElementById("tool-family-filters-container");
     if (!container) return;
 
@@ -254,6 +255,12 @@ function buildToolFamilyFilters(families, initialValue) {
         container.innerHTML = "";
         return;
     }
+
+    // Build a Set of pre-selected values for fast lookup
+    const preSelected = new Set(
+        initialValues ? initialValues.split(",").map(v => v.trim().toUpperCase()) : []
+    );
+    const hasSelection = preSelected.size > 0;
 
     container.innerHTML = `
         <div class="filter-card">
@@ -263,23 +270,28 @@ function buildToolFamilyFilters(families, initialValue) {
 
     const tfItems = [
         `<label class="checkbox-label">
-            <input type="radio" name="tool-family-filter" value="all" ${!initialValue ? "checked" : ""} onchange="onToolFamilyFilterChange('all')">
+            <input type="checkbox" name="tool-family-filter" value="all" ${!hasSelection ? "checked" : ""}
+                onchange="onToolFamilyCheckboxChange(this)">
             <span>All</span>
         </label>`,
-        ...families.map(f => `
+        ...families.map(f => {
+            const val = Store.escapeAttr(f.tool_family);
+            const checked = preSelected.has(f.tool_family.toUpperCase()) ? "checked" : "";
+            return `
         <label class="checkbox-label">
-            <input type="radio" name="tool-family-filter" value="${Store.escapeAttr(f.tool_family)}"
-                ${initialValue === f.tool_family ? "checked" : ""}
-                onchange="onToolFamilyFilterChange('${Store.escapeAttr(f.tool_family)}')">
+            <input type="checkbox" name="tool-family-filter" value="${val}" ${checked}
+                onchange="onToolFamilyCheckboxChange(this)">
             <span>${f.tool_family}</span>
-        </label>`),
+        </label>`;
+        }),
     ];
     const tfOptsEl = document.getElementById("filter-opts-tool-family");
     if (tfOptsEl) renderFilterOptions(tfOptsEl, tfItems, "tool-family");
 }
 
 /* ── Build material filter sidebar ──────────────────────────────────────── */
-function buildMaterialFilters(materials, initialValue) {
+// initialValues: null | string (single) | comma-separated string (multi)
+function buildMaterialFilters(materials, initialValues) {
     const container = document.getElementById("material-filters-container");
     if (!container) return;
 
@@ -287,6 +299,11 @@ function buildMaterialFilters(materials, initialValue) {
         container.innerHTML = "";
         return;
     }
+
+    const preSelected = new Set(
+        initialValues ? initialValues.split(",").map(v => v.trim().toUpperCase()) : []
+    );
+    const hasSelection = preSelected.size > 0;
 
     container.innerHTML = `
         <div class="filter-card">
@@ -296,16 +313,18 @@ function buildMaterialFilters(materials, initialValue) {
 
     const matItems = [
         `<label class="checkbox-label">
-            <input type="radio" name="material-filter" value="all" ${!initialValue ? "checked" : ""} onchange="onMaterialFilterChange('all')">
+            <input type="checkbox" name="material-filter" value="all" ${!hasSelection ? "checked" : ""}
+                onchange="onMaterialCheckboxChange(this)">
             <span>All</span>
         </label>`,
         ...materials.map(m => {
+            const val = Store.escapeAttr(m.material);
+            const checked = preSelected.has(m.material.toUpperCase()) ? "checked" : "";
             const label = Store.materialLabel(m.material);
             return `
         <label class="checkbox-label">
-            <input type="radio" name="material-filter" value="${Store.escapeAttr(m.material)}"
-                ${initialValue === m.material ? "checked" : ""}
-                onchange="onMaterialFilterChange('${Store.escapeAttr(m.material)}')">
+            <input type="checkbox" name="material-filter" value="${val}" ${checked}
+                onchange="onMaterialCheckboxChange(this)">
             <span>${label}</span>
         </label>`;
         }),
@@ -329,11 +348,62 @@ window.onBrandFilterChange = function(value) {
     loadCatalogProducts();
 };
 
+// Collect all checked Tool Family checkboxes and rebuild the active filter string.
+window.onToolFamilyCheckboxChange = function(changedBox) {
+    const allBox = document.querySelector('input[name="tool-family-filter"][value="all"]');
+
+    if (changedBox.value === "all") {
+        // "All" toggled — uncheck every specific option
+        document.querySelectorAll('input[name="tool-family-filter"]').forEach(cb => {
+            cb.checked = cb.value === "all" ? changedBox.checked : false;
+        });
+    } else {
+        // Specific option toggled — uncheck "All"
+        if (allBox) allBox.checked = false;
+    }
+
+    const checked = [...document.querySelectorAll('input[name="tool-family-filter"]:checked')]
+        .map(cb => cb.value)
+        .filter(v => v !== "all");
+
+    activeToolFamilyFilter = checked.length ? checked.join(",") : null;
+
+    // If nothing is checked, restore "All"
+    if (!activeToolFamilyFilter && allBox) allBox.checked = true;
+
+    loadCatalogProducts();
+};
+
+// Kept for backward compat (single-value callers)
 window.onToolFamilyFilterChange = function(value) {
     activeToolFamilyFilter = value === "all" ? null : value;
     loadCatalogProducts();
 };
 
+// Collect all checked Material checkboxes and rebuild the active filter string.
+window.onMaterialCheckboxChange = function(changedBox) {
+    const allBox = document.querySelector('input[name="material-filter"][value="all"]');
+
+    if (changedBox.value === "all") {
+        document.querySelectorAll('input[name="material-filter"]').forEach(cb => {
+            cb.checked = cb.value === "all" ? changedBox.checked : false;
+        });
+    } else {
+        if (allBox) allBox.checked = false;
+    }
+
+    const checked = [...document.querySelectorAll('input[name="material-filter"]:checked')]
+        .map(cb => cb.value)
+        .filter(v => v !== "all");
+
+    activeMaterialFilter = checked.length ? checked.join(",") : null;
+
+    if (!activeMaterialFilter && allBox) allBox.checked = true;
+
+    loadCatalogProducts();
+};
+
+// Kept for backward compat
 window.onMaterialFilterChange = function(value) {
     activeMaterialFilter = value === "all" ? null : value;
     loadCatalogProducts();
@@ -460,10 +530,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const allBrandRadio = document.querySelector('input[name="brand-filter"][value="all"]');
         if (allBrandRadio) allBrandRadio.checked = true;
-        const allTfRadio = document.querySelector('input[name="tool-family-filter"][value="all"]');
-        if (allTfRadio) allTfRadio.checked = true;
-        const allMatRadio = document.querySelector('input[name="material-filter"][value="all"]');
-        if (allMatRadio) allMatRadio.checked = true;
+        // Tool family: uncheck all specific options, check "All"
+        document.querySelectorAll('input[name="tool-family-filter"]').forEach(cb => {
+            cb.checked = cb.value === "all";
+        });
+        // Material: uncheck all specific options, check "All"
+        document.querySelectorAll('input[name="material-filter"]').forEach(cb => {
+            cb.checked = cb.value === "all";
+        });
         activeAttributeFilter = {};
         activeBrandFilter = null;
         activeToolFamilyFilter = null;
@@ -471,21 +545,31 @@ document.addEventListener("DOMContentLoaded", () => {
         loadCatalogProducts({});
     });
 
-    // Read URL params for initial filters
+    // Read URL params for initial filters.
+    // Singular params (tool_family, material) = single-value sidebar filters.
+    // Plural params (tool_families, materials) = comma-separated multi-value
+    // deep links from the "Shop by Material" cards on the home page.
     const urlParams = new URLSearchParams(window.location.search);
-    const itemGroup = urlParams.get("item_group");
-    const attrName  = urlParams.get("attribute");
-    const attrValue = urlParams.get("value");
-    const brand     = urlParams.get("brand");
-    const toolFamily = urlParams.get("tool_family");
-    const material   = urlParams.get("material");
+    const itemGroup   = urlParams.get("item_group");
+    const attrName    = urlParams.get("attribute");
+    const attrValue   = urlParams.get("value");
+    const brand       = urlParams.get("brand");
+    const toolFamily  = urlParams.get("tool_family");
+    const material    = urlParams.get("material");
+    const toolFamilies = urlParams.get("tool_families"); // e.g. "SEM,FEM,EM"
+    const materials    = urlParams.get("materials");     // e.g. "HSS,C,CW,TCT"
 
     const queryArgs = {};
     if (itemGroup) queryArgs.item_group = itemGroup;
     if (attrName && attrValue) activeAttributeFilter[attrName] = [attrValue];
-    if (brand)       activeBrandFilter       = brand;
-    if (toolFamily)  activeToolFamilyFilter  = toolFamily;
-    if (material)    activeMaterialFilter    = material;
+    if (brand) activeBrandFilter = brand;
+
+    // Multi-value params take precedence over single-value params
+    if (toolFamilies)     activeToolFamilyFilter = toolFamilies;
+    else if (toolFamily)  activeToolFamilyFilter = toolFamily;
+
+    if (materials)      activeMaterialFilter = materials;
+    else if (material)  activeMaterialFilter = material;
 
     // Load sidebar filter panels in parallel
     Promise.all([
@@ -493,9 +577,13 @@ document.addEventListener("DOMContentLoaded", () => {
         Store.call("custom_webshop.api.catalog.get_all_tool_families"),
         Store.call("custom_webshop.api.catalog.get_all_materials"),
         Store.call("custom_webshop.api.catalog.get_brands"),
-    ]).then(([attrs, families, materials, brandRows]) => {
-        buildToolFamilyFilters(families || [], toolFamily);
-        buildMaterialFilters(materials || [], material);
+    ]).then(([attrs, families, mats, brandRows]) => {
+        // Pass the full active filter value (single or multi) so checkboxes
+        // can pre-tick every matching option on deep-link arrival.
+        const initTf  = activeToolFamilyFilter || null;
+        const initMat = activeMaterialFilter   || null;
+        buildToolFamilyFilters(families || [], initTf);
+        buildMaterialFilters(mats || [], initMat);
         buildAttributeFilters(attrs || []);
         buildBrandFilters((brandRows || []).map(r => r.brand).filter(Boolean));
         if (brand) {

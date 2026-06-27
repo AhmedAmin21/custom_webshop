@@ -168,7 +168,7 @@ function signupViaHook(email, fullName, pwd, redirectTo, mobile) {
     body.set("full_name", fullName);
     body.set("pwd", pwd);
     body.set("mobile_no", mobile);
-    if (redirectTo) body.set("redirect_to", redirectTo);
+    body.set("redirect_to", redirectTo || "");
 
     const token = (window.LOGIN_CONTEXT || {}).csrf_token ||
         (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || "";
