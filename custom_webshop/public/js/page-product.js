@@ -246,13 +246,14 @@ function renderRecommendedProducts(recommended) {
 
     section.style.display = "";
     grid.innerHTML = recommended.map(p => {
-        const pImg = p.website_item_thumbnail || "/assets/custom_webshop/images/placeholder.jpg";
+        const pImg = p.website_item_thumbnail || p.website_image || p.image
+            || "/assets/custom_webshop/images/placeholder.jpg";
         const pName = p.website_item_name || p.item_code || "";
         const pPrice = p.formatted_price || "—";
         const pHref = Store.productLink({ route: p.route, item_code: p.item_code, name: p.item_code });
         return `<div class="product-card">
             <div class="product-img-wrapper" onclick="window.location.href='${pHref}'">
-                <img src="${escapeHtml(pImg)}" alt="${escapeHtml(pName)}" class="product-img" loading="lazy">
+                <img src="${escapeHtml(pImg)}" alt="${escapeHtml(pName)}" class="product-img" loading="lazy" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.jpg';">
             </div>
             <div class="product-info">
                 <h4 class="product-name" onclick="window.location.href='${pHref}'">${escapeHtml(pName)}</h4>
