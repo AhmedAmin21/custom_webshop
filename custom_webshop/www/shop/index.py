@@ -10,7 +10,7 @@ def get_context(context):
     # Session info injected into page for JS consumption
     context.session_user = frappe.session.user
     context.is_guest = frappe.session.user == "Guest"
-    context.csrf_token = frappe.session.csrf_token
+    context.csrf_token = frappe.sessions.get_csrf_token()
 
     # Redirect guests to login if needed — shop page is guest-accessible
     # (products are public), so no redirect here

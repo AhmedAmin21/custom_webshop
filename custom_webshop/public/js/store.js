@@ -549,6 +549,18 @@ const Store = {
             this.isGuest = this.user === "Guest";
         }
 
+        // Fallback to Frappe's live global (injected per-response via base template)
+        if (!this.csrfToken && window.frappe && frappe.csrf_token) {
+            this.csrfToken = frappe.csrf_token;
+        }
+
+        // Refresh token when returning from desk or another tab
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && window.frappe && frappe.csrf_token) {
+                this.csrfToken = frappe.csrf_token;
+            }
+        });
+
         // Re-render lucide icons after page setup
         if (window.lucide) lucide.createIcons();
 

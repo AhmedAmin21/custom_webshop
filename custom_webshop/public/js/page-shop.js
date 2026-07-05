@@ -376,8 +376,9 @@ function loadSlides() {
 
 /* ── Load products from ERPNext ──────────────────────────────────────────── */
 function loadHomeProducts() {
-    Store.call("webshop.webshop.api.get_product_filter_data", {
-        query_args: JSON.stringify({ field_filters: {}, start: 0 })
+    Store.call("custom_webshop.api.catalog.get_catalog_products", {
+        start: 0,
+        page_length: 20
     }).then(data => {
         const products = (data && data.items) ? data.items : [];
         renderTrendingGrid(products);

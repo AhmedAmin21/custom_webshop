@@ -20,6 +20,6 @@ def get_context(context):
 
 	context.session_user = frappe.session.user
 	context.is_guest = False
-	context.csrf_token = frappe.session.csrf_token
+	context.csrf_token = frappe.sessions.get_csrf_token()
 
 	return context
