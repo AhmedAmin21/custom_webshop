@@ -74,11 +74,18 @@ function clearStatus() {
     });
 }
 
-function setLoading(btnId, loading) {
+function setButtonLoading(btnId, loading, loadingKey, defaultKey, iconName = "arrow-right") {
     const btn = document.getElementById(btnId);
     if (!btn) return;
     btn.disabled = loading;
-    btn.style.opacity = loading ? "0.7" : "1";
+    if (loading) {
+        const text = Store.t(loadingKey) || "Loading...";
+        btn.innerHTML = `<span class="auth-btn-spinner"></span><span>${Store.escapeHtml(text)}</span>`;
+    } else {
+        const text = Store.t(defaultKey) || "Submit";
+        btn.innerHTML = `<span data-i18n="${defaultKey}">${Store.escapeHtml(text)}</span><i data-lucide="${iconName}"></i>`;
+        if (window.lucide) lucide.createIcons({ nodes: [btn] });
+    }
 }
 
 /* ── LOGIN ───────────────────────────────────────────────────────────────── */
@@ -92,7 +99,7 @@ function handleLogin(e) {
     if (!email) { showStatus("Please enter your email address.", "error"); return; }
     if (!pwd) { showStatus("Please enter your password.", "error"); return; }
 
-    setLoading("login-submit-btn", true);
+    setButtonLoading("login-submit-btn", true, "auth_login_btn_loading", "auth_login_btn", "arrow-right");
 
     const body = new URLSearchParams();
     body.set("cmd", "login");
@@ -112,34 +119,23 @@ function handleLogin(e) {
     .then(res => res.json())
     .then(data => {
         const msg = data && data.message;
-        // #region agent log
-        Store.debugLog("page-login.js:handleLogin", "login response", {
-            message: msg,
-            hasRedirect: !!(data && data.redirect_to),
-            homePage: data && data.home_page,
-        }, "H1");
-        // #endregion
-
         // "Logged In" = System User success
         // "No App"    = Website User (Customer) success — NOT an error
         if (msg === "Logged In" || msg === "No App") {
             const target = resolveRedirect(data);
-            // #region agent log
-            Store.debugLog("page-login.js:handleLogin", "redirecting", { target, message: msg }, "H1");
-            // #endregion
             showStatus("Logged in! Redirecting…", "success");
             window.location.assign(target);
         } else if (data && data.exc) {
             showStatus(data.exc_type || data.message || "Invalid credentials.", "error");
-            setLoading("login-submit-btn", false);
+            setButtonLoading("login-submit-btn", false, "auth_login_btn_loading", "auth_login_btn", "arrow-right");
         } else {
             showStatus(String(msg) || "Invalid credentials. Please try again.", "error");
-            setLoading("login-submit-btn", false);
+            setButtonLoading("login-submit-btn", false, "auth_login_btn_loading", "auth_login_btn", "arrow-right");
         }
     })
     .catch(() => {
         showStatus("Connection error. Please try again.", "error");
-        setLoading("login-submit-btn", false);
+        setButtonLoading("login-submit-btn", false, "auth_login_btn_loading", "auth_login_btn", "arrow-right");
     });
 }
 
@@ -195,35 +191,27 @@ function submitSignup(email, fullName, pwd, redirectTo, mobile) {
         const status = Array.isArray(result) ? parseInt(result[0], 10) : 0;
         const msgObj = Array.isArray(result) ? result[1] : result;
         const msgText = (msgObj && (msgObj.message || msgObj)) || "";
-
-        // #region agent log
-        Store.debugLog("page-login.js:submitSignup", "signup response", {
-            status: String(status),
-            msg: String(msgText).slice(0, 120),
-        }, "H2");
-        // #endregion
+        const targetRedirect = (msgObj && msgObj.redirect_to) || redirectTo || resolveRedirect();
 
         if (status === 1) {
-            showStatus(String(msgText) || "Account created successfully! Please log in.", "success");
-            Store.toast(String(msgText) || "Account created! Please log in.", "success");
-            document.getElementById("signup-form")?.reset();
-            setLoading("signup-submit-btn", false);
-            setTimeout(() => { clearStatus(); switchTab("login"); }, 2000);
+            showStatus(String(msgText) || "Account created! Redirecting…", "success");
+            Store.toast(String(msgText) || "Account created! Redirecting…", "success");
+            window.location.assign(targetRedirect || "/shop");
         } else {
             showStatus(String(msgText) || "Signup failed. Please try again.", "error");
-            setLoading("signup-submit-btn", false);
+            setButtonLoading("signup-submit-btn", false, "auth_signup_btn_loading", "auth_signup_btn", "check-circle");
+            isSubmittingSignup = false;
             throw new Error(String(msgText) || "Signup failed");
         }
     });
 }
 
+let isSubmittingSignup = false;
+
 function handleSignup(e) {
     if (e) e.preventDefault();
+    if (isSubmittingSignup) return;
     clearStatus();
-
-    // #region agent log
-    Store.debugLog("page-login.js:handleSignup", "submit triggered", {}, "H4");
-    // #endregion
 
     const email = (document.getElementById("signup_email")?.value || "").trim();
     const fullName = (document.getElementById("signup_fullname")?.value || "").trim();
@@ -249,7 +237,8 @@ function handleSignup(e) {
         return;
     }
 
-    setLoading("signup-submit-btn", true);
+    isSubmittingSignup = true;
+    setButtonLoading("signup-submit-btn", true, "auth_signup_btn_loading", "auth_signup_btn", "check-circle");
 
     // Password strength check — same as custom_signup.js
     Store.call("frappe.core.doctype.user.user.test_password_strength", { new_password: pwd })
@@ -261,23 +250,20 @@ function handleSignup(e) {
                     (feedback.suggestions && feedback.suggestions[0]) ||
                     "Password is too weak";
                 showStatus(msg, "error");
-                setLoading("signup-submit-btn", false);
+                setButtonLoading("signup-submit-btn", false, "auth_signup_btn_loading", "auth_signup_btn", "check-circle");
+                isSubmittingSignup = false;
                 return;
             }
             return submitSignup(email, fullName, pwd, redirectTo, mobile);
         })
         .catch(() => {
-            // Policy might be disabled — submit anyway (custom_signup.js error callback)
+            // Policy might be disabled — submit anyway
             return submitSignup(email, fullName, pwd, redirectTo, mobile);
         })
         .catch(err => {
-            // #region agent log
-            Store.debugLog("page-login.js:handleSignup", "signup error", {
-                error: String(err.message || err).slice(0, 200),
-            }, "H2");
-            // #endregion
             showStatus(err.message || "Signup failed. Please try again.", "error");
-            setLoading("signup-submit-btn", false);
+            setButtonLoading("signup-submit-btn", false, "auth_signup_btn_loading", "auth_signup_btn", "check-circle");
+            isSubmittingSignup = false;
         });
 }
 
@@ -291,16 +277,16 @@ function handleForgot(e) {
         showStatus("Please enter a valid email address.", "error"); return;
     }
 
-    setLoading("forgot-submit-btn", true);
+    setButtonLoading("forgot-submit-btn", true, "auth_forgot_btn_loading", "auth_forgot_btn", "send");
 
     Store.call("frappe.core.doctype.user.user.reset_password", { user: email })
     .then(() => {
         showStatus("If that address is registered, a reset link has been sent.", "success");
-        setLoading("forgot-submit-btn", false);
+        setButtonLoading("forgot-submit-btn", false, "auth_forgot_btn_loading", "auth_forgot_btn", "send");
     })
     .catch(() => {
         showStatus("If that address is registered, a reset link has been sent.", "success");
-        setLoading("forgot-submit-btn", false);
+        setButtonLoading("forgot-submit-btn", false, "auth_forgot_btn_loading", "auth_forgot_btn", "send");
     });
 }
 
@@ -330,11 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
         signupForm.setAttribute("action", "#");
         signupForm.setAttribute("method", "post");
     }
-    // Fallback: direct button click (in case form submit is swallowed)
-    document.getElementById("signup-submit-btn")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        handleSignup(e);
-    });
 
     document.getElementById("forgot-form")?.addEventListener("submit", handleForgot);
 

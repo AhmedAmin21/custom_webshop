@@ -42,15 +42,40 @@ const TRANSLATIONS = {
         order_view: "View Order", order_date: "Date", order_total: "Total", order_status: "Status",
         auth_login_title: "Log in", auth_login_sub: "",
         auth_email: "E-mail Address", auth_password: "Password", auth_login_btn: "Authenticate",
+        auth_login_btn_loading: "Signing in...",
         auth_no_account: "No account?", auth_signup_link: "Create one",
         auth_signup_title: "New Account", auth_signup_sub: "Register for industrial product procurement.",
         auth_name: "Full Name / Company", auth_phone: "Mobile Number", auth_confirm_password: "Confirm Password",
-        auth_signup_btn: "Create Account", auth_has_account: "Already have an account?", auth_login_link: "Sign In",
+        auth_signup_btn: "Create Account",
+        auth_signup_btn_loading: "Creating Account...",
+        auth_has_account: "Already have an account?", auth_login_link: "Sign In",
+        auth_forgot_btn: "Send Reset Link",
+        auth_forgot_btn_loading: "Sending...",
         loading: "Loading...", error_generic: "Something went wrong. Please try again.",
         shipping_destination: "Shipping Destination (Governorate)", shipping_select: "Select governorate...",
         shipping_company_select: "Select shipping company...",
         cart_shipping_required: "Please select a shipping company and governorate.",
-        cart_delivery_required: "Please fill in your name, phone, and shipping address."
+        cart_delivery_required: "Please fill in your name, phone, and shipping address.",
+        stock_in: "In Stock",
+        stock_out: "Out of Stock",
+        stock_low: "Low Stock: Only {qty} left",
+        stock_backorder: "Available on backorder",
+        nav_search_placeholder: "Search cutting tools, part codes, specs...",
+        home_hero_browse: "Browse All Products",
+        home_hero_catalog: "Catalog",
+        home_hero_contact: "Contact Us",
+        certified_partner: "Certified Partner",
+        price_on_request: "Price on Request",
+        view_more: "View More",
+        filter_all: "All",
+        filter_all_brands: "All Brands",
+        filter_clear_all: "Clear All",
+        filter_view_more: "View More",
+        filter_view_less: "View Less",
+        filter_mobile_btn: "Filter Products",
+        filter_mobile_title: "Filters",
+        filter_active: "Active Filters:",
+        btn_apply_filters: "Show Results"
     },
     ar: {
         nav_home: "الرئيسية", nav_catalog: "جميع المنتجات", nav_orders: "تتبع الطلبات", nav_admin: "لوحة التحكم",
@@ -63,8 +88,8 @@ const TRANSLATIONS = {
         home_shop_tool_family: "تسوق حسب عائلة الأداة", home_shop_tool_family_sub: "تصفح المنتجات حسب عائلة أداة القطع",
         filter_tool_family: "عائلة الأداة", filter_material: "الخامة",
         home_trending: "المعدات الشائعة",
-        home_trending_sub: "المكونات الأكثر طلباً", home_shop_brand: "تسوق حسب العلامة التجارية المعتمدة",
-        home_shop_brand_sub: "مكونات أصلية من الشركات المصنعة الصناعية المعتمدة", filter_search: "بحث",
+        home_trending_sub: "المكونات الأكثر طلباً لورش ومصانع الـ CNC", home_shop_brand: "تسوق حسب العلامة التجارية المعتمدة",
+        home_shop_brand_sub: "مكونات وأدوات أصلية من الشركات المصنعة المعتمدة", filter_search: "بحث",
         filter_search_placeholder: "ابحث بالنموذج أو المواصفات...", filter_category: "الفئة", filter_stock: "حالة المخزون",
         filter_instock_only: "متوفر فقط", filter_max_price: "الحد الأقصى للسعر", filter_brand: "العلامة التجارية",
         btn_reset_filters: "إعادة ضبط المرشحات", catalog_sort: "ترتيب: ", sort_default: "الترتيب الافتراضي",
@@ -89,15 +114,40 @@ const TRANSLATIONS = {
         order_view: "عرض الطلب", order_date: "التاريخ", order_total: "الإجمالي", order_status: "الحالة",
         auth_login_title: "تسجيل الدخول", auth_login_sub: "",
         auth_email: "البريد الإلكتروني", auth_password: "كلمة المرور", auth_login_btn: "تسجيل الدخول",
+        auth_login_btn_loading: "جاري تسجيل الدخول...",
         auth_no_account: "ليس لديك حساب؟", auth_signup_link: "إنشاء حساب",
         auth_signup_title: "حساب جديد", auth_signup_sub: "سجل لشراء المنتجات الصناعية.",
         auth_name: "الاسم الكامل / الشركة", auth_phone: "رقم الموبايل", auth_confirm_password: "تأكيد كلمة المرور",
-        auth_signup_btn: "إنشاء حساب", auth_has_account: "هل لديك حساب بالفعل؟", auth_login_link: "تسجيل الدخول",
+        auth_signup_btn: "إنشاء حساب",
+        auth_signup_btn_loading: "جاري إنشاء الحساب...",
+        auth_has_account: "هل لديك حساب بالفعل؟", auth_login_link: "تسجيل الدخول",
+        auth_forgot_btn: "إرسال رابط إعادة التعيين",
+        auth_forgot_btn_loading: "جاري الإرسال...",
         loading: "جاري التحميل...", error_generic: "حدث خطأ. يرجى المحاولة مرة أخرى.",
         shipping_destination: "وجهة الشحن (المحافظة)", shipping_select: "اختر المحافظة...",
         shipping_company_select: "اختر شركة الشحن...",
         cart_shipping_required: "يرجى اختيار شركة الشحن والمحافظة.",
-        cart_delivery_required: "يرجى إدخال الاسم والهاتف وعنوان الشحن."
+        cart_delivery_required: "يرجى إدخال الاسم والهاتف وعنوان الشحن.",
+        stock_in: "متوفر بالمخزن",
+        stock_out: "نفذت الكمية",
+        stock_low: "متبقي كمية محدودة: فقط {qty}",
+        stock_backorder: "متاح للطلب المسبق",
+        nav_search_placeholder: "ابحث عن أدوات القطع، الأكواد، المواصفات...",
+        home_hero_browse: "تصفح جميع المنتجات",
+        home_hero_catalog: "الكاتلوج",
+        home_hero_contact: "تواصل معنا",
+        certified_partner: "شريك معتمد",
+        price_on_request: "السعر عند الطلب",
+        view_more: "عرض الكل",
+        filter_all: "الكل",
+        filter_all_brands: "جميع العلامات التجارية",
+        filter_clear_all: "مسح الكل",
+        filter_view_more: "عرض المزيد",
+        filter_view_less: "عرض أقل",
+        filter_mobile_btn: "تصفية المنتجات",
+        filter_mobile_title: "الفلاتر",
+        filter_active: "الفلاتر المطبقة:",
+        btn_apply_filters: "عرض النتائج"
     }
 };
 
@@ -169,6 +219,8 @@ const Store = {
         if (langBtnText) langBtnText.textContent = lang === "en" ? "AR" : "EN";
         // Update cart badge
         this.updateCartBadge();
+        // Dispatch global event for active page controllers to re-render dynamic content
+        window.dispatchEvent(new CustomEvent("cnc_language_changed", { detail: { lang } }));
     },
 
     /* ------------------------------------------------------------------
@@ -216,8 +268,14 @@ const Store = {
     productPrice(item) {
         if (!item) return "—";
         if (item.formatted_price) return item.formatted_price;
-        if (item.price_list_rate != null) return parseFloat(item.price_list_rate).toFixed(2);
-        if (item.price != null) return parseFloat(item.price).toFixed(2);
+        const rate = item.price_list_rate != null ? parseFloat(item.price_list_rate) : (item.price != null ? parseFloat(item.price) : null);
+        if (rate != null) {
+            if (rate <= 0) {
+                return this.lang === "ar" ? "السعر عند الطلب" : "Price on Request";
+            }
+            const numStr = rate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return this.lang === "ar" ? `${numStr} ج.م` : `${numStr} EGP`;
+        }
         return "—";
     },
 
@@ -335,27 +393,52 @@ const Store = {
 
         if (!mobileBtn || !navLinks) return;
 
-        mobileBtn.addEventListener("click", () => {
-            const isActive = navLinks.classList.toggle("mobile-active");
+        // Ensure mobile backdrop exists
+        let backdrop = document.getElementById("mobile-nav-backdrop");
+        if (!backdrop) {
+            backdrop = document.createElement("div");
+            backdrop.id = "mobile-nav-backdrop";
+            backdrop.className = "mobile-nav-backdrop";
+            document.body.appendChild(backdrop);
+        }
+
+        const openMenu = () => {
+            navLinks.classList.add("mobile-active");
+            backdrop.classList.add("active");
+            mobileBtn.setAttribute("aria-expanded", "true");
+            document.body.style.overflow = "hidden";
             const iconMenu = mobileBtn.querySelector(".icon-menu");
             const iconX = mobileBtn.querySelector(".icon-x");
-            if (isActive) {
-                if (iconMenu) iconMenu.style.display = "none";
-                if (iconX) iconX.style.display = "block";
+            if (iconMenu) iconMenu.style.display = "none";
+            if (iconX) iconX.style.display = "block";
+        };
+
+        const closeMenu = () => {
+            navLinks.classList.remove("mobile-active");
+            backdrop.classList.remove("active");
+            mobileBtn.setAttribute("aria-expanded", "false");
+            document.body.style.overflow = "";
+            const iconMenu = mobileBtn.querySelector(".icon-menu");
+            const iconX = mobileBtn.querySelector(".icon-x");
+            if (iconMenu) iconMenu.style.display = "block";
+            if (iconX) iconX.style.display = "none";
+        };
+
+        mobileBtn.setAttribute("aria-label", "Toggle navigation menu");
+        mobileBtn.setAttribute("aria-expanded", "false");
+
+        mobileBtn.addEventListener("click", () => {
+            if (navLinks.classList.contains("mobile-active")) {
+                closeMenu();
             } else {
-                if (iconMenu) iconMenu.style.display = "block";
-                if (iconX) iconX.style.display = "none";
+                openMenu();
             }
         });
 
+        backdrop.addEventListener("click", closeMenu);
+
         navLinks.querySelectorAll("a").forEach(link => {
-            link.addEventListener("click", () => {
-                navLinks.classList.remove("mobile-active");
-                const iconMenu = mobileBtn.querySelector(".icon-menu");
-                const iconX = mobileBtn.querySelector(".icon-x");
-                if (iconMenu) iconMenu.style.display = "block";
-                if (iconX) iconX.style.display = "none";
-            });
+            link.addEventListener("click", closeMenu);
         });
     },
 
@@ -366,6 +449,23 @@ const Store = {
             .replace(/'/g, "&#39;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
+    },
+
+    escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    },
+
+    stripHtml(html) {
+        if (!html) return "";
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return (tmp.textContent || tmp.innerText || "").trim();
     },
 
     /* ------------------------------------------------------------------

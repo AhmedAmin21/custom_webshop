@@ -52,7 +52,7 @@ def place_order_from_cart():
 	sales_order.payment_schedule = []
 
 	# Copy Governorate shipping fields from Quotation to Sales Order
-	for field in ("shipping_rule", "shipping_destination", "custom_manual_shipping_amount"):
+	for field in ("shipping_rule", "shipping_destination", "shipping_district", "custom_manual_shipping_amount"):
 		if quotation.get(field):
 			sales_order.set(field, quotation.get(field))
 

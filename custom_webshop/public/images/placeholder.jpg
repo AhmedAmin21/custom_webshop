@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="toolGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="50%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bgGrad)"/>
+  <g transform="translate(130, 70)">
+    <!-- Shank -->
+    <rect x="45" y="10" width="50" height="100" rx="3" fill="url(#toolGrad)" stroke="#64748B" stroke-width="3"/>
+    <!-- Neck -->
+    <path d="M45 110 L30 140 L110 140 L95 110 Z" fill="#94A3B8" stroke="#64748B" stroke-width="3"/>
+    <!-- Flutes Body -->
+    <rect x="30" y="140" width="80" height="85" rx="2" fill="url(#toolGrad)" stroke="#64748B" stroke-width="3"/>
+    <!-- Spiral Flutes -->
+    <path d="M30 155 Q70 170 110 155" stroke="#2563EB" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M30 180 Q70 195 110 180" stroke="#2563EB" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M30 205 Q70 220 110 205" stroke="#2563EB" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <!-- Tip -->
+    <path d="M30 225 L70 240 L110 225 Z" fill="#2563EB" stroke="#1D4ED8" stroke-width="2.5"/>
+  </g>
+  <text x="200" y="340" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="14" font-weight="700" fill="#475569" text-anchor="middle" letter-spacing="1.5">CNC LEADERS</text>
+  <text x="200" y="362" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="12" font-weight="500" fill="#94A3B8" text-anchor="middle">Industrial Tooling</text>
+</svg>

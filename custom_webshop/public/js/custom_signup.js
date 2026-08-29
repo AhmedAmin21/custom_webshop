@@ -1,4 +1,8 @@
 frappe.ready(function () {
+    // If the custom login page controller (page-login.js) is active, let it handle signup
+    if (window.LOGIN_CONTEXT) {
+        return;
+    }
     console.log("[custom_webshop] custom_signup.js loaded");
 
     function bind_custom_signup_handler() {

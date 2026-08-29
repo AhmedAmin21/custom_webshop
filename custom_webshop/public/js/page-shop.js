@@ -9,30 +9,44 @@ let slides = [];
 let currentSlideIndex = 0;
 let slideshowTimer = null;
 
-/* ── Default fallback slides (used until server data loads) ──────────────── */
-const DEFAULT_SLIDES = [
+/* ── Default fallback slides (bilingual support) ─────────────────────────── */
+const DEFAULT_SLIDES_EN = [
     {
         eyebrow: "PRECISION CNC ENGINEERING",
-        title: "Industrial Components built for micro-tolerance performance",
-        subtitle: "Direct distributor of high-torque spindle systems, premium linear rails, high-resolution stepper systems, and carbide tooling. ERPNext Synced.",
+        title: "Industrial Components Built for Micro-Tolerance Performance",
+        subtitle: "Direct distributor of solid carbide cutting tools, high-torque spindle systems, and precision motion components.",
         link: "/catalog",
-        image: "/assets/custom_webshop/images/cnc_spindle_motor.jpg"
+        image: "/assets/custom_webshop/images/assets/Aluminum%20and%20metal.jpeg"
     },
     {
-        eyebrow: "MOTION CONTROL TELEMETRY",
-        title: "Linear Motion Guides & Precision Ball Screws",
-        subtitle: "H Class GCr15 carbon steel rails with heavy duty flanged blocks. Low axial backlash SFU actuators.",
-        link: "/catalog?item_group=Linear+Guides",
-        image: "/assets/custom_webshop/images/linear_guide_rail.jpg"
-    },
-    {
-        eyebrow: "HARDENED ROTARY CUTTERS",
-        title: "Solid Carbide Spiral End Mill Kits",
-        subtitle: "AlTiN nano-blue coated 4-flute routing bits. Resists friction and high thermal loads up to 55 HRC.",
-        link: "/catalog?item_group=Carbide+Tooling",
-        image: "/assets/custom_webshop/images/carbide_end_mills.jpg"
+        eyebrow: "HIGH-PERFORMANCE TOOLING",
+        title: "Solid Carbide Spiral End Mills & Router Bits",
+        subtitle: "AlTiN nano-coated 1-flute to 4-flute cutting tools for aluminum, wood, acrylic, and composite materials.",
+        link: "/catalog?tool_families=SEM,EM,FEM",
+        image: "/assets/custom_webshop/images/assets/Wood%20and%20mdf.jpeg"
     }
 ];
+
+const DEFAULT_SLIDES_AR = [
+    {
+        eyebrow: "هندسة وحلول CNC فائقة الدقة",
+        title: "أدوات قطع ومكونات صناعية مصممة لأعلى كفاءة تشغيل",
+        subtitle: "الموزع المعتمد لبناط الراوتر الكاربيد، أدوات التفريز، ومستلزمات ماكينات الـ CNC ذات الجودة العالية.",
+        link: "/catalog",
+        image: "/assets/custom_webshop/images/assets/Aluminum%20and%20metal.jpeg"
+    },
+    {
+        eyebrow: "أدوات قطع كاربيد متطورة",
+        title: "بناط تفريز وأدوات توجيه كاربيد عالية التحمل",
+        subtitle: "تشكيلة واسعة من بناط الألومنيوم والأخشاب والرخام بمختلف الأقطار والمواصفات المعتمدة.",
+        link: "/catalog?tool_families=SEM,EM,FEM",
+        image: "/assets/custom_webshop/images/assets/Wood%20and%20mdf.jpeg"
+    }
+];
+
+function getDefaultSlides() {
+    return Store.lang === "ar" ? DEFAULT_SLIDES_AR : DEFAULT_SLIDES_EN;
+}
 
 /* ── Hero Canvas Toolpath ────────────────────────────────────────────────── */
 function initToolpathCanvas() {
@@ -73,7 +87,27 @@ function initToolpathCanvas() {
         }
     }
 
+    let isVisible = true;
+    let animFrameId = null;
+
+    if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                isVisible = entry.isIntersecting;
+                if (isVisible && !animFrameId) {
+                    animFrameId = requestAnimationFrame(animate);
+                }
+            });
+        }, { threshold: 0.05 });
+        const heroEl = document.getElementById("hero-slider-container") || canvas;
+        observer.observe(heroEl);
+    }
+
     function animate() {
+        if (!isVisible) {
+            animFrameId = null;
+            return;
+        }
         ctx.clearRect(0, 0, width, height);
         drawGrid();
         const targetX = mouse.active ? mouse.x : width / 2 + Math.sin(Date.now() / 1500) * (width / 4);
@@ -91,9 +125,9 @@ function initToolpathCanvas() {
             ctx.lineWidth = 2;
             ctx.stroke();
         }
-        requestAnimationFrame(animate);
+        animFrameId = requestAnimationFrame(animate);
     }
-    animate();
+    animFrameId = requestAnimationFrame(animate);
 }
 
 function updateFloatingGCode(x, y) {
@@ -154,7 +188,7 @@ function renderHeroSlides() {
     wrapper.innerHTML = "";
     dotsContainer.innerHTML = "";
 
-    const activeSlides = slides.length ? slides : DEFAULT_SLIDES;
+    const activeSlides = (slides && slides.length) ? slides : getDefaultSlides();
     if (currentSlideIndex >= activeSlides.length) currentSlideIndex = 0;
 
     activeSlides.forEach((slide, idx) => {
@@ -170,17 +204,20 @@ function renderHeroSlides() {
                 <h1 class="hero-title" data-title="${(slide.title || "").replace(/"/g, "&quot;")}"></h1>
                 <p class="hero-subtitle">${subtitleHTML}</p>
                 <div class="hero-actions">
-                    <a href="${slide.link || "/catalog"}" class="btn btn-primary">Inspect Details</a>
-                    <a href="/catalog" class="btn btn-secondary">Browse All Catalog</a>
+                    <a href="${slide.link || "/catalog"}" class="btn btn-primary">${Store.t("home_hero_browse")}</a>
+                    <a href="#" class="btn btn-secondary">${Store.t("home_hero_catalog")}</a>
                 </div>
                 <div class="gcode-scroll"></div>
             </div>`;
         wrapper.appendChild(slideDiv);
 
-        const dot = document.createElement("button");
-        dot.className = `slide-dot ${idx === currentSlideIndex ? "active" : ""}`;
-        dot.addEventListener("click", () => goToSlide(idx));
-        dotsContainer.appendChild(dot);
+        if (activeSlides.length > 1) {
+            const dot = document.createElement("button");
+            dot.className = `slide-dot ${idx === currentSlideIndex ? "active" : ""}`;
+            dot.setAttribute("aria-label", `Slide ${idx + 1}`);
+            dot.addEventListener("click", () => goToSlide(idx));
+            dotsContainer.appendChild(dot);
+        }
     });
 
     const activeSlide = wrapper.querySelector(".hero-slide.active");
@@ -188,7 +225,7 @@ function renderHeroSlides() {
 }
 
 function goToSlide(index) {
-    const activeSlides = slides.length ? slides : DEFAULT_SLIDES;
+    const activeSlides = (slides && slides.length) ? slides : getDefaultSlides();
     if (index < 0) index = activeSlides.length - 1;
     if (index >= activeSlides.length) index = 0;
     currentSlideIndex = index;
@@ -203,9 +240,9 @@ function goToSlide(index) {
 
 function startSlideshowRotation() {
     stopSlideshowRotation();
-    const activeSlides = slides.length ? slides : DEFAULT_SLIDES;
+    const activeSlides = (slides && slides.length) ? slides : getDefaultSlides();
     if (activeSlides.length <= 1) return;
-    slideshowTimer = setInterval(() => goToSlide(currentSlideIndex + 1), 4000);
+    slideshowTimer = setInterval(() => goToSlide(currentSlideIndex + 1), 5000);
 }
 
 function stopSlideshowRotation() {
@@ -213,16 +250,23 @@ function stopSlideshowRotation() {
 }
 
 /* ── Product Card HTML Helper ────────────────────────────────────────────── */
-function buildProductCard(item, badge = "STOCK") {
+function buildProductCard(item, badge = "") {
     const inStock = item.in_stock !== false;
-    const badgeHTML = inStock
-        ? `<span class="product-badge" style="background:var(--primary-blue);border-color:var(--primary-blue);">${badge}</span>`
-        : `<span class="product-badge out-of-stock">DEPLETED</span>`;
+    let badgeHTML = "";
+    if (!inStock) {
+        badgeHTML = `<span class="product-badge out-of-stock">${Store.t("stock_out")}</span>`;
+    } else if (badge && badge !== "STOCK") {
+        badgeHTML = `<span class="product-badge">${badge}</span>`;
+    }
+
     const price = Store.productPrice(item);
-    const img = item.website_image || item.image || "/assets/custom_webshop/images/placeholder.jpg";
+    const img = item.image || item.website_image || "/assets/custom_webshop/images/placeholder.svg";
     const productHref = Store.productLink(item);
     const displayName = item.web_item_name || item.item_name || item.name || "";
+    const rawDesc = Store.stripHtml(item.description || item.short_description || "");
+    const descHTML = rawDesc ? `<p class="product-card-desc">${Store.escapeHtml(rawDesc)}</p>` : "";
     const brand = item.brand || "";
+    const brandHTML = brand ? `<div class="product-meta-specs"><div class="spec-line"><span>${Store.t("filter_brand")}:</span><span style="font-weight:700;">${Store.escapeHtml(brand)}</span></div></div>` : "";
     const addBtn = inStock
         ? `<button class="card-add-btn" onclick="addToCartItem('${item.item_code || item.name}')" title="${Store.t("btn_add_to_cart")}"><i data-lucide="shopping-cart"></i></button>`
         : `<button class="card-add-btn disabled" disabled title="${Store.t("btn_out_of_stock")}"><i data-lucide="shopping-cart"></i></button>`;
@@ -230,15 +274,13 @@ function buildProductCard(item, badge = "STOCK") {
     return `
         <div class="product-card">
             <div class="product-img-wrapper" onclick="window.location.href='${productHref}'">
-                <img src="${img}" alt="${displayName}" class="product-img" loading="eager" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.jpg';">
+                <img src="${img}" alt="${Store.escapeAttr(displayName)}" class="product-img" loading="lazy" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.svg';">
                 ${badgeHTML}
             </div>
             <div class="product-info">
-                <span class="product-cat">${item.item_group || ""}</span>
-                <h3 class="product-name" onclick="window.location.href='${productHref}'">${displayName}</h3>
-                <div class="product-meta-specs">
-                    ${brand ? `<div class="spec-line"><span>Brand:</span><span style="font-weight:700;">${brand}</span></div>` : ""}
-                </div>
+                <h3 class="product-name" onclick="window.location.href='${productHref}'" title="${Store.escapeAttr(displayName)}">${Store.escapeHtml(displayName)}</h3>
+                ${descHTML}
+                ${brandHTML}
                 <div class="product-bottom">
                     <span class="product-price">${price}</span>
                     ${addBtn}
@@ -266,25 +308,30 @@ window.addToCartItem = function(itemCode) {
 
 /* ── Home Page Sections ──────────────────────────────────────────────────── */
 
-/* Load brands from dedicated API and render brand cards */
+/* Load brands from dedicated API and render brand marquee cards */
 function loadBrands() {
     Store.call("custom_webshop.api.catalog.get_brands")
         .then(brands => {
             const brandGrid = document.getElementById("home-brand-grid");
             if (!brandGrid) return;
             if (!brands || !brands.length) {
-                brandGrid.innerHTML = `<p style="color:var(--text-muted);padding:16px;">No brands found.</p>`;
+                brandGrid.innerHTML = `<p style="color:var(--text-muted);padding:16px;">${Store.lang === 'ar' ? 'لا توجد علامات تجارية حالياً' : 'No brands found.'}</p>`;
                 return;
             }
-            brandGrid.innerHTML = brands.map(b => `
-                <div class="brand-card" onclick="window.location.href='/catalog?brand=${encodeURIComponent(b.brand)}'">
-                    <div class="brand-logo-text">
-                        <span style="color:var(--primary-blue);font-family:var(--font-heading);font-weight:800;">[</span>
-                        ${b.brand}
-                        <span style="color:var(--primary-blue);font-family:var(--font-heading);font-weight:800;">]</span>
-                    </div>
-                    <div class="brand-logo-sub">Certified Partner</div>
-                </div>`).join("");
+            // Repeat brand list for smooth infinite marquee looping
+            const displayBrands = brands.length > 2 ? [...brands, ...brands, ...brands] : brands;
+            brandGrid.innerHTML = displayBrands.map(b => {
+                const brandName = b.brand || b.attribute_value || "";
+                const attrName = b.attribute || "Brand - الماركة";
+                const targetUrl = `/catalog?attribute=${encodeURIComponent(attrName)}&value=${encodeURIComponent(brandName)}`;
+                return `
+                <div class="brand-card" onclick="window.location.href='${targetUrl}'">
+                    <div class="brand-badge-icon"><i data-lucide="shield-check"></i></div>
+                    <div class="brand-logo-text">${Store.escapeHtml(brandName)}</div>
+                    <div class="brand-logo-sub">${Store.t("certified_partner")}</div>
+                </div>`;
+            }).join("");
+            if (window.lucide) lucide.createIcons({ nodes: [brandGrid] });
         })
         .catch(() => {});
 }
@@ -312,17 +359,17 @@ function loadToolFamilyCarousels() {
                 section.innerHTML = `
                     <div class="category-carousel-header">
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <h3 class="carousel-title">${familyName}</h3>
-                            <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">View More →</a>
+                            <h3 class="carousel-title">${Store.escapeHtml(familyName)}</h3>
+                            <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">${Store.t("view_more")} &rarr;</a>
                         </div>
                         <div class="carousel-nav">
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)"><i data-lucide="chevron-left"></i></button>
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',1)"><i data-lucide="chevron-right"></i></button>
+                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
+                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',1)" aria-label="Next"><i data-lucide="chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="category-carousel-track-wrapper">
                         <div class="category-carousel-track" id="${trackId}">
-                            ${products.map(p => buildProductCard(p, "STOCK")).join("")}
+                            ${products.map(p => buildProductCard(p, "")).join("")}
                         </div>
                     </div>`;
                 container.appendChild(section);
@@ -349,7 +396,9 @@ function loadToolFamilyCarousels() {
 window.scrollCarousel = function(safeId, dir) {
     const track = document.getElementById(`carousel-track-${safeId}`);
     if (!track) return;
-    track.scrollBy({ left: dir * 300, behavior: "smooth" });
+    const isRtl = document.documentElement.getAttribute("dir") === "rtl" || Store.lang === "ar";
+    const scrollAmount = (isRtl ? -dir : dir) * 320;
+    track.scrollBy({ left: scrollAmount, behavior: "smooth" });
 };
 
 function renderTrendingGrid(products) {
@@ -365,9 +414,9 @@ function loadSlides() {
     Store.call("custom_webshop.api.slides.get_slides")
         .then(data => {
             if (Array.isArray(data) && data.length) slides = data;
-            else slides = DEFAULT_SLIDES;
+            else slides = null;
         })
-        .catch(() => { slides = DEFAULT_SLIDES; })
+        .catch(() => { slides = null; })
         .finally(() => {
             renderHeroSlides();
             startSlideshowRotation();
@@ -434,4 +483,12 @@ document.addEventListener("DOMContentLoaded", () => {
         sliderContainer.addEventListener("mouseenter", stopSlideshowRotation);
         sliderContainer.addEventListener("mouseleave", startSlideshowRotation);
     }
+
+    // Live re-render all dynamic home components on language toggle
+    window.addEventListener("cnc_language_changed", () => {
+        renderHeroSlides();
+        loadBrands();
+        loadToolFamilyCarousels();
+        loadHomeProducts();
+    });
 });

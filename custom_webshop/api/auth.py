@@ -66,36 +66,54 @@ def custom_sign_up(
     if default_role:
         user.add_roles(default_role)
 
+    target_redirect = _safe_sanitize_redirect(redirect_to)
+
     # Cache redirect
-    if redirect_to:
-        from frappe.www.login import sanitize_redirect
+    if target_redirect:
+        frappe.cache.hset("redirect_after_login", user.name, target_redirect)
 
-        frappe.cache.hset("redirect_after_login", user.name, sanitize_redirect(redirect_to))
-
-    # Send custom welcome email (no password reset link)
-    site_name = (
-        frappe.db.get_default("site_name")
-        or frappe.get_conf().get("site_name")
-        or _("ERPNext")
-    )
-    subject = _("Welcome to {0}").format(site_name)
-
-    frappe.sendmail(
-        recipients=user.email,
-        subject=subject,
-        template="custom_welcome_email",
-        args={
-            "first_name": user.first_name,
-            "site_url": get_url(),
-            "site_name": site_name,
-        },
-        now=True,
-    )
+    # Send welcome email safely
+    try:
+        site_name = (
+            frappe.db.get_default("site_name")
+            or frappe.get_conf().get("site_name")
+            or _("ERPNext")
+        )
+        subject = _("Welcome to {0}").format(site_name)
+        frappe.sendmail(
+            recipients=user.email,
+            subject=subject,
+            message=_("Hi {0},<br><br>Welcome to {1}! Your account has been created successfully.").format(user.first_name, site_name),
+            now=False,
+        )
+    except Exception:
+        pass
 
     # Auto-create Customer, Contact, and Portal User for the new signup
     _create_new_customer_for_user(user)
 
-    return 1, {"status": "created", "message": _("Account created successfully! Please log in.")}
+    # Automatically log in the new user session
+    if hasattr(frappe.local, "login_manager") and frappe.local.login_manager:
+        try:
+            frappe.local.login_manager.login_as(user.name)
+        except Exception:
+            pass
+
+    return 1, {
+        "status": "logged_in",
+        "redirect_to": target_redirect,
+        "message": _("Account created! Welcome, {0}.").format(user.first_name or user.name)
+    }
+
+
+def _safe_sanitize_redirect(redirect_to):
+    """Safely return a valid relative path redirect or default to /shop."""
+    if not redirect_to or not isinstance(redirect_to, str):
+        return "/shop"
+    clean = redirect_to.strip()
+    if clean.startswith("/") and not clean.startswith("//") and not clean.startswith("/app"):
+        return clean
+    return "/shop"
 
 
 def _default_customer_group():

@@ -91,7 +91,14 @@ function loadProductDetail(itemName) {
                 return;
             }
             currentItemCode = item.item_code || item.name;
-            return fetchProductInfo(currentItemCode).then(info => {
+            return Promise.all([
+                fetchProductInfo(currentItemCode),
+                Store.call("custom_webshop.api.catalog.get_item_master_details", { item_code: currentItemCode }).catch(() => ({}))
+            ]).then(([info, master]) => {
+                if (master) {
+                    if (master.description) item.description = master.description;
+                    if (master.image) item.image = master.image;
+                }
                 renderDetailView(item, info, bootstrap);
             });
         })
@@ -115,8 +122,10 @@ function renderDetailView(item, productInfoData, bootstrap) {
     currentWished = Boolean(bootstrap.wished);
 
     const displayName = item.web_item_name || item.item_name || item.name || "";
-    const description = stripHtml(item.web_long_description) || stripHtml(item.short_description) || "";
-    const mainImg = item.website_image || "/assets/custom_webshop/images/placeholder.jpg";
+    const rawDesc = (bootstrap.item_description || item.description || item.web_long_description || item.short_description || "").trim();
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(rawDesc);
+    const descriptionHtml = hasHtmlTags ? rawDesc : (rawDesc ? `<p>${escapeHtml(rawDesc)}</p>` : "");
+    const mainImg = bootstrap.item_image || item.image || item.website_image || "/assets/custom_webshop/images/placeholder.jpg";
 
     const slides = (bootstrap.slides && bootstrap.slides.length)
         ? bootstrap.slides
@@ -136,19 +145,21 @@ function renderDetailView(item, productInfoData, bootstrap) {
 
     function buildStockLabel() {
         if (onBackorder) {
-            return `<span class="dot-status dot-instock"></span><span style="color:var(--primary-blue);">Available on backorder</span>`;
+            return `<span class="dot-status dot-instock" style="background:#3B82F6;box-shadow:0 0 10px rgba(59,130,246,0.4);"></span><span style="color:#3B82F6;">${Store.t("stock_backorder")}</span>`;
         }
         if (!inStock) {
-            return `<span class="dot-status dot-outofstock"></span><span style="color:#EF4444;">${Store.t("btn_out_of_stock")}</span>`;
+            return `<span class="dot-status dot-outofstock"></span><span style="color:#EF4444;">${Store.t("stock_out")}</span>`;
         }
-        let label = "In Stock";
-        if (productInfo.show_stock_qty && productInfo.stock_qty != null && productInfo.stock_qty !== "") {
-            const qty = parseFloat(productInfo.stock_qty);
-            if (!Number.isNaN(qty)) {
-                label += ` (${qty % 1 === 0 ? qty.toFixed(0) : qty.toFixed(2)})`;
-            }
+        let qty = null;
+        if (productInfo.stock_qty != null && productInfo.stock_qty !== "") {
+            const parsed = parseFloat(productInfo.stock_qty);
+            if (!Number.isNaN(parsed)) qty = parsed;
         }
-        return `<span class="dot-status dot-instock"></span><span style="color:#22C55E;">${label}</span>`;
+        if (qty != null && qty > 0 && qty <= 10) {
+            const formattedQty = qty % 1 === 0 ? qty.toFixed(0) : qty.toFixed(2);
+            return `<span class="dot-status dot-lowstock"></span><span style="color:#F59E0B;">${Store.t("stock_low", { qty: formattedQty })}</span>`;
+        }
+        return `<span class="dot-status dot-instock"></span><span style="color:#22C55E;">${Store.t("stock_in")}</span>`;
     }
 
     const stockHTML = !showStock ? "" : buildStockLabel();
@@ -173,11 +184,12 @@ function renderDetailView(item, productInfoData, bootstrap) {
         <tr><td class="spec-name">${escapeHtml(stripHtml(spec.label))}</td><td class="spec-val">${escapeHtml(stripHtml(spec.description))}</td></tr>
     `).join("");
 
-    const specsHTML = specsRows || `
-        <tr><td class="spec-name">ERP Item Code</td><td class="spec-val" style="color:var(--primary-blue);">${escapeHtml(item.item_code || item.name)}</td></tr>
-        ${item.brand ? `<tr><td class="spec-name">Brand</td><td class="spec-val">${escapeHtml(item.brand)}</td></tr>` : ""}
-        ${item.item_group ? `<tr><td class="spec-name">Category</td><td class="spec-val">${escapeHtml(item.item_group)}</td></tr>` : ""}
-    `;
+    const specsSectionHTML = specs.length > 0 ? `
+        <h3 class="specs-table-title">Product Specifications</h3>
+        <table class="specs-table">
+            <tbody>${specsRows}</tbody>
+        </table>
+    ` : "";
 
     const thumbsHTML = uniqueImages.map((src, i) => `
         <div class="gallery-thumb ${i === 0 ? "active" : ""}" data-src="${encodeURI(src)}" onclick="updateMainDetailImage(this.dataset.src, this)">
@@ -195,8 +207,7 @@ function renderDetailView(item, productInfoData, bootstrap) {
             </div>
 
             <div class="detail-meta-panel">
-                <div class="detail-title-row">
-                    <span class="detail-cat">${escapeHtml(item.item_group || "")}</span>
+                <div class="detail-title-row" style="justify-content:flex-end;">
                     ${wishlistHTML}
                 </div>
                 <h1 class="detail-title">${escapeHtml(displayName)}</h1>
@@ -206,12 +217,9 @@ function renderDetailView(item, productInfoData, bootstrap) {
                     ${stockHTML ? `<div class="stock-indicator">${stockHTML}</div>` : ""}
                 </div>
 
-                ${description ? `<p class="detail-desc">${escapeHtml(description)}</p>` : ""}
+                ${rawDesc ? `<div class="detail-desc">${descriptionHtml}</div>` : ""}
 
-                <h3 class="specs-table-title">Product Specifications</h3>
-                <table class="specs-table">
-                    <tbody>${specsHTML}</tbody>
-                </table>
+                ${specsSectionHTML}
 
                 <div class="detail-actions">
                     <div class="qty-spinner">
@@ -246,17 +254,21 @@ function renderRecommendedProducts(recommended) {
 
     section.style.display = "";
     grid.innerHTML = recommended.map(p => {
-        const pImg = p.website_item_thumbnail || p.website_image || p.image
+        const pImg = p.image || p.website_item_thumbnail || p.website_image
             || "/assets/custom_webshop/images/placeholder.jpg";
         const pName = p.website_item_name || p.item_code || "";
         const pPrice = p.formatted_price || "—";
         const pHref = Store.productLink({ route: p.route, item_code: p.item_code, name: p.item_code });
+        const pDesc = stripHtml(p.description || "");
+        const descHTML = pDesc ? `<p class="product-card-desc">${escapeHtml(pDesc)}</p>` : "";
+
         return `<div class="product-card">
             <div class="product-img-wrapper" onclick="window.location.href='${pHref}'">
                 <img src="${escapeHtml(pImg)}" alt="${escapeHtml(pName)}" class="product-img" loading="lazy" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.jpg';">
             </div>
             <div class="product-info">
                 <h4 class="product-name" onclick="window.location.href='${pHref}'">${escapeHtml(pName)}</h4>
+                ${descHTML}
                 <div class="product-bottom" style="margin-top:12px;">
                     <span class="product-price">${escapeHtml(pPrice)}</span>
                     <button class="card-add-btn" onclick="event.stopPropagation();addToCartFromRelated('${escapeHtml(p.item_code)}')">

@@ -13,19 +13,56 @@ from custom_webshop.api.item_parser import (
 
 
 @frappe.whitelist(allow_guest=True)
+def get_item_master_details(item_code):
+	"""Return image and description directly from Item master for a given item_code."""
+	if not item_code:
+		return {}
+	return frappe.db.get_value(
+		"Item",
+		item_code,
+		["name", "item_code", "item_name", "image", "description"],
+		as_dict=True,
+	) or {}
+
+
+@frappe.whitelist(allow_guest=True)
 def get_brands():
-	"""Return brands that have at least one published Website Item."""
+	"""Return brand names from the 'Brand - الماركة' Item Attribute values."""
+	brand_attr = frappe.db.get_value(
+		"Item Attribute",
+		{"name": ["like", "%Brand%"]},
+		"name",
+	) or "Brand - الماركة"
+
 	rows = frappe.db.sql(
 		"""
-		SELECT DISTINCT wi.brand
-		FROM `tabWebsite Item` wi
-		WHERE wi.published = 1
-		  AND wi.brand IS NOT NULL
-		  AND wi.brand != ''
-		ORDER BY wi.brand
+		SELECT 
+			iav.attribute_value AS brand,
+			iav.abbr AS abbr,
+			iav.parent AS attribute
+		FROM `tabItem Attribute Value` iav
+		WHERE iav.parent = %s
+		ORDER BY iav.idx ASC, iav.attribute_value ASC
 		""",
+		[brand_attr],
 		as_dict=True,
 	)
+
+	if not rows:
+		rows = frappe.db.sql(
+			"""
+			SELECT 
+				iav.attribute_value AS brand,
+				iav.abbr AS abbr,
+				iav.parent AS attribute
+			FROM `tabItem Attribute Value` iav
+			WHERE iav.parent LIKE %s
+			ORDER BY iav.idx ASC, iav.attribute_value ASC
+			""",
+			["%Brand%"],
+			as_dict=True,
+		)
+
 	return rows
 
 
@@ -322,6 +359,8 @@ def get_items_by_tool_family(tool_family, material=None, start=0, page_length=20
 			wi.item_code,
 			i.item_name,
 			wi.web_item_name,
+			i.image AS image,
+			i.description AS description,
 			wi.website_image,
 			wi.short_description,
 			wi.route,
@@ -360,23 +399,22 @@ def get_items_by_tool_family(tool_family, material=None, start=0, page_length=20
 def get_catalog_products(
 	tool_family=None,
 	material=None,
+	item_group=None,
 	attribute_filters=None,
 	field_filters=None,
 	search=None,
 	start=0,
-	page_length=20,
+	page_length=50,
 ):
 	"""
-	Unified catalog product endpoint that combines:
-	  - Tool Family filter  (parsed from item_name via LIKE)
-	  - Material filter     (parsed from item_name via LIKE)
-	  - ERP Attribute filters (delegated to webshop's filter engine)
+	Unified catalog product endpoint that returns item master image and description.
+	Combines:
+	  - Tool Family filter (parsed from item_name via LIKE)
+	  - Material filter (parsed from item_name via LIKE)
+	  - Item Group filter
+	  - ERP Attribute filters
 	  - Brand field filter
 	  - Text search
-
-	When tool_family or material is provided, this endpoint handles the full
-	query.  When neither is set, callers should use the standard webshop API
-	(get_product_filter_data) directly for maximum compatibility.
 	"""
 	if isinstance(attribute_filters, str):
 		attribute_filters = json.loads(attribute_filters) if attribute_filters else {}
@@ -389,8 +427,6 @@ def get_catalog_products(
 	page_length = int(page_length)
 
 	# Build WHERE clauses for item_name-based filters.
-	# Both tool_family and material accept comma-separated lists for OR logic
-	# (e.g. "SEM,FEM,EM") as well as single values.
 	name_clauses = []
 	params = []
 
@@ -408,22 +444,31 @@ def get_catalog_products(
 			name_clauses.append(f"({or_parts})")
 			params.extend([build_material_like_pattern(m) for m in mat_list])
 
-	# Brand field filter
-	brand_clause = ""
+	# Brand field filter (mapped to Brand - الماركة Item Attribute)
 	if field_filters.get("brand"):
 		brands = field_filters["brand"]
 		if isinstance(brands, str):
 			brands = [brands]
-		placeholders = ", ".join(["%s"] * len(brands))
-		brand_clause = f"AND wi.brand IN ({placeholders})"
-		params.extend(brands)
+		if "Brand - الماركة" not in attribute_filters:
+			attribute_filters["Brand - الماركة"] = brands
+
+	# Item group filter
+	ig = item_group or field_filters.get("item_group")
+	ig_clause = ""
+	if ig:
+		if isinstance(ig, str):
+			ig = [ig]
+		placeholders = ", ".join(["%s"] * len(ig))
+		ig_clause = f"AND (i.item_group IN ({placeholders}) OR wi.item_group IN ({placeholders}))"
+		params.extend(ig)
+		params.extend(ig)
 
 	# Search
 	search_clause = ""
 	if search:
-		search_clause = "AND (i.item_name LIKE %s OR wi.web_item_name LIKE %s OR wi.short_description LIKE %s)"
+		search_clause = "AND (i.item_name LIKE %s OR wi.web_item_name LIKE %s OR i.description LIKE %s OR wi.short_description LIKE %s)"
 		like_search = f"%{search}%"
-		params.extend([like_search, like_search, like_search])
+		params.extend([like_search, like_search, like_search, like_search])
 
 	name_where = ("AND " + " AND ".join(name_clauses)) if name_clauses else ""
 
@@ -435,7 +480,7 @@ def get_catalog_products(
 		INNER JOIN `tabItem` i ON i.name = wi.item_code
 		WHERE wi.published = 1
 		  {name_where}
-		  {brand_clause}
+		  {ig_clause}
 		  {search_clause}
 		""",
 		params,
@@ -484,6 +529,8 @@ def get_catalog_products(
 			wi.item_code,
 			i.item_name,
 			wi.web_item_name,
+			i.image AS image,
+			i.description AS description,
 			wi.website_image,
 			wi.short_description,
 			wi.route,
