@@ -1,0 +1,405 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-29 00:00:00.000000",
+ "description": "A signup in progress. Holds no ERPNext business data and creates none until it reaches COMPLETED.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "signup_id",
+  "status",
+  "column_break_head",
+  "account_type",
+  "expires_at",
+  "submitted_section",
+  "full_name",
+  "company_name",
+  "column_break_submitted",
+  "email",
+  "email_normalized",
+  "phone_raw",
+  "phone_country",
+  "phone_e164",
+  "verification_section",
+  "email_verified",
+  "email_otp_hash",
+  "email_otp_expires_at",
+  "email_otp_attempts",
+  "email_otp_sends",
+  "email_otp_last_sent_at",
+  "column_break_verification",
+  "phone_verified",
+  "phone_otp_hash",
+  "phone_otp_expires_at",
+  "phone_otp_attempts",
+  "phone_otp_sends",
+  "phone_otp_last_sent_at",
+  "matching_section",
+  "match_result",
+  "candidate_customer",
+  "user_decision",
+  "rename_account",
+  "column_break_matching",
+  "resolution",
+  "candidate_customers",
+  "outcome_section",
+  "created_user",
+  "created_customer",
+  "column_break_outcome",
+  "created_contact",
+  "identity_record",
+  "audit_section",
+  "binding_hash",
+  "ip_address",
+  "column_break_audit",
+  "user_agent",
+  "block_reason"
+ ],
+ "fields": [
+  {
+   "description": "Opaque client-facing handle. Never the document name.",
+   "fieldname": "signup_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Signup ID",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "STARTED",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "STARTED\nEMAIL_PENDING\nEMAIL_VERIFIED\nPHONE_PENDING\nPHONE_VERIFIED\nMATCH_REVIEW\nREADY\nCOMPLETED\nBLOCKED\nEXPIRED\nCANCELLED",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Individual",
+   "fieldname": "account_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Account Type",
+   "options": "Individual\nCompany",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "submitted_section",
+   "fieldtype": "Section Break",
+   "label": "Submitted Details"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.account_type=='Company'",
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_submitted",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email (as typed)",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email_normalized",
+   "fieldtype": "Data",
+   "label": "Email (normalized)",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "phone_raw",
+   "fieldtype": "Data",
+   "label": "Phone (as typed)",
+   "read_only": 1
+  },
+  {
+   "description": "ISO region the number was entered under. Decides which rules it was judged by.",
+   "fieldname": "phone_country",
+   "fieldtype": "Data",
+   "label": "Phone Country",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "label": "Phone (E.164)",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "verification_section",
+   "fieldtype": "Section Break",
+   "label": "Verification"
+  },
+  {
+   "default": "0",
+   "fieldname": "email_verified",
+   "fieldtype": "Check",
+   "label": "Email Verified",
+   "read_only": 1
+  },
+  {
+   "description": "Keyed HMAC of the issued code. The code itself is never stored anywhere.",
+   "fieldname": "email_otp_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Email OTP Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email_otp_expires_at",
+   "fieldtype": "Datetime",
+   "label": "Email OTP Expires At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "email_otp_attempts",
+   "fieldtype": "Int",
+   "label": "Email OTP Attempts",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "email_otp_sends",
+   "fieldtype": "Int",
+   "label": "Email OTP Sends",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email_otp_last_sent_at",
+   "fieldtype": "Datetime",
+   "label": "Email OTP Last Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_verification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "phone_verified",
+   "fieldtype": "Check",
+   "label": "Phone Verified",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_otp_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Phone OTP Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_otp_expires_at",
+   "fieldtype": "Datetime",
+   "label": "Phone OTP Expires At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "phone_otp_attempts",
+   "fieldtype": "Int",
+   "label": "Phone OTP Attempts",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "phone_otp_sends",
+   "fieldtype": "Int",
+   "label": "Phone OTP Sends",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_otp_last_sent_at",
+   "fieldtype": "Datetime",
+   "label": "Phone OTP Last Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "matching_section",
+   "fieldtype": "Section Break",
+   "label": "Identity Resolution"
+  },
+  {
+   "fieldname": "match_result",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Match Result",
+   "options": "\nNO_MATCH\nSTRONG_MATCH\nPHONE_NAME_MISMATCH\nEMAIL_MATCH\nEMAIL_NAME_MISMATCH\nMULTIPLE_MATCH\nEMAIL_ACCOUNT_EXISTS\nPHONE_ACCOUNT_EXISTS\nCUSTOMER_ALREADY_LINKED\nOWN_ACCOUNT",
+   "read_only": 1
+  },
+  {
+   "description": "Held server-side. Never sent to the browser as an identifier and never accepted from it.",
+   "fieldname": "candidate_customer",
+   "fieldtype": "Link",
+   "label": "Candidate Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "user_decision",
+   "fieldtype": "Select",
+   "label": "User Decision",
+   "options": "Pending\nAccepted\nRejected",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "The person asked for their website account to carry the name they typed at signup rather than the one already on the record. Only the User is renamed; the Contact and Customer wait for staff.",
+   "fieldname": "rename_account",
+   "fieldtype": "Check",
+   "label": "Carry The Submitted Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_matching",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "resolution",
+   "fieldtype": "Select",
+   "label": "Resolution",
+   "options": "\nLINK_EXISTING\nCREATE_NEW\nCREATE_NEW_WITH_CONFLICT\nRECOVER_EXISTING",
+   "read_only": 1
+  },
+  {
+   "description": "JSON audit trail of every candidate the matching engine considered.",
+   "fieldname": "candidate_customers",
+   "fieldtype": "Small Text",
+   "label": "Candidate Customers (JSON)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome_section",
+   "fieldtype": "Section Break",
+   "label": "Outcome"
+  },
+  {
+   "fieldname": "created_user",
+   "fieldtype": "Link",
+   "label": "Website User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_outcome",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "identity_record",
+   "fieldtype": "Link",
+   "label": "Account Identity",
+   "options": "Webshop Account Identity",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "audit_section",
+   "fieldtype": "Section Break",
+   "label": "Audit"
+  },
+  {
+   "description": "SHA-256 of the secret held in this browser's httpOnly signup cookie. Binds the signup to one browser; all Frappe guests share one sid, so the session id itself binds nothing.",
+   "fieldname": "binding_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Binding Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user_agent",
+   "fieldtype": "Small Text",
+   "label": "User Agent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "block_reason",
+   "fieldtype": "Small Text",
+   "label": "Block Reason",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-03 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "custom_webshop",
+ "name": "Webshop Signup Session",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "quick_entry": 0,
+ "search_fields": "status,full_name,email_normalized,phone_e164",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 0
+}

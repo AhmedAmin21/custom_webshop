@@ -6,21 +6,7 @@ no_cache = 1
 import frappe
 from frappe import _
 
-
-def _debug_log(message, data=None, hypothesis_id="H1"):
-	import json, time
-	try:
-		with open("/home/erpnext/frappe-bench/.cursor/debug-edf32e.log", "a") as f:
-			f.write(json.dumps({
-				"sessionId": "edf32e",
-				"location": "orders.py:get_context",
-				"message": message,
-				"data": data or {},
-				"timestamp": int(time.time() * 1000),
-				"hypothesisId": hypothesis_id,
-			}) + "\n")
-	except Exception:
-		pass
+from custom_webshop.signup.resolution import get_customer_names
 
 
 def get_context(context):
@@ -29,13 +15,13 @@ def get_context(context):
 	context.title = _("Orders")
 	context.parents = [{"route": "me", "title": _("My Account")}]
 
-	# Find ALL customers linked to this user via Portal User
-	# (bypasses get_party() which may return a Lead or wrong contact)
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": frappe.session.user, "parenttype": "Customer"},
-		pluck="parent"
-	)
+	# Resolve through the verified identity record rather than reading
+	# Portal User directly: a Portal User row only says some code path
+	# once linked this account to that Customer, and webshop's get_party()
+	# adds them from an arbitrary contact link. This list drives an
+	# ignore_permissions query below, so it has to be the authoritative
+	# answer.
+	customers = get_customer_names()
 	if not customers:
 		context.orders = []
 		return context
@@ -70,5 +56,4 @@ def get_context(context):
 			order.transaction_date = str(order.transaction_date)
 
 	context.orders = orders
-	_debug_log("orders context built", {"count": len(orders), "sample_date": str(orders[0].transaction_date) if orders else None})
 	return context

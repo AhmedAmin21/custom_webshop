@@ -1,0 +1,536 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CNCLeaders Webshop",
+    "subtitle": "custom_webshop — pages, endpoints, records, and the three apps it must live beside",
+    "output": "01-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "gate",
+        "label": "1 · Browse & the gate",
+        "focus": [
+          "apicatalog",
+          "apisignup",
+          "checkout",
+          "dtsession",
+          "localbasket",
+          "login",
+          "pagejs",
+          "shoppages",
+          "signupdomain",
+          "signupjs",
+          "storejs",
+          "visitor",
+          "websiteitem"
+        ],
+        "note": "Browsing and the basket need no account, and the basket lives in the visitor's own browser. Proceeding to the full form changes that."
+      },
+      {
+        "id": "identity",
+        "label": "2 · Identity",
+        "focus": [
+          "apisignup",
+          "signupdomain",
+          "dtsession",
+          "dtidentity",
+          "customer",
+          "contact",
+          "ceapp"
+        ],
+        "note": "Nothing in ERPNext is created until both email and phone are proved. Account Identity is the authoritative User-to-Customer link."
+      },
+      {
+        "id": "order",
+        "label": "3 · Order",
+        "focus": [
+          "checkout",
+          "cartjs",
+          "cartoverride",
+          "shipping",
+          "quotation",
+          "salesorder",
+          "orders"
+        ],
+        "note": "The full order form builds a Quotation, then a Sales Order that waits for payment proof rather than submitting itself."
+      },
+      {
+        "id": "staff",
+        "label": "4 · Staff review",
+        "focus": [
+          "signupdomain",
+          "apiconflicts",
+          "conflictdt",
+          "customer",
+          "contact"
+        ],
+        "note": "What the flow refuses to guess lands in a queue a person works. A merge is one-way, so the surviving record is chosen and typed to confirm."
+      },
+      {
+        "id": "neighbours",
+        "label": "5 · The apps around it",
+        "focus": [
+          "cartoverride",
+          "apisignup",
+          "contact",
+          "webshopapp",
+          "ceapp",
+          "erpnextapp",
+          "frappeapp"
+        ],
+        "note": "Three apps this one cannot change: webshop's cart is overridden, contact_enhancements rewrites phones on save, frappe's sign_up is closed."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      40,
+      90
+    ],
+    "cols": 8,
+    "gapX": 44,
+    "gapY": 46,
+    "cellW": 152,
+    "cellH": 62
+  },
+  "components": [
+    {
+      "id": "visitor",
+      "type": "external",
+      "label": "Visitor",
+      "sublabel": "browser",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "shoppages",
+      "type": "frontend",
+      "label": "Shop pages",
+      "sublabel": "browse the catalogue",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "login",
+      "type": "frontend",
+      "label": "/login",
+      "sublabel": "sign in · sign up",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "checkout",
+      "type": "frontend",
+      "label": "/cart",
+      "sublabel": "full order form",
+      "row": 2,
+      "col": 1,
+      "tag": "members only"
+    },
+    {
+      "id": "orders",
+      "type": "frontend",
+      "label": "/orders",
+      "sublabel": "history",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "/admin",
+      "sublabel": "staff panel",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "pagejs",
+      "type": "frontend",
+      "label": "page scripts",
+      "sublabel": "shop · catalog · product",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "storejs",
+      "type": "frontend",
+      "label": "store.js",
+      "sublabel": "basket · drawer · i18n",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "signupjs",
+      "type": "frontend",
+      "label": "page-signup.js",
+      "sublabel": "5-step wizard",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "cartjs",
+      "type": "frontend",
+      "label": "page-cart.js",
+      "sublabel": "order form",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "adminjs",
+      "type": "frontend",
+      "label": "page-admin.js",
+      "sublabel": "slides · attributes",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "apicatalog",
+      "type": "backend",
+      "label": "api/catalog.py",
+      "sublabel": "products · cart preview",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "localbasket",
+      "type": "database",
+      "label": "localStorage",
+      "sublabel": "cnc_guest_cart",
+      "row": 1,
+      "col": 3,
+      "tag": "codes + qty"
+    },
+    {
+      "id": "apisignup",
+      "type": "backend",
+      "label": "api/signup.py",
+      "sublabel": "12 guest endpoints",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "cartoverride",
+      "type": "backend",
+      "label": "cart_override.py",
+      "sublabel": "update_cart · place_order",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "id": "websiteitem",
+      "type": "database",
+      "label": "Website Item",
+      "sublabel": "published catalogue",
+      "row": 0,
+      "col": 4
+    },
+    {
+      "id": "signupdomain",
+      "type": "backend",
+      "label": "signup/ package",
+      "sublabel": "identity · otp · linking",
+      "row": 2,
+      "col": 4
+    },
+    {
+      "id": "shipping",
+      "type": "backend",
+      "label": "shipping_api.py",
+      "sublabel": "governorate rules",
+      "row": 4,
+      "col": 4
+    },
+    {
+      "id": "dtidentity",
+      "type": "database",
+      "label": "Account Identity",
+      "sublabel": "user · phone · email",
+      "row": 1,
+      "col": 5,
+      "tag": "unique keys"
+    },
+    {
+      "id": "dtsession",
+      "type": "database",
+      "label": "Signup Session",
+      "sublabel": "creates nothing yet",
+      "row": 2,
+      "col": 5
+    },
+    {
+      "id": "quotation",
+      "type": "database",
+      "label": "Quotation",
+      "sublabel": "the live cart",
+      "row": 3,
+      "col": 5
+    },
+    {
+      "id": "customer",
+      "type": "database",
+      "label": "Customer",
+      "sublabel": "ERPNext",
+      "row": 1,
+      "col": 6
+    },
+    {
+      "id": "contact",
+      "type": "database",
+      "label": "Contact + Phone",
+      "sublabel": "E.164 stored",
+      "row": 2,
+      "col": 6
+    },
+    {
+      "id": "salesorder",
+      "type": "database",
+      "label": "Sales Order",
+      "sublabel": "awaiting proof",
+      "row": 3,
+      "col": 6
+    },
+    {
+      "id": "frappeapp",
+      "type": "cloud",
+      "label": "frappe",
+      "sublabel": "users · routing",
+      "row": 0,
+      "col": 7
+    },
+    {
+      "id": "ceapp",
+      "type": "cloud",
+      "label": "contact_enhancements",
+      "sublabel": "rewrites phones",
+      "row": 1,
+      "col": 7,
+      "size": [
+        176,
+        62
+      ]
+    },
+    {
+      "id": "webshopapp",
+      "type": "cloud",
+      "label": "webshop",
+      "sublabel": "cart · get_party",
+      "row": 2,
+      "col": 7
+    },
+    {
+      "id": "erpnextapp",
+      "type": "cloud",
+      "label": "erpnext",
+      "sublabel": "selling · stock",
+      "row": 3,
+      "col": 7
+    },
+    {
+      "id": "apislides",
+      "type": "backend",
+      "label": "api/slides.py",
+      "sublabel": "home carousel · admin",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "apiconflicts",
+      "col": 4,
+      "row": 1,
+      "type": "backend",
+      "label": "api/conflicts.py",
+      "sublabel": "guided merge"
+    },
+    {
+      "id": "conflictdt",
+      "col": 5,
+      "row": 4,
+      "type": "database",
+      "label": "Identity Conflict",
+      "sublabel": "the staff queue"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Browser",
+      "wraps": [
+        "pagejs",
+        "storejs",
+        "signupjs",
+        "cartjs",
+        "adminjs",
+        "localbasket"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "custom_webshop server",
+      "wraps": [
+        "apicatalog",
+        "apisignup",
+        "cartoverride",
+        "signupdomain",
+        "shipping",
+        "apislides",
+        "apiconflicts"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Apps this one cannot change",
+      "wraps": [
+        "frappeapp",
+        "ceapp",
+        "webshopapp",
+        "erpnextapp"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "visitor",
+      "to": "shoppages",
+      "variant": "emphasis"
+    },
+    {
+      "from": "visitor",
+      "to": "login"
+    },
+    {
+      "from": "visitor",
+      "to": "checkout"
+    },
+    {
+      "from": "shoppages",
+      "to": "pagejs"
+    },
+    {
+      "from": "login",
+      "to": "signupjs"
+    },
+    {
+      "from": "checkout",
+      "to": "cartjs"
+    },
+    {
+      "from": "orders",
+      "to": "cartjs"
+    },
+    {
+      "from": "admin",
+      "to": "adminjs"
+    },
+    {
+      "from": "pagejs",
+      "to": "apicatalog"
+    },
+    {
+      "from": "storejs",
+      "to": "localbasket",
+      "variant": "emphasis"
+    },
+    {
+      "from": "storejs",
+      "to": "apicatalog"
+    },
+    {
+      "from": "signupjs",
+      "to": "apisignup",
+      "variant": "emphasis"
+    },
+    {
+      "from": "cartjs",
+      "to": "cartoverride",
+      "variant": "emphasis"
+    },
+    {
+      "from": "storejs",
+      "to": "login",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "from": "checkout",
+      "to": "login",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "apicatalog",
+      "to": "websiteitem",
+      "variant": "emphasis"
+    },
+    {
+      "from": "apisignup",
+      "to": "signupdomain",
+      "variant": "emphasis"
+    },
+    {
+      "from": "cartoverride",
+      "to": "shipping"
+    },
+    {
+      "from": "cartoverride",
+      "to": "quotation",
+      "variant": "emphasis"
+    },
+    {
+      "from": "signupdomain",
+      "to": "dtsession",
+      "variant": "emphasis"
+    },
+    {
+      "from": "signupdomain",
+      "to": "dtidentity",
+      "variant": "security"
+    },
+    {
+      "from": "dtidentity",
+      "to": "customer",
+      "variant": "emphasis"
+    },
+    {
+      "from": "dtsession",
+      "to": "contact",
+      "variant": "emphasis"
+    },
+    {
+      "from": "quotation",
+      "to": "salesorder",
+      "variant": "emphasis"
+    },
+    {
+      "from": "customer",
+      "to": "ceapp",
+      "variant": "dashed"
+    },
+    {
+      "from": "contact",
+      "to": "webshopapp",
+      "variant": "dashed"
+    },
+    {
+      "from": "salesorder",
+      "to": "erpnextapp",
+      "variant": "dashed"
+    },
+    {
+      "from": "websiteitem",
+      "to": "frappeapp",
+      "variant": "dashed"
+    },
+    {
+      "from": "adminjs",
+      "to": "apislides"
+    },
+    {
+      "from": "apiconflicts",
+      "to": "signupdomain"
+    }
+  ]
+}

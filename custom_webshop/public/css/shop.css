@@ -2886,7 +2886,13 @@ body.rtl .specs-table td.spec-name {
     width: 44px;
     height: 44px;
     border-radius: 4px;
-    object-fit: cover;
+    /* Contain, not cover: a product photo taller than it is wide would
+       otherwise be cropped top and bottom, and the row is where staff
+       check they attached the right picture. The tile is padded and
+       tinted so a letterboxed image reads as deliberate rather than as
+       an image that failed to fill its box. */
+    object-fit: contain;
+    padding: 2px;
     background: #F1F5F9;
     border: 1px solid var(--border-subtle);
 }

@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "From browsing to an order",
+    "subtitle": "Where an account becomes necessary — and who decides when two records might be the same person",
+    "output": "02-journey.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "views": [
+      {
+        "id": "happy",
+        "label": "The whole journey",
+        "focus": [
+          "basket",
+          "proceed",
+          "prove",
+          "ask",
+          "create",
+          "order"
+        ],
+        "note": "Browse and fill a basket with no account at all. Everything left of the gate writes nothing to ERPNext and survives a reload."
+      },
+      {
+        "id": "gate",
+        "label": "The gate",
+        "focus": [
+          "basket",
+          "proceed",
+          "prove"
+        ],
+        "note": "Adding to the cart needs no account. Proceeding to the full form does, and that is the only place the flow insists on one."
+      },
+      {
+        "id": "ask",
+        "label": "Is this you?",
+        "focus": [
+          "prove",
+          "ask",
+          "create",
+          "conflict"
+        ],
+        "note": "When one record might be yours you are shown it, redacted, and you decide. Saying no still produces a working account."
+      },
+      {
+        "id": "stops",
+        "label": "Where it stops",
+        "focus": [
+          "prove",
+          "taken",
+          "ask",
+          "conflict"
+        ],
+        "note": "Already having an account is only ever said once both channels are proved. Anything ambiguous goes to a person, never to a guess."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "visitor",
+      "label": "You"
+    },
+    {
+      "id": "browser",
+      "label": "Browser"
+    },
+    {
+      "id": "gate",
+      "label": "The gate"
+    },
+    {
+      "id": "server",
+      "label": "custom_webshop"
+    },
+    {
+      "id": "records",
+      "label": "Created for you"
+    },
+    {
+      "id": "stops",
+      "label": "Stops",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "basket",
+    "proceed",
+    "prove",
+    "ask",
+    "create",
+    "order"
+  ],
+  "nodes": [
+    {
+      "id": "basket",
+      "lane": "browser",
+      "col": 0,
+      "type": "database",
+      "label": "Add to cart",
+      "sublabel": "basket in this browser",
+      "tag": "no account"
+    },
+    {
+      "id": "proceed",
+      "lane": "gate",
+      "col": 1,
+      "type": "security",
+      "label": "Proceed",
+      "sublabel": "to the full form",
+      "tag": "the gate"
+    },
+    {
+      "id": "prove",
+      "lane": "server",
+      "col": 2,
+      "type": "security",
+      "label": "Prove it",
+      "sublabel": "email and phone"
+    },
+    {
+      "id": "ask",
+      "lane": "server",
+      "col": 3,
+      "type": "frontend",
+      "label": "Is this you?",
+      "sublabel": "redacted record",
+      "tag": "you decide"
+    },
+    {
+      "id": "create",
+      "lane": "records",
+      "col": 4,
+      "type": "backend",
+      "label": "Account",
+      "sublabel": "Customer, Contact"
+    },
+    {
+      "id": "order",
+      "lane": "visitor",
+      "col": 5,
+      "type": "database",
+      "label": "Sales Order",
+      "sublabel": "yours from now on"
+    },
+    {
+      "id": "taken",
+      "lane": "stops",
+      "col": 2,
+      "type": "security",
+      "label": "Account exists",
+      "sublabel": "said once proved"
+    },
+    {
+      "id": "conflict",
+      "lane": "stops",
+      "col": 4,
+      "type": "security",
+      "label": "Staff queue",
+      "sublabel": "account made anyway"
+    }
+  ],
+  "edges": [
+    {
+      "from": "basket",
+      "to": "proceed",
+      "role": "main"
+    },
+    {
+      "from": "proceed",
+      "to": "prove",
+      "role": "main"
+    },
+    {
+      "from": "prove",
+      "to": "taken",
+      "role": "error"
+    },
+    {
+      "from": "prove",
+      "to": "ask",
+      "role": "main"
+    },
+    {
+      "from": "ask",
+      "to": "create",
+      "role": "main",
+      "label": "yes",
+      "labelDx": 26
+    },
+    {
+      "from": "ask",
+      "to": "conflict",
+      "role": "error",
+      "label": "no",
+      "labelDy": 34
+    },
+    {
+      "from": "create",
+      "to": "order",
+      "role": "main"
+    }
+  ]
+}

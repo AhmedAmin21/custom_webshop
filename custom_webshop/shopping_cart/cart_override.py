@@ -1,3 +1,5 @@
+import contextlib
+
 import frappe
 from frappe import _, throw
 from frappe.utils import cint, flt, get_fullname
@@ -21,6 +23,56 @@ from custom_webshop.shopping_cart.shipping_api import (
 )
 
 
+
+@contextlib.contextmanager
+def shopping_as_customer():
+	"""Let a shopper's own cart operation read the items it is buying.
+
+	ERPNext resolves item details on every save of a Quotation, and
+	`erpnext.stock.get_item_details.get_item_details` calls
+	`item.check_permission()` unconditionally. The Customer role has no
+	read permission on Item - ERPNext does not ship one, and this site
+	adds none - so a Website User adding anything to their basket got a
+	bare 403 the moment the quotation was saved. Every account created by
+	the verified signup flow was affected: the shop looked finished and
+	nothing could be bought.
+
+	The alternative was granting the Customer role blanket read on Item,
+	which would expose valuation and cost fields to every portal account
+	for the sake of a name and a price they can already see. This is the
+	narrower trade: the flag is raised only around one save, only inside
+	this app's own cart endpoints, and only after the caller has been
+	shown to be operating on their own cart.
+
+	Yields:
+		None.
+	"""
+	previous = frappe.flags.ignore_permissions
+	frappe.flags.ignore_permissions = True
+	try:
+		yield
+	finally:
+		frappe.flags.ignore_permissions = previous
+
+
+def assert_purchasable(item_code):
+	"""Refuse an item the shop does not actually offer.
+
+	The permission bypass above is only defensible because of this: a
+	shopper may put a *published Website Item* in their basket and
+	nothing else, so an unpublished or non-existent code is rejected
+	before any check is relaxed.
+
+	Args:
+		item_code: the code the browser asked for.
+
+	Raises:
+		frappe.PermissionError: if the item is not on sale.
+	"""
+	if not frappe.db.exists("Website Item", {"item_code": item_code, "published": 1}):
+		frappe.throw(_("This product is not available."), frappe.PermissionError)
+
+
 @frappe.whitelist()
 def place_order_from_cart():
 	"""
@@ -38,7 +90,11 @@ def place_order_from_cart():
 	quotation.company = cart_settings.company
 
 	quotation.flags.ignore_permissions = True
-	quotation.submit()
+	# Same reason as update_cart: submitting the quotation and building the
+	# Sales Order from it both re-resolve item details, which check Item
+	# read permission the Customer role does not have.
+	with shopping_as_customer():
+		quotation.submit()
 
 	if quotation.quotation_to == "Lead" and quotation.party_name:
 		frappe.defaults.set_user_default("company", quotation.company)
@@ -100,7 +156,8 @@ def place_order_from_cart():
 			sales_order.contact_display = f"{contact_doc.first_name or ''} {contact_doc.last_name or ''}".strip()
 
 	sales_order.flags.ignore_permissions = True
-	sales_order.insert()
+	with shopping_as_customer():
+		sales_order.insert()
 	# Keep Sales Order in Draft until customer uploads payment proof
 	# sales_order.submit()
 
@@ -111,6 +168,7 @@ def place_order_from_cart():
 		frappe.local.cookie_manager.delete_cookie("cart_count")
 
 	return sales_order.name
+
 
 
 @frappe.whitelist()
@@ -336,11 +394,26 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 	Override update_cart to clear contact_person from quotation before saving.
 	This prevents "Contact Person does not belong to Customer" validation errors.
 	Contact info is added to the Sales Order when placing the order.
+
+	What the shopper is allowed to buy is settled first, under their own
+	permissions. Only then is the cart itself rebuilt, which re-resolves
+	item details and prices from end to end and checks an Item permission
+	no portal account has - see `shopping_as_customer`.
 	"""
+	if flt(qty) > 0:
+		assert_purchasable(item_code)
+
+	with shopping_as_customer():
+		return _update_cart(item_code, qty, additional_notes, with_items)
+
+
+def _update_cart(item_code, qty, additional_notes, with_items):
+	"""Rebuild the cart. Always called inside `shopping_as_customer`."""
 	quotation = _get_cart_quotation()
 
 	empty_card = False
 	qty = flt(qty)
+
 	if qty == 0:
 		quotation_items = quotation.get("items", {"item_code": ["!=", item_code]})
 		if quotation_items:
@@ -455,21 +528,16 @@ def update_cart_address(address_type, address_name):
 
 def get_customer_for_user(user=None):
 	"""
-	Get the Customer doc linked to the current user via Portal User.
-	This is a reliable alternative to get_party() which may return a Lead
-	or a different contact link depending on contact.link ordering.
-	"""
-	if not user:
-		user = frappe.session.user
+	Get the Customer doc for the current user.
 
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": user, "parenttype": "Customer"},
-		pluck="parent"
-	)
-	if customers:
-		return frappe.get_doc("Customer", customers[0])
-	return None
+	Kept as a thin wrapper so existing callers keep working; the actual
+	resolution now goes through the verified identity record - see
+	custom_webshop.signup.resolution for why reading Portal User (or
+	webshop's get_party) directly is not a safe answer to this question.
+	"""
+	from custom_webshop.signup.resolution import get_customer
+
+	return get_customer(user)
 
 
 def _send_order_email(sales_order, email_type):
@@ -503,11 +571,24 @@ def _send_order_email(sales_order, email_type):
 
 	message = frappe.render_template(template, context)
 
-	frappe.sendmail(
-		recipients=[user.email],
-		subject=subject,
-		message=message,
-		reference_doctype="Sales Order",
-		reference_name=sales_order.name,
-		now=True,
-	)
+	# Failing to notify must never undo the order. `now=True` sends inline,
+	# and with no outgoing Email Account configured - the state of this
+	# site - it raises `OutgoingEmailError`; Frappe rolls the whole request
+	# back on an unhandled exception, so the Sales Order that was just
+	# created is destroyed and the customer is told nothing happened. The
+	# order is the thing that matters; the email is a courtesy, and a
+	# courtesy that cannot be delivered is logged and left there.
+	try:
+		frappe.sendmail(
+			recipients=[user.email],
+			subject=subject,
+			message=message,
+			reference_doctype="Sales Order",
+			reference_name=sales_order.name,
+			now=True,
+		)
+	except Exception:
+		frappe.log_error(
+			title="custom_webshop: could not email order {0}".format(sales_order.name),
+			message=frappe.get_traceback(),
+		)

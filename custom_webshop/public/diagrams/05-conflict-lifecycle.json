@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "One conflict, start to finish",
+    "subtitle": "What happens to a signup the engine will not resolve alone — and who decides",
+    "output": "05-conflict-lifecycle.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "views": [
+      {
+        "id": "raised",
+        "label": "1 · Raised",
+        "focus": [
+          "verified",
+          "verdict",
+          "account",
+          "queued"
+        ],
+        "note": "The account is created either way. Somebody who has proved both channels never waits on a queue, and a tracked duplicate is cheap."
+      },
+      {
+        "id": "review",
+        "label": "2 · Reviewed",
+        "focus": [
+          "queued",
+          "opened",
+          "account"
+        ],
+        "note": "Both records side by side with their submitted documents. The one with history is pre-selected, with its reason shown, and can be overruled."
+      },
+      {
+        "id": "decided",
+        "label": "3 · Decided",
+        "focus": [
+          "opened",
+          "merged",
+          "separate",
+          "dismissed"
+        ],
+        "note": "Three answers. Only one destroys a record, and it is the one whose surviving customer has to be typed out before the button will fire."
+      },
+      {
+        "id": "after",
+        "label": "4 · Afterwards",
+        "focus": [
+          "merged",
+          "separate"
+        ],
+        "note": "The invariant is re-read from the database, never assumed: one User, one Contact, one Customer agreeing, with portal access intact."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "The signup"
+    },
+    {
+      "id": "queue",
+      "label": "The review queue"
+    },
+    {
+      "id": "terminal",
+      "label": "How it ends"
+    }
+  ],
+  "states": [
+    {
+      "id": "verified",
+      "type": "start",
+      "label": "Both codes proved",
+      "sublabel": "email and phone",
+      "lane": "main",
+      "col": 0,
+      "step": "1"
+    },
+    {
+      "id": "verdict",
+      "type": "decision",
+      "label": "Who is this?",
+      "sublabel": "classify",
+      "lane": "main",
+      "col": 1,
+      "step": "2"
+    },
+    {
+      "id": "asked",
+      "type": "waiting",
+      "label": "Is this you?",
+      "sublabel": "redacted card",
+      "lane": "main",
+      "col": 2,
+      "step": "3"
+    },
+    {
+      "id": "account",
+      "type": "success",
+      "label": "Account created",
+      "sublabel": "either answer",
+      "lane": "main",
+      "col": 3,
+      "step": "4",
+      "tag": "never waits on staff"
+    },
+    {
+      "id": "queued",
+      "type": "waiting",
+      "label": "Conflict opened",
+      "sublabel": "Open",
+      "lane": "queue",
+      "col": 0,
+      "step": "5"
+    },
+    {
+      "id": "opened",
+      "type": "decision",
+      "label": "Same person?",
+      "sublabel": "footprints compared",
+      "lane": "queue",
+      "col": 2,
+      "step": "6",
+      "tag": "a person, not a rule"
+    },
+    {
+      "id": "merged",
+      "type": "success",
+      "label": "Merged",
+      "sublabel": "survivor typed to confirm",
+      "lane": "terminal",
+      "col": 0,
+      "step": "7"
+    },
+    {
+      "id": "separate",
+      "type": "neutral",
+      "label": "Kept separate",
+      "sublabel": "number stays pending",
+      "lane": "terminal",
+      "col": 1,
+      "step": "7"
+    },
+    {
+      "id": "dismissed",
+      "type": "failure",
+      "label": "Dismissed",
+      "sublabel": "not a real problem",
+      "lane": "terminal",
+      "col": 2,
+      "step": "7"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "verified",
+      "to": "verdict"
+    },
+    {
+      "from": "verdict",
+      "to": "asked"
+    },
+    {
+      "from": "asked",
+      "to": "account"
+    },
+    {
+      "from": "account",
+      "to": "queued",
+      "route": "drop",
+      "note": "Raised when the number was already on somebody else's contact, when several records matched, or when a link was made across names that disagree."
+    },
+    {
+      "from": "queued",
+      "to": "opened"
+    },
+    {
+      "from": "opened",
+      "to": "merged",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "note": "One savepoint covers the whole merge, so a step that fails leaves the conflict open rather than half-applied — then the invariant is re-read."
+    },
+    {
+      "from": "opened",
+      "to": "separate",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "opened",
+      "to": "dismissed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Proving who you are",
+    "subtitle": "The signup handshake — both codes are proved before anything is decided or created",
+    "output": "03-signup.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "viewBox": [
+      1000,
+      1460
+    ],
+    "views": [
+      {
+        "id": "email",
+        "label": "1 · Email",
+        "focus": [
+          "visitor",
+          "wizard",
+          "api",
+          "otp",
+          "send"
+        ],
+        "note": "The code is hashed the moment it is issued. Nothing stores it in the clear, and a wrong guess is spent even though the request then fails."
+      },
+      {
+        "id": "phone",
+        "label": "2 · Phone",
+        "focus": [
+          "visitor",
+          "wizard",
+          "api",
+          "otp",
+          "send"
+        ],
+        "note": "The phone is asked for once the email is proved, and always asked for. Turn one channel off and there is no signup at all."
+      },
+      {
+        "id": "resolve",
+        "label": "3 · Resolve",
+        "focus": [
+          "api",
+          "match",
+          "erp"
+        ],
+        "note": "The only point where anything is decided, “you already have an account” included. Answering earlier makes the email step a test for it."
+      },
+      {
+        "id": "ask",
+        "label": "4 · Ask",
+        "focus": [
+          "visitor",
+          "wizard",
+          "api",
+          "match"
+        ],
+        "note": "A record that may be theirs, redacted: street in the clear, governorate and country hidden. The hidden characters never leave the server."
+      },
+      {
+        "id": "create",
+        "label": "5 · Create",
+        "focus": [
+          "wizard",
+          "api",
+          "link",
+          "erp",
+          "visitor"
+        ],
+        "note": "One locked write. Saying no still gives an account: the number is left off the new Contact, recorded as pending, and queued for staff."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "visitor",
+      "type": "external",
+      "label": "Visitor",
+      "sublabel": "browser"
+    },
+    {
+      "id": "wizard",
+      "type": "frontend",
+      "label": "signup wizard",
+      "sublabel": "5-step wizard"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "api/signup.py",
+      "sublabel": "state machine"
+    },
+    {
+      "id": "otp",
+      "type": "security",
+      "label": "otp.py",
+      "sublabel": "hashed codes"
+    },
+    {
+      "id": "send",
+      "type": "external",
+      "label": "Email / SMS",
+      "sublabel": "dev mode logs"
+    },
+    {
+      "id": "match",
+      "type": "backend",
+      "label": "matching.py",
+      "sublabel": "deterministic"
+    },
+    {
+      "id": "link",
+      "type": "backend",
+      "label": "linking.py",
+      "sublabel": "atomic finalise"
+    },
+    {
+      "id": "erp",
+      "type": "database",
+      "label": "ERPNext",
+      "sublabel": "Customer, Contact"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 300,
+      "label": "Details"
+    },
+    {
+      "from": 320,
+      "to": 700,
+      "label": "Prove email, then phone — both, always"
+    },
+    {
+      "from": 720,
+      "to": 880,
+      "label": "Resolve, once both are proved"
+    },
+    {
+      "from": 900,
+      "to": 1130,
+      "label": "Ask, when a record may be theirs"
+    },
+    {
+      "from": 1150,
+      "to": 1370,
+      "label": "Create, atomically"
+    }
+  ],
+  "messages": [
+    {
+      "from": "visitor",
+      "to": "wizard",
+      "y": 190,
+      "label": "name, email, phone"
+    },
+    {
+      "from": "wizard",
+      "to": "api",
+      "y": 240,
+      "label": "start"
+    },
+    {
+      "from": "api",
+      "to": "otp",
+      "y": 340,
+      "label": "issue email code"
+    },
+    {
+      "from": "otp",
+      "to": "send",
+      "y": 390,
+      "label": "send, never stored",
+      "variant": "security"
+    },
+    {
+      "from": "send",
+      "to": "visitor",
+      "y": 440,
+      "label": "code arrives"
+    },
+    {
+      "from": "visitor",
+      "to": "wizard",
+      "y": 490,
+      "label": "enter code"
+    },
+    {
+      "from": "wizard",
+      "to": "api",
+      "y": 540,
+      "label": "verify_email",
+      "note": "Verifies the address and nothing else. Whether it already has an account is not answered here."
+    },
+    {
+      "from": "api",
+      "to": "otp",
+      "y": 590,
+      "label": "issue phone code"
+    },
+    {
+      "from": "otp",
+      "to": "send",
+      "y": 640,
+      "label": "SMS",
+      "variant": "security"
+    },
+    {
+      "from": "visitor",
+      "to": "wizard",
+      "y": 690,
+      "label": "enter code"
+    },
+    {
+      "from": "wizard",
+      "to": "api",
+      "y": 740,
+      "label": "verify_phone"
+    },
+    {
+      "from": "api",
+      "to": "match",
+      "y": 780,
+      "label": "resolve",
+      "variant": "emphasis"
+    },
+    {
+      "from": "match",
+      "to": "erp",
+      "y": 825,
+      "label": "read by phone, email"
+    },
+    {
+      "from": "match",
+      "to": "api",
+      "y": 866,
+      "label": "verdict",
+      "variant": "return"
+    },
+    {
+      "from": "api",
+      "to": "wizard",
+      "y": 940,
+      "label": "redacted card",
+      "variant": "security",
+      "note": "Never a Customer identifier. The browser can send back nothing but yes or no."
+    },
+    {
+      "from": "wizard",
+      "to": "visitor",
+      "y": 990,
+      "label": "is this you?"
+    },
+    {
+      "from": "visitor",
+      "to": "wizard",
+      "y": 1040,
+      "label": "yes / no"
+    },
+    {
+      "from": "wizard",
+      "to": "api",
+      "y": 1090,
+      "label": "decide"
+    },
+    {
+      "from": "wizard",
+      "to": "api",
+      "y": 1190,
+      "label": "complete + password"
+    },
+    {
+      "from": "api",
+      "to": "link",
+      "y": 1240,
+      "label": "finalise, under lock",
+      "variant": "emphasis"
+    },
+    {
+      "from": "link",
+      "to": "erp",
+      "y": 1290,
+      "label": "Contact, Customer, identity"
+    },
+    {
+      "from": "api",
+      "to": "visitor",
+      "y": 1340,
+      "label": "signed in",
+      "variant": "return"
+    }
+  ]
+}

@@ -5,3 +5,6 @@
 tags
 node_modules
 __pycache__
+# Browser-walk artifacts: fixtures manifest, screenshots and results,
+# rewritten on every run.
+custom_webshop/tests/browser/.run/

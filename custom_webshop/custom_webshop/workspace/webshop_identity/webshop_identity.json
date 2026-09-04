@@ -1,0 +1,180 @@
+{
+ "charts": [
+  {
+   "chart_name": "Identity Conflicts By Type",
+   "label": "Identity Conflicts By Type"
+  }
+ ],
+ "content": "[{\"id\": \"wiHdr1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Identity Review Queue</b></span>\", \"col\": 12}}, {\"id\": \"wiNc01\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Identity Conflicts\", \"col\": 4}}, {\"id\": \"wiNc02\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Waiting Over A Week\", \"col\": 4}}, {\"id\": \"wiNc03\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Accounts Created This Month\", \"col\": 4}}, {\"id\": \"wiSp01\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wiCh01\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Identity Conflicts By Type\", \"col\": 12}}, {\"id\": \"wiSp02\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wiHdr2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Records</b></span>\", \"col\": 12}}, {\"id\": \"wiCd01\", \"type\": \"card\", \"data\": {\"card_name\": \"Review Queue\", \"col\": 4}}, {\"id\": \"wiCd02\", \"type\": \"card\", \"data\": {\"card_name\": \"Signup\", \"col\": 4}}, {\"id\": \"wiCd03\", \"type\": \"card\", \"data\": {\"card_name\": \"Related\", \"col\": 4}}]",
+ "creation": "2026-09-02 00:00:00",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "users",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Webshop Identity",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Review Queue",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Webshop Identity Conflict",
+   "link_count": 0,
+   "link_to": "Webshop Identity Conflict",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Duplicate Mobile Contacts",
+   "link_count": 0,
+   "link_to": "duplicate-mobile-contacts",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Signup",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Webshop Account Identity",
+   "link_count": 0,
+   "link_to": "Webshop Account Identity",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Webshop Signup Session",
+   "link_count": 0,
+   "link_to": "Webshop Signup Session",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Webshop Signup Settings",
+   "link_count": 0,
+   "link_to": "Webshop Signup Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Related",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contact",
+   "link_count": 0,
+   "link_to": "Contact",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "User",
+   "link_count": 0,
+   "link_to": "User",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-09-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Custom Webshop",
+ "name": "Webshop Identity",
+ "number_cards": [
+  {
+   "label": "Open Identity Conflicts",
+   "number_card_name": "Open Identity Conflicts"
+  },
+  {
+   "label": "Waiting Over A Week",
+   "number_card_name": "Waiting Over A Week"
+  },
+  {
+   "label": "Accounts Created This Month",
+   "number_card_name": "Accounts Created This Month"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Orange",
+   "label": "Open Conflicts",
+   "link_to": "Webshop Identity Conflict",
+   "stats_filter": "{\"status\": \"Open\"}",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "label": "Website Accounts",
+   "link_to": "Webshop Account Identity",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "label": "Signup Settings",
+   "link_to": "Webshop Signup Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "Webshop Identity"
+}

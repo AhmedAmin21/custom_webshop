@@ -291,19 +291,12 @@ function buildProductCard(item, badge = "") {
 
 /* ── Add to cart (calls ERPNext update_cart override) ────────────────────── */
 window.addToCartItem = function(itemCode) {
-    if (Store.isGuest) {
-        window.location.href = "/login?redirect-to=/shop";
-        return;
-    }
-    Store.call("webshop.webshop.shopping_cart.cart.update_cart", {
-        item_code: itemCode,
-        qty: 1,
-    }).then(() => {
-        Store.toast(Store.t("toast_added_cart"), "success");
-        Store.updateCartBadge();
-    }).catch(err => {
-        Store.toast(err.message || Store.t("error_generic"), "error");
-    });
+    // No account needed to fill a basket. Store.addToCart puts a guest's
+    // in this browser and a signed-in visitor's on the server; the ask to
+    // sign up comes at the full order form, not here.
+    Store.addToCart(itemCode, 1)
+        .then(() => Store.toast(Store.t("toast_added_cart"), "success"))
+        .catch(err => Store.toast(err.message || Store.t("error_generic"), "error"));
 };
 
 /* ── Home Page Sections ──────────────────────────────────────────────────── */

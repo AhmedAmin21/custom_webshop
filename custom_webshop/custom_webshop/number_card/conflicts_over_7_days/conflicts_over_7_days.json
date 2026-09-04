@@ -1,0 +1,21 @@
+{
+ "creation": "2026-09-02 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Webshop Identity Conflict",
+ "filters_json": "[[\"Webshop Identity Conflict\", \"status\", \"in\", [\"Open\", \"In Review\"]]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Waiting Over A Week",
+ "modified": "2026-09-02 13:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Custom Webshop",
+ "name": "Waiting Over A Week",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type",
+ "dynamic_filters_json": "[[\"Webshop Identity Conflict\", \"opened_on\", \"<\", \"frappe.datetime.add_days(frappe.datetime.get_today(), -7).slice(0, 10)\"]]"
+}

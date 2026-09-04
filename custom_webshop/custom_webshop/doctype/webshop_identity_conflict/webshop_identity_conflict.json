@@ -1,0 +1,251 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-08-29 00:00:00.000000",
+ "description": "A signup the matching engine could not resolve safely on its own. Staff review and, where appropriate, merge the records in ERPNext.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "briefing",
+  "detail_section",
+  "naming_series",
+  "conflict_type",
+  "status",
+  "column_break_head",
+  "signup_session",
+  "opened_on",
+  "identity_section",
+  "submitted_name",
+  "claimed_company_name",
+  "phone_e164",
+  "column_break_identity",
+  "email_normalized",
+  "account_type",
+  "problems_section",
+  "problems",
+  "records_section",
+  "candidate_customers",
+  "created_user",
+  "column_break_records",
+  "created_customer",
+  "resolution_section",
+  "resolution_notes",
+  "resolved_by",
+  "column_break_resolution",
+  "resolved_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "briefing",
+   "fieldtype": "HTML",
+   "label": "Briefing"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:false",
+   "fieldname": "detail_section",
+   "fieldtype": "Section Break",
+   "label": "Record detail"
+  },
+  {
+   "default": "WSC-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "WSC-.YYYY.-"
+  },
+  {
+   "fieldname": "conflict_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Conflict Type",
+   "options": "PHONE_NAME_MISMATCH\nEMAIL_NAME_MISMATCH\nMULTIPLE_PHONE_MATCHES\nCUSTOMER_ALREADY_LINKED\nEMAIL_ACCOUNT_EXISTS\nPHONE_ACCOUNT_EXISTS\nUSER_REJECTED_MATCH\nPHONE_ALREADY_ASSOCIATED\nPROFILE_DISCREPANCY\nSTALE_LINK_DECISION\nINCOMPLETE_PROFILE\nLEAD_PREFILL_DIVERGENCE\nMATCHED_CUSTOMER_DISABLED\nACCOUNT_TYPE_MISMATCH",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nIn Review\nResolved\nDismissed",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "signup_session",
+   "fieldtype": "Link",
+   "label": "Signup Session",
+   "options": "Webshop Signup Session",
+   "read_only": 1
+  },
+  {
+   "fieldname": "opened_on",
+   "fieldtype": "Datetime",
+   "label": "Opened On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Submitted Identity"
+  },
+  {
+   "fieldname": "submitted_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Submitted Name",
+   "read_only": 1
+  },
+  {
+   "description": "The business name typed at signup, when the person signed up as a company. Kept separate from Submitted Name, which is always the person's own name - applying a company name where an individual's belongs would rename a customer to a business.",
+   "fieldname": "claimed_company_name",
+   "fieldtype": "Data",
+   "label": "Company Name Given",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Verified Phone (E.164)",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email_normalized",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Verified Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "account_type",
+   "fieldtype": "Data",
+   "label": "Account Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "problems_section",
+   "fieldtype": "Section Break",
+   "label": "Problems"
+  },
+  {
+   "description": "Everything wrong with this signup. One conflict is opened per signup and each problem is a row here, so a case that is wrong in several ways stays one item in the queue instead of several unrelated ones.",
+   "fieldname": "problems",
+   "fieldtype": "Table",
+   "label": "Problems",
+   "options": "Webshop Identity Problem",
+   "read_only": 1
+  },
+  {
+   "fieldname": "records_section",
+   "fieldtype": "Section Break",
+   "label": "Records Involved"
+  },
+  {
+   "description": "Every Customer the matching engine considered, with why it was a candidate.",
+   "fieldname": "candidate_customers",
+   "fieldtype": "Small Text",
+   "label": "Candidates considered (raw)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_user",
+   "fieldtype": "Link",
+   "label": "Website User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_records",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The new Customer this signup was given. Merging it into a candidate is the usual resolution.",
+   "fieldname": "created_customer",
+   "fieldtype": "Link",
+   "label": "Created Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolution_section",
+   "fieldtype": "Section Break",
+   "label": "Resolution"
+  },
+  {
+   "fieldname": "resolution_notes",
+   "fieldtype": "Text",
+   "label": "Resolution Notes"
+  },
+  {
+   "fieldname": "resolved_by",
+   "fieldtype": "Link",
+   "label": "Resolved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_resolution",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "resolved_on",
+   "fieldtype": "Datetime",
+   "label": "Resolved On",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-04 01:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "custom_webshop",
+ "name": "Webshop Identity Conflict",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "search_fields": "conflict_type,status,submitted_name,phone_e164",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "submitted_name",
+ "track_changes": 1
+}

@@ -125,3 +125,19 @@
 	font-size: 1.25rem;
 	letter-spacing: 0.5px;
 }
+
+/* ── Cart line-item thumbnails ──────────────────────────────────────────
+   webshop's own `.item-thumb` is `object-fit: cover` in a fixed 80x50
+   box, so any product photo that is not close to 8:5 loses its edges -
+   and a tall one loses most of the product. That stylesheet belongs to
+   another app, so the rule is corrected here instead: this file is
+   `web_include_css` for this app and loads after webshop's bundle.
+
+   Contain shows the whole picture and pads the difference, which is the
+   rule the rest of this shop already follows on the card, the detail
+   gallery, the cart and the drawer. */
+.item-thumb {
+	object-fit: contain;
+	background: #ffffff;
+	padding: 2px;
+}

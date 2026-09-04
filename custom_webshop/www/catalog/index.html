@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css?v={{ build_version }}">
 
     <script>
         window.FRAPPE_SESSION = {
@@ -248,13 +248,13 @@
             <div class="drawer-summary">
                 <div class="drawer-summary-row"><span>Est. Total:</span><span id="drawer-subtotal">—</span></div>
             </div>
-            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">Proceed to Full Form</a>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn" data-i18n="drawer_proceed">Proceed to Full Form</a>
         </div>
     </div>
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/assets/custom_webshop/js/store.js"></script>
-    <script src="/assets/custom_webshop/js/page-catalog.js"></script>
+    <script src="/assets/custom_webshop/js/store.js?v={{ build_version }}"></script>
+    <script src="/assets/custom_webshop/js/page-catalog.js?v={{ build_version }}"></script>
 </body>
 </html>

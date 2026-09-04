@@ -1,0 +1,212 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-29 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "feature_flags_section",
+  "signup_enabled",
+  "email_otp_enabled",
+  "column_break_flags",
+  "phone_otp_enabled",
+  "otp_dev_mode",
+  "otp_section",
+  "otp_length",
+  "otp_ttl_seconds",
+  "otp_max_attempts",
+  "column_break_otp",
+  "otp_resend_cooldown_seconds",
+  "otp_max_sends_per_channel",
+  "signup_starts_per_hour_per_ip",
+  "sms_sender_method",
+  "session_section",
+  "session_ttl_minutes",
+  "column_break_session",
+  "session_retention_days",
+  "identity_section",
+  "require_name_parts",
+  "default_phone_region",
+  "column_break_identity",
+  "default_customer_group",
+  "default_territory"
+ ],
+ "fields": [
+  {
+   "fieldname": "feature_flags_section",
+   "fieldtype": "Section Break",
+   "label": "Feature Flags"
+  },
+  {
+   "default": "0",
+   "description": "Master switch for the verified signup flow. When off, the signup API returns a disabled message and creates nothing.",
+   "fieldname": "signup_enabled",
+   "fieldtype": "Check",
+   "label": "Signup Enabled"
+  },
+  {
+   "default": "1",
+   "description": "Require email OTP verification. Turning this off disables signup entirely.",
+   "fieldname": "email_otp_enabled",
+   "fieldtype": "Check",
+   "label": "Email OTP Enabled"
+  },
+  {
+   "fieldname": "column_break_flags",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Require phone OTP verification. Needs a configured gateway in SMS Settings, or Dev Mode. Turning this off disables signup entirely.",
+   "fieldname": "phone_otp_enabled",
+   "fieldtype": "Check",
+   "label": "Phone OTP Enabled"
+  },
+  {
+   "default": "0",
+   "description": "Write OTP codes to the site log instead of sending them. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "otp_dev_mode",
+   "fieldtype": "Check",
+   "label": "OTP Dev Mode"
+  },
+  {
+   "fieldname": "otp_section",
+   "fieldtype": "Section Break",
+   "label": "One Time Passwords"
+  },
+  {
+   "default": "6",
+   "fieldname": "otp_length",
+   "fieldtype": "Int",
+   "label": "OTP Length"
+  },
+  {
+   "default": "600",
+   "description": "How long a code stays valid, in seconds.",
+   "fieldname": "otp_ttl_seconds",
+   "fieldtype": "Int",
+   "label": "OTP Validity (seconds)"
+  },
+  {
+   "default": "5",
+   "description": "Wrong guesses allowed per issued code before it is destroyed.",
+   "fieldname": "otp_max_attempts",
+   "fieldtype": "Int",
+   "label": "Max Verify Attempts"
+  },
+  {
+   "fieldname": "column_break_otp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "60",
+   "fieldname": "otp_resend_cooldown_seconds",
+   "fieldtype": "Int",
+   "label": "Resend Cooldown (seconds)"
+  },
+  {
+   "default": "5",
+   "description": "Total codes that may be sent per channel, per signup session.",
+   "fieldname": "otp_max_sends_per_channel",
+   "fieldtype": "Int",
+   "label": "Max Sends Per Channel"
+  },
+  {
+   "default": "30",
+   "description": "How many signups one IP address may begin per hour. Keep generous: mobile carriers in Egypt put many customers behind a single public IP, so a tight limit blocks real people, not just abuse. Per-session OTP caps are the tighter control.",
+   "fieldname": "signup_starts_per_hour_per_ip",
+   "fieldtype": "Int",
+   "label": "Signup Starts Per Hour Per IP"
+  },
+  {
+   "description": "Dotted path to a custom SMS sender, called as sender(phone_e164, message). Leave blank to use Frappe's SMS Settings gateway.",
+   "fieldname": "sms_sender_method",
+   "fieldtype": "Data",
+   "label": "SMS Sender Method"
+  },
+  {
+   "fieldname": "session_section",
+   "fieldtype": "Section Break",
+   "label": "Signup Sessions"
+  },
+  {
+   "default": "30",
+   "description": "How long an in-progress signup stays alive, refreshed on every successful step.",
+   "fieldname": "session_ttl_minutes",
+   "fieldtype": "Int",
+   "label": "Session Validity (minutes)"
+  },
+  {
+   "fieldname": "column_break_session",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "30",
+   "description": "Days to keep expired and cancelled sessions before the daily purge removes them.",
+   "fieldname": "session_retention_days",
+   "fieldtype": "Int",
+   "label": "Session Retention (days)"
+  },
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity Rules"
+  },
+  {
+   "default": "3",
+   "description": "How many parts of a name a customer record must carry: first name, father's name and family name. A business requirement about this shop's own records, not a rule about how names work - some naming systems are complete in fewer parts, and a customer using one is told plainly what is needed rather than that their name is wrong. Counted on the name as typed, ignoring tokens with no letters in them.",
+   "fieldname": "require_name_parts",
+   "fieldtype": "Int",
+   "label": "Required Name Components"
+  },
+  {
+   "default": "EG",
+   "description": "ISO region used to interpret phone numbers typed without a country code.",
+   "fieldname": "default_phone_region",
+   "fieldtype": "Data",
+   "label": "Default Phone Region"
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Customer Group for Customers created by signup. Must be a leaf group, not a group node.",
+   "fieldname": "default_customer_group",
+   "fieldtype": "Link",
+   "label": "Default Customer Group",
+   "options": "Customer Group"
+  },
+  {
+   "description": "Territory for Customers created by signup. Must be a leaf territory, not a group node.",
+   "fieldname": "default_territory",
+   "fieldtype": "Link",
+   "label": "Default Territory",
+   "options": "Territory"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-03 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "custom_webshop",
+ "name": "Webshop Signup Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

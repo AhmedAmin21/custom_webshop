@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "One phone number, one format",
+    "subtitle": "What the field accepts, what is stored, and why reading stays forgiving",
+    "output": "04-phone.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "viewBox": [
+      1180,
+      700
+    ],
+    "views": [
+      {
+        "id": "typed",
+        "label": "1 · As typed",
+        "focus": [
+          "typed",
+          "field",
+          "rules",
+          "canonical"
+        ],
+        "note": "The field drops the trunk zero as you type, so +20 and the number beside it read as one dialable number."
+      },
+      {
+        "id": "stored",
+        "label": "2 · As stored",
+        "focus": [
+          "canonical",
+          "stored"
+        ],
+        "note": "Every column this app writes holds E.164, so a number means the same thing wherever it is read from."
+      },
+      {
+        "id": "read",
+        "label": "3 · As read",
+        "focus": [
+          "stored",
+          "variants",
+          "matching",
+          "ceapp"
+        ],
+        "note": "Reading accepts every written form, because contact_enhancements and older rows still hold the local one."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Typed"
+    },
+    {
+      "label": "Judged"
+    },
+    {
+      "label": "Canonical"
+    },
+    {
+      "label": "Stored"
+    },
+    {
+      "label": "Read back"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "typed",
+      "type": "external",
+      "label": "01012345678",
+      "sublabel": "however it is written",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "field",
+      "type": "frontend",
+      "label": "phone field",
+      "sublabel": "drops the trunk 0",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "rules",
+      "type": "security",
+      "label": "country rules",
+      "sublabel": "digits per country",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "canonical",
+      "type": "backend",
+      "label": "to_e164",
+      "sublabel": "the authority",
+      "stage": 2,
+      "row": 1,
+      "tag": "phonenumbers"
+    },
+    {
+      "id": "variants",
+      "type": "backend",
+      "label": "phone_variants",
+      "sublabel": "every written form",
+      "stage": 4,
+      "row": 0,
+      "height": 62
+    },
+    {
+      "id": "matching",
+      "type": "backend",
+      "label": "matching",
+      "sublabel": "finds old rows too",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "ceapp",
+      "type": "cloud",
+      "label": "contact_enh.",
+      "sublabel": "rewrites to local",
+      "stage": 4,
+      "row": 2
+    },
+    {
+      "id": "stored",
+      "type": "database",
+      "label": "Stored as E.164",
+      "sublabel": "Contact, User, Identity",
+      "stage": 3,
+      "row": 1,
+      "tag": "one format"
+    }
+  ],
+  "flows": [
+    {
+      "from": "typed",
+      "to": "field",
+      "label": "as typed"
+    },
+    {
+      "from": "typed",
+      "to": "rules",
+      "label": "checked against"
+    },
+    {
+      "from": "field",
+      "to": "canonical",
+      "label": "national part"
+    },
+    {
+      "from": "rules",
+      "to": "canonical",
+      "label": "region"
+    },
+    {
+      "from": "canonical",
+      "to": "stored",
+      "label": "+201012345678",
+      "variant": "emphasis"
+    },
+    {
+      "from": "stored",
+      "to": "variants",
+      "label": "read back"
+    },
+    {
+      "from": "variants",
+      "to": "matching",
+      "label": "local form too",
+      "variant": "dashed"
+    },
+    {
+      "from": "ceapp",
+      "to": "stored",
+      "label": "rewrites on save",
+      "variant": "security"
+    }
+  ]
+}

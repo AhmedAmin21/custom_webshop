@@ -7,6 +7,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from custom_webshop.signup.resolution import owns_customer
+
 
 def get_context(context):
 	context.no_cache = 1
@@ -21,21 +23,17 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/payment?order_id=" + order_id if order_id else "/login"
 		raise frappe.Redirect
 
-	# Find all customers linked to this user
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": frappe.session.user, "parenttype": "Customer"},
-		pluck="parent"
-	)
-
 	if not order_id:
 		context.invalid = True
 		context.error = _("No order specified.")
 		return context
 
-	# Fetch the order and ensure it belongs to one of the customer's linked customers
+	# Ownership is checked against the verified identity record, not the
+	# Portal User table: this page loads a Sales Order by an id straight
+	# out of the query string, so the check standing between one customer
+	# and another's order has to be the authoritative one.
 	sales_order = frappe.get_doc("Sales Order", order_id)
-	if not sales_order or sales_order.customer not in customers:
+	if not sales_order or not owns_customer(sales_order.customer):
 		context.invalid = True
 		context.error = _("Order not found.")
 		return context

@@ -1,0 +1,133 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-29 00:00:00.000000",
+ "description": "The authoritative link between a verified website account and its ERPNext Customer. The unique constraints here are what make concurrent signups safe.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "customer",
+  "column_break_head",
+  "phone_e164",
+  "email_normalized",
+  "provenance_section",
+  "signup_session",
+  "contact",
+  "column_break_provenance",
+  "verified_on",
+  "linked_existing_customer"
+ ],
+ "fields": [
+  {
+   "description": "One website account per identity row.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Website User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Verified, canonical. Unique across all accounts.",
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone (E.164)",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Verified, canonical. Unique across all accounts.",
+   "fieldname": "email_normalized",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email (normalized)",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "provenance_section",
+   "fieldtype": "Section Break",
+   "label": "Provenance"
+  },
+  {
+   "fieldname": "signup_session",
+   "fieldtype": "Link",
+   "label": "Signup Session",
+   "options": "Webshop Signup Session"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "column_break_provenance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On"
+  },
+  {
+   "default": "0",
+   "description": "Set when this account was linked to a Customer that already existed, rather than one created by signup.",
+   "fieldname": "linked_existing_customer",
+   "fieldtype": "Check",
+   "label": "Linked Existing Customer"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-29 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "custom_webshop",
+ "name": "Webshop Account Identity",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager"
+  }
+ ],
+ "quick_entry": 0,
+ "search_fields": "user,customer,phone_e164",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "user",
+ "track_changes": 1
+}

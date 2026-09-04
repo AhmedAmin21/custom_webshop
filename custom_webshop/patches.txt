@@ -4,3 +4,7 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
+custom_webshop.patches.backfill_contact_phone_e164
+custom_webshop.patches.backfill_zeroed_signup_settings
+custom_webshop.patches.canonicalize_webshop_owned_phones
+custom_webshop.patches.grant_portal_shopping_permissions

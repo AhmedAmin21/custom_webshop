@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css?v={{ build_version }}">
 
     <!-- Session data for JS -->
     <script>
@@ -244,9 +244,7 @@
                     <span id="drawer-subtotal">—</span>
                 </div>
             </div>
-            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn">
-                Proceed to Full Form
-            </a>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn" data-i18n="drawer_proceed">Proceed to Full Form</a>
         </div>
     </div>
 
@@ -254,10 +252,10 @@
     <div class="toast-container" id="toast-container"></div>
 
     <!-- Shared store (i18n, theme, api adapter) -->
-    <script src="/assets/custom_webshop/js/store.js"></script>
+    <script src="/assets/custom_webshop/js/store.js?v={{ build_version }}"></script>
 
     <!-- Home page controller -->
-    <script src="/assets/custom_webshop/js/page-shop.js"></script>
+    <script src="/assets/custom_webshop/js/page-shop.js?v={{ build_version }}"></script>
 
 </body>
 </html>

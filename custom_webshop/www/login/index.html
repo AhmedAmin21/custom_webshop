@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css">
+    <link rel="stylesheet" href="/assets/custom_webshop/css/shop.css?v={{ build_version }}">
 
     <script>
         window.FRAPPE_SESSION = {
@@ -21,45 +21,658 @@
         window.LOGIN_CONTEXT = {
             redirect_to: "{{ redirect_to | e }}",
             disable_signup: {{ 'true' if disable_signup else 'false' }},
-            csrf_token: "{{ csrf_token }}"
+            csrf_token: "{{ csrf_token }}",
+            // From signup/passwords.py, so the guide beside the field and
+            // the check on submit are the same rules.
+            password_rules: {{ password_rules | tojson }}
         };
     </script>
 
     <style>
+        /* ═══════════════════════════════════════════════════════════════
+           Auth — built on the shop's own tokens (Outfit / Inter / Cairo,
+           #2563EB, slate). Three variables the base stylesheet references
+           are never defined anywhere in it: --text-base, --bg-body and
+           --shadow-strong. An undefined var makes the whole declaration
+           invalid, so inputs were rendering with no background and the card
+           with no shadow. Aliasing them here repairs the base styles for
+           this page without touching the 97KB shared stylesheet.
+           ═══════════════════════════════════════════════════════════════ */
+        :root {
+            --text-base: var(--text-main);
+            --bg-body: var(--bg-surface-opaque);
+            --shadow-strong: 0 24px 48px -24px rgba(15, 23, 42, 0.18),
+                             0 2px 8px -2px rgba(15, 23, 42, 0.06);
+        }
+
+        /* ── Shell ──────────────────────────────────────────────────── */
+        .auth-wrapper {
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: calc(100vh - 200px);
+            padding: 8px 20px 64px;
+            background: none;
+        }
+        .auth-card {
+            width: 100%; max-width: 440px;
+            background: var(--bg-surface-opaque);
+            backdrop-filter: none;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-strong);
+            padding: 40px 36px 32px;
+            position: relative;
+            /* The base sheet clips here, for a gradient strip that this
+               page disables anyway. Clipping cut the country dropdown off
+               at the card's edge, so it goes back to visible. */
+            overflow: visible;
+        }
+        /* The base sheet paints a blue gradient strip here. The signup card
+           carries the tick rail instead, so drop the strip and let one
+           device do the job. */
+        .auth-card::before { display: none; }
+
+        .auth-header { text-align: center; margin-bottom: 26px; }
+        .auth-title {
+            font-family: var(--font-heading);
+            font-size: 1.6rem; font-weight: 700;
+            letter-spacing: -0.02em; line-height: 1.2;
+            color: var(--text-main); margin: 0 0 6px;
+            text-wrap: balance;
+        }
+        .auth-subtitle {
+            font-size: 0.92rem; color: var(--text-muted);
+            margin: 0; line-height: 1.5; text-wrap: balance;
+        }
+        .auth-icon { display: none; }
+
         .auth-status {
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto 16px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: none;
-            text-align: center;
+            width: 100%; margin: 0 auto 16px; padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem; font-weight: 500;
+            display: none; text-align: center;
         }
         .auth-status.error {
-            display: block;
-            background: rgba(239,68,68,0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239,68,68,0.3);
+            display: block; background: rgba(220, 38, 38, 0.07);
+            color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.2);
         }
         .auth-status.success {
-            display: block;
-            background: rgba(34,197,94,0.1);
-            color: #22c55e;
-            border: 1px solid rgba(34,197,94,0.3);
+            display: block; background: rgba(5, 150, 105, 0.07);
+            color: #047857; border: 1px solid rgba(5, 150, 105, 0.2);
         }
         .auth-view { display: none; }
         .auth-view.active { display: block; }
-        .auth-forgot-link {
-            display: block;
-            text-align: end;
-            font-size: 0.82rem;
-            color: var(--text-muted);
+
+        /* ── Fields ─────────────────────────────────────────────────── */
+        .auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+        /* Shared field look.
+           The base sheet sets `padding: 16px 16px 16px 48px` - the 48px
+           reserving room for the icon. Both that and the icon's own `left`
+           are physical, so in Arabic the icon moves to the right while the
+           space held for it stays on the left, and the placeholder runs
+           straight underneath it. Both become logical here, so the gap is
+           always on whichever side the icon is actually on. */
+        .auth-form input {
+            background: var(--bg-surface-opaque);
+            color: var(--text-main);
+            border-radius: var(--radius-sm);
+            font-size: 0.98rem;
+            padding: 14px 16px;
+            padding-inline-start: 48px;
+        }
+        .auth-form input::placeholder { color: #94A3B8; }
+
+        .auth-form .input-icon {
+            left: auto; inset-inline-start: 16px;
+            width: 18px; height: 18px;
+        }
+
+        /* The base sheet tints the icon on focus with `input:focus ~
+           .input-icon`, but `~` selects a *following* sibling and the icon
+           is written before the input - so that rule never matched and the
+           icon never lit up. `:focus-within` on the group does what was
+           intended, whatever the order. */
+        .auth-form .input-group:focus-within .input-icon { color: var(--primary-blue); }
+
+        /* The wizard's own fields carry no icon, so they take back the 48px
+           the base sheet reserves for one. Scoped to the wizard rather than
+           done with :has(), so a browser without :has() cannot end up
+           overlapping the login form's icon with its text. */
+        #signup-wizard .auth-form input,
+        #signup-wizard .input-group input {
+            padding: 14px 16px;
+        }
+
+        /* A field is a label bound to its input. The form's gap separates
+           fields; inside one, the label sits close to what it labels. */
+        .field { display: flex; flex-direction: column; }
+        .signup-label {
+            display: block; font-size: 0.78rem; font-weight: 600;
+            letter-spacing: 0.01em;
+            color: var(--text-muted); margin: 0 0 7px;
+        }
+
+        /* ── Signature: the calibration rail ────────────────────────────
+           Five known steps, shown as a vernier scale rather than a bar.
+           Passed ticks fill blue, the current one is gold and full height. */
+        .signup-rail {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; margin: 0 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .rail-scale { display: flex; align-items: center; gap: 7px; flex: 1; }
+        .rail-tick {
+            flex: 1; height: 10px; border-radius: 999px;
+            background: #E2E8F0;
+            transition: var(--transition-fast);
+        }
+        .rail-tick.done { background: var(--primary-blue); }
+        .rail-tick.now {
+            background: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
+        }
+        .rail-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem; font-weight: 700;
+            color: var(--text-main); line-height: 1;
+        }
+        .rail-of { color: var(--text-muted); font-weight: 400; }
+
+        /* ── Account type ───────────────────────────────────────────────
+           The label is the content. No sub-caption: a second line saying
+           "a personal account" under "Personal" is the label twice. */
+        .signup-choices {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-bottom: 22px;
+        }
+        .signup-choice {
+            position: relative;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 10px;
+            padding: 22px 12px;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface-opaque);
+            cursor: pointer; width: 100%;
+            font-family: var(--font-heading);
+            transition: var(--transition-fast);
+        }
+        .signup-choice:hover {
+            border-color: #CBD5E1;
+            transform: translateY(-1px);
+        }
+        .signup-choice.selected {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.04);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+        }
+        .signup-choice-icon {
+            width: 26px; height: 26px;
+            color: #94A3B8; stroke-width: 1.6;
+            transition: var(--transition-fast);
+        }
+        .signup-choice.selected .signup-choice-icon { color: var(--primary-blue); }
+        .signup-choice-label {
+            font-size: 1.05rem; font-weight: 700;
+            color: var(--text-main); letter-spacing: -0.01em;
+        }
+        .signup-choice-check {
+            position: absolute; top: 10px; inset-inline-end: 10px;
+            width: 15px; height: 15px; stroke-width: 3;
+            color: var(--primary-blue); opacity: 0;
+            transition: var(--transition-fast);
+        }
+        .signup-choice.selected .signup-choice-check { opacity: 1; }
+
+        /* ── Buttons ────────────────────────────────────────────────── */
+        .auth-submit-btn {
+            font-family: var(--font-heading);
+            border-radius: var(--radius-sm);
+            padding: 14px; font-size: 1rem;
+            /* This class is a <button> nearly everywhere, but the blocked
+               panel's actions are real links to the sign-in and reset
+               views. Without this they arrive underlined. */
             text-decoration: none;
-            margin-top: -8px;
+        }
+        .signup-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .signup-restart { margin-top: 16px; text-align: center; }
+        /* Sized by their labels rather than split evenly: two equal
+           halves broke "تسجيل الدخول" across two lines while the longer
+           label beside it had room to spare. The tighter inline padding
+           buys back the same space. */
+        .signup-actions > * { flex: 1 1 auto; padding-inline: 10px; }
+        .signup-actions .auth-submit-btn { margin-top: 0; }
+        /* The primary label is short enough to hold one line; only
+           the longer secondary one is allowed to break. */
+        .signup-actions .auth-submit-btn span { white-space: nowrap; }
+        .auth-secondary-btn {
+            font-family: var(--font-heading);
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            font-weight: 600; font-size: 0.95rem;
+            border: 1.5px solid var(--border-subtle); background: transparent;
+            color: var(--text-muted); cursor: pointer; text-align: center;
+            text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: var(--transition-fast);
+        }
+        .auth-secondary-btn:hover {
+            border-color: #CBD5E1; color: var(--text-main);
+        }
+
+        /* ── Verification code — the one large type moment ──────────── */
+        .signup-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem; font-weight: 700;
+            letter-spacing: 0.42em; text-indent: 0.42em;
+            text-align: center; padding: 16px 12px !important;
+            color: var(--text-main);
+        }
+        .signup-code::placeholder { letter-spacing: 0.2em; }
+
+        .signup-links {
+            display: flex; justify-content: space-between;
+            gap: 12px; margin-top: 16px; flex-wrap: wrap;
+        }
+        .auth-link-btn {
+            background: none; border: none; padding: 0; cursor: pointer;
+            font-size: 0.86rem; font-weight: 600;
+            color: var(--primary-blue); font-family: var(--font-body);
+        }
+        .auth-link-btn:hover:not(:disabled) { text-decoration: underline; }
+        .auth-link-btn:disabled { color: var(--text-muted); cursor: default; font-weight: 500; }
+
+        .signup-hint {
+            font-size: 0.8rem; color: var(--text-muted);
+            text-align: center; margin: 12px 0 0;
+        }
+        .signup-notice {
+            font-size: 0.86rem; color: #1e40af; line-height: 1.5;
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.14);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px; margin: 0 0 18px; text-align: start;
+        }
+
+        /* ── Recognition card ───────────────────────────────────────── */
+        .signup-match-card {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: var(--bg-base);
+            padding: 16px 18px; margin-bottom: 20px;
+            display: grid; gap: 12px;
+        }
+        .signup-match-row {
+            display: flex; justify-content: space-between;
+            align-items: baseline; gap: 16px; font-size: 0.92rem;
+        }
+        .signup-match-label {
+            color: var(--text-muted); font-size: 0.8rem;
+            font-weight: 500; white-space: nowrap;
+        }
+        .signup-match-value {
+            font-weight: 600; color: var(--text-main); text-align: end;
+        }
+        /* The characters underneath are already block glyphs — the server
+           replaced them before the response was built — so this is not
+           hiding anything the page still contains. It stops a row of
+           solid blocks from reading as a value someone is meant to make
+           sense of, and makes "hidden until you confirm" look deliberate
+           rather than like corrupted data. */
+        .signup-match-value.is-redacted {
+            filter: blur(4px);
+            user-select: none;
+            opacity: 0.75;
+        }
+        /* The "which name?" card. Two spellings of one person, and the
+           only thing that makes the question answerable is knowing where
+           each one lives - so each option leads with its source and the
+           name sits under it. They were previously two identical rows
+           whose only difference was a grey caption, which meant reading
+           both carefully to find the difference.
+
+           Colour marks the source, never a recommended answer: the record
+           keeps a neutral slate, the typed name takes the brand. Styling
+           one as the safe default would be steering a decision that is
+           the person's to make. */
+        .signup-blocked-detail {
+            margin: -6px 0 18px; text-align: center;
+            font-size: 0.9rem; color: var(--text-main); font-weight: 550;
+        }
+        .auth-card.is-past-verification .auth-footer { display: none; }
+
+        .signup-name-options {
+            display: grid; gap: 20px; margin: 28px 0 20px;
+        }
+        /* The source label straddles the border the way a tab does on a
+           file, so it reads as "what this card is" rather than as the
+           first line of its contents. */
+        .signup-name-option {
+            position: relative;
+            display: grid; grid-template-columns: 1fr auto; align-items: center;
+            gap: 16px; text-align: start; cursor: pointer;
+            padding: 22px 20px 20px; border-radius: 14px;
+            border: 1.5px solid var(--edge); background: var(--fill);
+            transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+            font: inherit; color: var(--text-main);
+        }
+        .signup-name-option[data-source="record"] {
+            --edge: #CBD5E1; --fill: #FFFFFF; --tint: #475569; --chip: #F1F5F9;
+        }
+        .signup-name-option[data-source="typed"] {
+            --edge: var(--primary-blue); --fill: #F5F9FF; --tint: var(--primary-blue); --chip: #E3EEFF;
+        }
+        .signup-name-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px -14px rgba(15, 23, 42, 0.45);
+        }
+        .signup-name-option:active { transform: translateY(0); }
+        .signup-name-option:focus-visible {
+            outline: 2px solid var(--primary-blue); outline-offset: 3px;
+        }
+        .name-source {
+            position: absolute; top: 0; inset-inline-start: 16px;
+            transform: translateY(-50%);
+            padding: 3px 9px; border-radius: 6px;
+            background: var(--chip); color: var(--tint);
+            font-size: 0.66rem; font-weight: 700;
+            letter-spacing: 0.07em; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        /* Arabic letters join. Letterspacing them pulls the joins apart
+           and uppercase does nothing, so the eyebrow carries its weight
+           through size and colour instead. */
+        [dir="rtl"] .name-source {
+            letter-spacing: 0; text-transform: none; font-size: 0.72rem;
+        }
+        .name-body { display: grid; gap: 5px; min-width: 0; }
+        /* A Latin name inside an Arabic card has to render left-to-right
+           *without* taking the block's alignment with it. dir="auto" did
+           both, leaving every Latin name hanging off the opposite edge
+           from the label it belongs to - and <bdi> is no use either,
+           since it implies dir="auto" by definition. Plain isolation is
+           the answer: the element keeps the card's own direction, so it
+           stays under its label, while the run inside is laid out on its
+           own. */
+        .signup-name-value {
+            display: block; text-align: start; unicode-bidi: isolate;
+            font-family: var(--font-heading);
+            font-weight: 700; font-size: 1.26rem; line-height: 1.28;
+            letter-spacing: -0.015em;
+            overflow-wrap: anywhere;
+        }
+        .name-action { font-size: 0.9rem; color: var(--text-muted); line-height: 1.4; }
+        .name-mark {
+            width: 34px; height: 34px; flex: none;
+            color: var(--tint); opacity: 0.8; stroke-width: 1.5;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .signup-name-option { transition: none; }
+            .signup-name-option:hover { transform: none; }
+        }
+
+        /* A business holding the number is a fact worth stating, not a
+           claim that it is theirs - so it reads as a note beside the
+           card rather than as part of the identity on it. */
+        .signup-match-company {
+            margin: 10px 0 0; padding: 9px 12px;
+            border-radius: 8px; background: #F5F9FF;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            font-size: 0.82rem; line-height: 1.5; color: var(--text-main);
+        }
+
+        .signup-match-note {
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+            margin: 0 0 4px; font-size: 0.8rem;
+            color: var(--text-muted); text-align: center; line-height: 1.5;
+        }
+        .signup-match-note i { width: 14px; height: 14px; flex: none; }
+        /* A quiet way back out of an answer, not a second call to action.
+           It sits below whatever it undoes and reads as a link, so it
+           cannot compete with the button that moves the person forward.
+           The arrow follows the page direction rather than pointing left
+           in Arabic, where back is to the right. */
+        .signup-back-link {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: auto; margin: 18px auto 0; padding: 9px 20px;
+            background: none; border: 1px solid var(--border-subtle);
+            border-radius: 999px; cursor: pointer;
+            font: inherit; font-size: 0.88rem; font-weight: 500;
+            color: var(--text-muted);
+            transition: border-color .15s ease, color .15s ease, background .15s ease;
+        }
+        .signup-back-link:hover {
+            color: var(--text-main); border-color: #94A3B8; background: #F8FAFC;
+        }
+        .signup-back-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+        .signup-back-link i { width: 15px; height: 15px; }
+        [dir="rtl"] .signup-back-link i { transform: scaleX(-1); }
+
+        .signup-centered { text-align: center; padding: 36px 0; }
+
+        /* ── Phone: country picker + national number ─────────────────── */
+        /* The phone field reads left-to-right in every language.
+           A number is written and dialled the same way worldwide - country
+           code first, then the national part - so mirroring the field in
+           Arabic puts the dial code after the digits and makes the whole
+           thing harder to check. The label above it stays in the page's
+           own direction. */
+        .phone-row {
+            direction: ltr;
+            position: relative; display: flex; align-items: stretch;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface-opaque);
+            transition: var(--transition-fast);
+        }
+        .phone-row:focus-within {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        .country-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 0 12px; border: 0; cursor: pointer;
+            background: var(--bg-base);
+            border-inline-end: 1px solid var(--border-subtle);
+            border-start-start-radius: calc(var(--radius-sm) - 1px);
+            border-end-start-radius: calc(var(--radius-sm) - 1px);
+            color: var(--text-main); white-space: nowrap;
+            transition: var(--transition-fast);
+        }
+        .country-btn:hover { background: #EFF3F8; }
+        .country-btn i { width: 13px; height: 13px; color: var(--text-muted); }
+
+        /* The country marker. Deliberately a code chip and not a flag
+           emoji: Windows renders no regional-indicator glyphs at all and
+           many Linux builds ship no emoji font, so flags silently fall
+           back to bare letters. */
+        .country-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+            color: var(--text-main);
+            background: var(--bg-surface-opaque);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 3px 5px; line-height: 1;
+        }
+        .country-dial {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.84rem; font-weight: 600;
+        }
+        .phone-input {
+            flex: 1; min-width: 0;
+            border: 0 !important; background: transparent !important;
+            outline: none; box-shadow: none !important;
+            padding: 14px 16px !important;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.96rem; color: var(--text-main);
+        }
+
+        /* Per-country length feedback.
+           The check shows only when the number is a length this country
+           actually uses; the note shows only when it is not. Neither is a
+           standing hint - an untouched field says nothing at all, which
+           is why the old permanent "we store it as +20..." line is gone. */
+        .phone-ok {
+            width: 17px; height: 17px; flex: none; align-self: center;
+            margin-inline-end: 14px; color: #047857;
+            opacity: 0; transform: scale(0.7);
+            transition: var(--transition-fast);
+        }
+        .phone-row.is-valid .phone-ok { opacity: 1; transform: scale(1); }
+        .phone-row.is-invalid { border-color: rgba(220, 38, 38, 0.55); }
+        .phone-row.is-invalid:focus-within {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+        }
+        /* Outside .phone-row, which is forced LTR for the digits - the
+           note is prose and follows the page's own direction. Toggled by
+           a class, not the `hidden` attribute: a display rule in this
+           sheet would outrank the user agent's [hidden] and the note
+           would never disappear. */
+        .field-note {
+            display: none;
+            margin: 7px 2px 0;
+            font-size: 0.78rem; line-height: 1.45; color: #b91c1c;
+        }
+        .field-note.is-shown { display: block; }
+
+        /* What makes a good password, ticked off while it is being typed.
+           Stated up front rather than reported as a rejection afterwards -
+           the four points are the same rules the server applies. */
+        .pw-guide { margin: -4px 2px 14px; }
+        .pw-guide-title {
+            margin: 0 0 6px; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-muted);
+        }
+        .pw-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+        .pw-check {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);
+            transition: var(--transition-fast);
+        }
+        .pw-check-mark {
+            flex: none; width: 14px; height: 14px; border-radius: 50%;
+            border: 1.5px solid var(--border-subtle); position: relative;
+            transition: var(--transition-fast);
+        }
+        .pw-check.is-met { color: #047857; }
+        .pw-check.is-met .pw-check-mark {
+            border-color: #047857; background: #047857;
+        }
+        /* The tick is drawn rather than an icon font, so it cannot arrive late
+           or fail to load the way a lucide glyph can inside a re-render. */
+        .pw-check.is-met .pw-check-mark::after {
+            content: ""; position: absolute; left: 4px; top: 1px;
+            width: 3px; height: 7px; border: solid #fff;
+            border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+        }
+        /* Inherits the field's direction so the code / name / dial
+           columns stay in one order whatever the page language; the name
+           itself carries dir="auto" and renders in its own script. */
+        .country-pop {
+            direction: ltr;
+            position: absolute; top: calc(100% + 8px); bottom: auto;
+            inset-inline-start: 0; inset-inline-end: 0;
+            z-index: 60;
+            background: var(--bg-surface-opaque);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-strong);
+            overflow: hidden;
+        }
+        .country-search {
+            width: 100%; border: 0; outline: none;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 14px; font-size: 0.9rem;
+            font-family: var(--font-body);
+            background: transparent; color: var(--text-main);
+        }
+        /* Opens upward when the field sits too low for the list to fit
+           below it; the height is measured against the real viewport in
+           bindCountry, so it never runs off the bottom of the screen. */
+        .country-pop.opens-up {
+            top: auto; bottom: calc(100% + 8px);
+        }
+        .country-list {
+            list-style: none; margin: 0; padding: 5px;
+            max-height: var(--country-list-max, 252px);
+            overflow-y: auto; overscroll-behavior: contain;
+        }
+        .country-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 10px; border-radius: var(--radius-sm);
+            cursor: pointer; font-size: 0.9rem; color: var(--text-main);
+        }
+        /* Filtered out by the search. A class rather than the `hidden`
+           attribute, because `.country-item` sets `display: flex` and
+           would win over the user agent's `[hidden] { display: none }`. */
+        .country-item.is-filtered { display: none; }
+        .country-item:hover { background: var(--bg-base); }
+        .country-item.selected {
+            background: rgba(37, 99, 235, 0.07);
+            color: var(--primary-blue); font-weight: 600;
+        }
+        .country-item .country-code {
+            background: transparent; border-color: transparent;
+            color: var(--text-muted); padding: 0; min-width: 2.1em;
+        }
+        .country-item .country-name {
+            flex: 1; min-width: 0;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            /* The row is LTR so the columns line up; an Arabic name still
+               renders right-to-left inside its own box via dir="auto", but
+               the box starts next to the code rather than drifting across
+               to hug the dial code. */
+            text-align: left;
+        }
+        .country-item .country-dial { color: var(--text-muted); font-weight: 500; }
+        .country-item.selected .country-code { color: var(--primary-blue); }
+        .country-empty {
+            margin: 0; padding: 18px 14px 22px;
+            text-align: center; font-size: 0.86rem; color: var(--text-muted);
+        }
+        .country-search { text-align: start; }
+
+        /* ── Login → signup entry point ─────────────────────────────── */
+        .auth-divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 22px 0 14px; color: var(--text-muted); font-size: 0.82rem;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: ""; flex: 1; height: 1px; background: var(--border-subtle);
+        }
+        .auth-create-btn {
+            width: 100%; gap: 8px;
+            color: var(--primary-blue);
+            border-color: rgba(37, 99, 235, 0.35);
+        }
+        .auth-create-btn:hover {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--primary-blue);
+        }
+        .auth-create-btn i { width: 17px; height: 17px; }
+
+        .auth-forgot-link {
+            display: block; text-align: end; font-size: 0.82rem;
+            color: var(--text-muted); text-decoration: none; margin-top: -4px;
         }
         .auth-forgot-link:hover { color: var(--primary-blue); }
+        .auth-footer { margin-top: 22px; font-size: 0.88rem; }
+
+        @media (max-width: 520px) {
+            .auth-card { padding: 30px 22px 26px; border-radius: var(--radius-md); }
+            .auth-title { font-size: 1.4rem; }
+            .signup-code { font-size: 1.4rem; letter-spacing: 0.3em; text-indent: 0.3em; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .signup-choice, .rail-tick, .country-btn, .auth-secondary-btn,
+            .phone-ok { transition: none; }
+            .signup-choice:hover { transform: none; }
+        }
+
     </style>
 </head>
 <body>
@@ -131,17 +744,20 @@
                                    placeholder="Password" data-i18n-placeholder="auth_password"
                                    autocomplete="current-password">
                         </div>
-                        <a href="#forgot" class="auth-forgot-link" id="forgot-link" onclick="switchTab('forgot');return false;">Forgot Password?</a>
+                        <a href="#forgot" class="auth-forgot-link" id="forgot-link"
+                           data-i18n="auth_forgot_link" onclick="switchTab('forgot');return false;">Forgot password?</a>
                         <button type="submit" class="auth-submit-btn" id="login-submit-btn">
                             <span data-i18n="auth_login_btn">Authenticate</span>
                             <i data-lucide="arrow-right"></i>
                         </button>
                     </form>
-                    {% if not disable_signup %}
-                    <div class="auth-footer">
-                        <span data-i18n="auth_no_account">No account?</span>
-                        <a href="#signup" class="auth-link" data-i18n="auth_signup_link" onclick="switchTab('signup');return false;">Create one</a>
-                    </div>
+                    {% if signup_available %}
+                    <div class="auth-divider"><span data-i18n="auth_no_account">No account?</span></div>
+                    <button type="button" class="auth-secondary-btn auth-create-btn" id="go-to-signup"
+                            onclick="switchTab('signup');return false;">
+                        <i data-lucide="user-plus"></i>
+                        <span data-i18n="auth_signup_link">Create one</span>
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -150,53 +766,15 @@
         <!-- Status banner (signup) -->
         <div class="auth-status" id="auth-status-signup" style="max-width:480px;margin:0 auto 12px;"></div>
 
-        <!-- SIGNUP VIEW -->
-        {% if not disable_signup %}
+        <!-- SIGNUP VIEW — a state-rendering shell.
+             Every panel inside #signup-wizard is built by page-signup.js
+             from the state the backend reports. No step order, no identity
+             decision and no customer record lives in this markup. -->
+        {% if signup_available %}
         <section id="signup-view" class="auth-view">
             <div class="auth-wrapper">
                 <div class="auth-card">
-                    <div class="auth-header">
-                        <i data-lucide="user-plus" class="auth-icon"></i>
-                        <h2 class="auth-title" data-i18n="auth_signup_title">New Account</h2>
-                        <p class="auth-subtitle" data-i18n="auth_signup_sub">Register for industrial product procurement.</p>
-                    </div>
-                    <form id="signup-form" class="auth-form form-signup" novalidate>
-                        <div class="input-group">
-                            <i data-lucide="user" class="input-icon"></i>
-                            <input type="text" id="signup_fullname" required
-                                   placeholder="Full Name / Company" data-i18n-placeholder="auth_name"
-                                   autocomplete="name">
-                        </div>
-                        <div class="input-group">
-                            <i data-lucide="mail" class="input-icon"></i>
-                            <input type="email" id="signup_email" required
-                                   placeholder="E-mail Address" data-i18n-placeholder="auth_email"
-                                   autocomplete="username">
-                        </div>
-                        <div class="input-group">
-                            <i data-lucide="phone" class="input-icon"></i>
-                            <input type="tel" id="signup_mobile" required
-                                   placeholder="Mobile Number" data-i18n-placeholder="auth_phone"
-                                   autocomplete="tel">
-                        </div>
-                        <div class="input-group">
-                            <i data-lucide="key" class="input-icon"></i>
-                            <input type="password" id="signup_password" required
-                                   placeholder="Password" data-i18n-placeholder="auth_password"
-                                   autocomplete="new-password">
-                        </div>
-                        <div class="input-group">
-                            <i data-lucide="shield-check" class="input-icon"></i>
-                            <input type="password" id="signup_confirm_password" required
-                                   placeholder="Confirm Password" data-i18n-placeholder="auth_confirm_password"
-                                   autocomplete="new-password">
-                        </div>
-                        <div id="password-strength-message" style="display:none;font-size:0.82rem;color:var(--text-muted);"></div>
-                        <button type="submit" class="auth-submit-btn" id="signup-submit-btn">
-                            <span data-i18n="auth_signup_btn">Create Account</span>
-                            <i data-lucide="check-circle"></i>
-                        </button>
-                    </form>
+                    <div id="signup-wizard"></div>
                     <div class="auth-footer">
                         <span data-i18n="auth_has_account">Already have an account?</span>
                         <a href="#login" class="auth-link" data-i18n="auth_login_link" onclick="switchTab('login');return false;">Sign In</a>
@@ -212,21 +790,22 @@
                 <div class="auth-card">
                     <div class="auth-header">
                         <i data-lucide="mail" class="auth-icon"></i>
-                        <h2 class="auth-title">Reset Password</h2>
-                        <p class="auth-subtitle">Enter your email and we'll send a reset link.</p>
+                        <h2 class="auth-title" data-i18n="auth_forgot_title">Reset password</h2>
+                        <p class="auth-subtitle" data-i18n="auth_forgot_sub">Enter your email and we'll send you a reset link.</p>
                     </div>
                     <form id="forgot-form" class="auth-form" novalidate>
                         <div class="input-group">
                             <i data-lucide="mail" class="input-icon"></i>
-                            <input type="email" id="forgot-email" required placeholder="E-mail Address">
+                            <input type="email" id="forgot-email" required placeholder="E-mail Address"
+                                   data-i18n-placeholder="auth_email" dir="ltr">
                         </div>
                         <button type="submit" class="auth-submit-btn" id="forgot-submit-btn">
-                            <span>Send Reset Link</span>
+                            <span data-i18n="auth_forgot_btn">Send reset link</span>
                             <i data-lucide="send"></i>
                         </button>
                     </form>
                     <div class="auth-footer">
-                        <a href="#login" class="auth-link" onclick="switchTab('login');return false;">Back to Login</a>
+                        <a href="#login" class="auth-link" data-i18n="auth_back_to_login" onclick="switchTab('login');return false;">Back to sign in</a>
                     </div>
                 </div>
             </div>
@@ -235,7 +814,8 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/assets/custom_webshop/js/store.js"></script>
-    <script src="/assets/custom_webshop/js/page-login.js"></script>
+    <script src="/assets/custom_webshop/js/store.js?v={{ build_version }}"></script>
+    <script src="/assets/custom_webshop/js/page-signup.js?v={{ build_version }}"></script>
+    <script src="/assets/custom_webshop/js/page-login.js?v={{ build_version }}"></script>
 </body>
 </html>

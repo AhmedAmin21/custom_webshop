@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CNCLeaders — architecture diagrams</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root { color-scheme: light; }
+  body { margin:0; background:#f6f7f9; color:#16181d;
+         font:15px/1.6 ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 56px 24px 80px; }
+  h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing:-0.01em; }
+  p.lede { color:#5b6472; margin:0 0 36px; }
+  a.card { display:block; text-decoration:none; color:inherit; background:#fff;
+           border:1px solid #e3e6eb; border-radius:12px; padding:18px 20px; margin-bottom:14px;
+           transition: border-color .15s, transform .15s; }
+  a.card:hover { border-color:#2563eb; transform: translateY(-1px); }
+  .n { font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace; color:#2563eb; letter-spacing:.06em; }
+  .t { font-weight:650; font-size:1.05rem; margin:2px 0 4px; }
+  .d { color:#5b6472; font-size:.92rem; }
+  footer { margin-top:32px; color:#8a919e; font-size:.85rem; }
+  code { background:#eef0f4; padding:1px 5px; border-radius:4px; font-size:.85em; }
+</style>
+<main>
+  <h1>CNCLeaders webshop, drawn</h1>
+  <p class="lede">Four views of <code>custom_webshop</code>, built with archify. Each page has guided
+     views along the top — click one to isolate that path, or press <em>Play story</em>.</p>
+
+  <a class="card" href="01-architecture.html">
+    <div class="n">01 · ARCHITECTURE</div>
+    <div class="t">The whole site</div>
+    <div class="d">Every page, script, endpoint and record, and the three apps this one must live beside.
+       Five guided views: browse, the gate, identity, order, neighbours.</div>
+  </a>
+  <a class="card" href="02-journey.html">
+    <div class="n">02 · WORKFLOW</div>
+    <div class="t">From browsing to an order</div>
+    <div class="d">Where an account becomes necessary, what exists before it does, and the two places
+       the flow deliberately stops.</div>
+  </a>
+  <a class="card" href="03-signup.html">
+    <div class="n">03 · SEQUENCE</div>
+    <div class="t">Proving who you are</div>
+    <div class="d">The signup handshake message by message — both codes, the deterministic match,
+       and the single locked write at the end.</div>
+  </a>
+  <a class="card" href="04-phone.html">
+    <div class="n">04 · DATA FLOW</div>
+    <div class="t">One phone number, one format</div>
+    <div class="d">What the field accepts, what is stored, and why reading stays forgiving while
+       writing does not.</div>
+  </a>
+
+  <footer>Sources live beside each page as <code>.json</code>; re-render with
+     <code>node bin/archify.mjs</code>.</footer>
+</main>

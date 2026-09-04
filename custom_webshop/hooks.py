@@ -30,13 +30,19 @@ app_license = "mit"
 
 # include js, css files in header of web template
 web_include_css = "/assets/custom_webshop/css/cart.css"
-web_include_js = "/assets/custom_webshop/js/custom_signup.js"
+
+# Every page's asset URLs carry the build stamp, so a rebuild is a new URL
+# rather than a change a twelve-hour cache header hides - see
+# custom_webshop.setup.assets.
+update_website_context = "custom_webshop.setup.assets.add_build_version"
 
 # Custom shop pages — assets are loaded directly in each page's HTML,
 # not via web_include, to keep the custom pages fully standalone.
-
-# Custom signup form template
-signup_form_template = "custom_webshop/templates/signup.html"
+#
+# Signup is served entirely by the custom /login page (www/login/index.html
+# + public/js/page-signup.js). Frappe's own signup form is not themed here
+# and not reachable: the sign_up override below declines every request, so
+# there is exactly one way to create an account and it is the verified one.
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "custom_webshop/public/scss/website"
@@ -88,8 +94,8 @@ signup_form_template = "custom_webshop/templates/signup.html"
 # Installation
 # ------------
 
-# before_install = "custom_webshop.install.before_install"
-# after_install = "custom_webshop.install.after_install"
+after_install = "custom_webshop.install.after_install"
+after_migrate = "custom_webshop.install.after_migrate"
 
 # Uninstallation
 # ------------
@@ -147,13 +153,32 @@ signup_form_template = "custom_webshop/templates/signup.html"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-#	"*": {
-#		"on_update": "method",
-#		"on_cancel": "method",
-#		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Contact": {
+		# Keeps the canonical E.164 column in step with whatever local
+		# format is stored in Contact Phone.phone. Never throws, so it
+		# cannot break an unrelated Contact save.
+		"validate": "custom_webshop.contact_hooks.sync_phone_e164",
+	},
+	"Customer": {
+		# Strips Portal User rows granting an account access to a Customer
+		# it was not verified against - webshop's get_party() adds these
+		# silently from contact.links[0].
+		"validate": "custom_webshop.customer_hooks.enforce_portal_user_identity",
+	},
+	"Country": {
+		# The signup country picker is assembled from this doctype, then
+		# cached; rebuild it when the source changes.
+		"on_update": "custom_webshop.signup.countries.clear_cache",
+		"on_trash": "custom_webshop.signup.countries.clear_cache",
+	},
+}
+
+scheduler_events = {
+	"daily": [
+		"custom_webshop.signup.session.expire_stale_sessions",
+	],
+}
 
 # Scheduled Tasks
 # ---------------
@@ -256,7 +281,14 @@ website_route_rules = [
 	{"from_route": "/shop", "to_route": "shop"},
 	{"from_route": "/catalog", "to_route": "catalog"},
 	{"from_route": "/product", "to_route": "product"},
-	{"from_route": "/cart", "to_route": "cart"},
+	# Served from www/checkout, not www/cart. Frappe picks a page from the
+	# *last* installed app that has one, and webshop - installed after
+	# this app - ships its own templates/pages/cart.html, which shadowed
+	# ours completely: /cart was rendering webshop's stock cart, whose
+	# get_party() sends anyone without a Customer to /contact, a page
+	# this site does not have. An endpoint webshop has no file for is
+	# the only way to win that lookup without reordering the apps.
+	{"from_route": "/cart", "to_route": "checkout"},
 	{"from_route": "/admin", "to_route": "admin"},
 ]
 

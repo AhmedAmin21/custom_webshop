@@ -558,3 +558,67 @@ def get_catalog_products(
 		row["in_stock"] = True
 
 	return {"items": rows, "total": total}
+
+
+# Guests keep their basket in the browser, because building one on the
+# server would mean creating a Customer for somebody who has not proved
+# who they are - the exact thing custom_webshop.signup exists to prevent.
+# The browser therefore holds nothing but item codes and quantities, and
+# asks for the rest here. Capped so the endpoint cannot be turned into a
+# bulk export of the catalogue.
+MAX_CART_PREVIEW_ITEMS = 50
+
+
+@frappe.whitelist(allow_guest=True)
+def get_cart_preview(item_codes):
+	"""Names, images and prices for the items in a guest's basket.
+
+	Restricted to *published* Website Items, so this cannot be used to
+	read anything a visitor could not already see on the shop, and it
+	reads the same price list the catalogue does, so the drawer shows a
+	guest what the shop shows them.
+
+	Unknown or unpublished codes are simply absent from the result. The
+	caller treats a missing code as an item to drop, which is also how a
+	basket recovers when something is unpublished while it sits there.
+
+	Args:
+		item_codes: a list of item codes, or its JSON string.
+
+	Returns:
+		A list of dicts: item_code, item_name, web_item_name, image,
+		route and price.
+	"""
+	if isinstance(item_codes, str):
+		item_codes = json.loads(item_codes or "[]")
+
+	codes = [str(code) for code in (item_codes or []) if code][:MAX_CART_PREVIEW_ITEMS]
+	if not codes:
+		return []
+
+	placeholders = ", ".join(["%s"] * len(codes))
+	return frappe.db.sql(
+		f"""
+		SELECT
+			wi.item_code,
+			i.item_name,
+			wi.web_item_name,
+			COALESCE(NULLIF(wi.website_image, ''), i.image) AS image,
+			wi.route,
+			COALESCE(ip.price_list_rate, 0) AS price
+		FROM `tabWebsite Item` wi
+		INNER JOIN `tabItem` i ON i.name = wi.item_code
+		LEFT JOIN `tabItem Price` ip
+			ON ip.item_code = wi.item_code
+			AND ip.selling = 1
+			AND ip.price_list = (
+				SELECT value FROM `tabSingles`
+				WHERE doctype = 'Webshop Settings' AND field = 'price_list'
+				LIMIT 1
+			)
+		WHERE wi.published = 1
+		  AND wi.item_code IN ({placeholders})
+		""",
+		codes,
+		as_dict=True,
+	)

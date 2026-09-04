@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-04 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "problem_type",
+  "resolved",
+  "detail",
+  "resolved_on",
+  "resolved_by"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "problem_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Problem",
+   "options": "\nPHONE_NAME_MISMATCH\nEMAIL_NAME_MISMATCH\nMULTIPLE_PHONE_MATCHES\nPHONE_ALREADY_ASSOCIATED\nUSER_REJECTED_MATCH\nPROFILE_DISCREPANCY\nCUSTOMER_ALREADY_LINKED\nEMAIL_ACCOUNT_EXISTS\nPHONE_ACCOUNT_EXISTS\nSTALE_LINK_DECISION\nINCOMPLETE_PROFILE\nLEAD_PREFILL_DIVERGENCE\nMATCHED_CUSTOMER_DISABLED\nACCOUNT_TYPE_MISMATCH",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "resolved",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Resolved",
+   "read_only": 1
+  },
+  {
+   "columns": 6,
+   "fieldname": "detail",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "What happened",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolved_on",
+   "fieldtype": "Datetime",
+   "label": "Resolved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolved_by",
+   "fieldtype": "Link",
+   "label": "Resolved By",
+   "options": "User",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Custom Webshop",
+ "name": "Webshop Identity Problem",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

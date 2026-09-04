@@ -321,28 +321,17 @@ window.updateMainDetailImage = function(src, el) {
 };
 
 window.addDetailItemToCart = function() {
-    if (Store.isGuest) {
-        window.location.href = "/login?redirect-to=" + encodeURIComponent(window.location.pathname + window.location.search);
-        return;
-    }
     if (!currentItemCode) return;
     const qty = parseInt(document.getElementById("detail-qty-input")?.value || "1", 10);
-    Store.call("webshop.webshop.shopping_cart.cart.update_cart", {
-        item_code: currentItemCode,
-        qty: qty,
-    }).then(() => {
-        Store.toast(Store.t("toast_added_cart"), "success");
-        Store.updateCartBadge();
-    }).catch(err => Store.toast(err.message || Store.t("error_generic"), "error"));
+    // Guests may fill a basket; the account is asked for at the full form.
+    Store.addToCart(currentItemCode, qty)
+        .then(() => Store.toast(Store.t("toast_added_cart"), "success"))
+        .catch(err => Store.toast(err.message || Store.t("error_generic"), "error"));
 };
 
 window.addToCartFromRelated = function(itemCode) {
-    if (Store.isGuest) {
-        window.location.href = "/login?redirect-to=" + encodeURIComponent(window.location.pathname + window.location.search);
-        return;
-    }
-    Store.call("webshop.webshop.shopping_cart.cart.update_cart", { item_code: itemCode, qty: 1 })
-        .then(() => { Store.toast(Store.t("toast_added_cart"), "success"); Store.updateCartBadge(); })
+    Store.addToCart(itemCode, 1)
+        .then(() => Store.toast(Store.t("toast_added_cart"), "success"))
         .catch(err => Store.toast(err.message || Store.t("error_generic"), "error"));
 };
 

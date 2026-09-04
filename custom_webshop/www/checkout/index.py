@@ -111,8 +111,13 @@ def _build_cart_bootstrap(quotation=None):
 		"country": country,
 		"address_name": address_name,
 		"contact_name": contact_name_for_edit,
-		"shipping_rule": (quotation.shipping_rule if quotation else None) or "",
-		"shipping_destination": (quotation.shipping_destination if quotation else None) or "",
+		# Read with .get: `shipping_destination` is not a Quotation field
+		# here. It belongs to custom_shipping_rule, which this site does
+		# not have installed, and attribute access on a field a doctype
+		# does not carry raises - which took the whole checkout page down
+		# with a 500. www/payment.py already reads it this way.
+		"shipping_rule": quotation.get("shipping_rule") or "",
+		"shipping_destination": quotation.get("shipping_destination") or "",
 		"total_weight": weight_info.get("total_weight") or 0,
 		"weight_uom": weight_info.get("weight_uom") or "",
 	}
