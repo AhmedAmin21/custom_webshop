@@ -1226,3 +1226,148 @@ class TestEveryQuestionCanBeAnswered(ConflictTestCase):
 		state = self.rejected_signup()
 		with self.assertRaises(frappe.ValidationError):
 			conflicts_api.resolve_conflict(state["conflict"], "settle_one")
+
+
+class TestConvertingBetweenPersonAndBusiness(ConflictTestCase):
+	"""Both directions, and the contact kept in step with the customer.
+
+	A Customer of type Individual *is* a person and a Company *is* a
+	business, so converting one to the other has to move the name as well
+	as the type - and the Contact's own company name has to follow, since
+	that is what says which business the person belongs to.
+	"""
+
+	def returning_owner_claims_a_business(self):
+		"""The path that had the bug: coming back to an account you own.
+
+		The signup writes `Contact.company_name` when it builds or reuses
+		a Contact, but not when somebody signs back in to an account they
+		already have - so the claim never reached the record.
+		"""
+		person, company = unique_name("Khaled"), unique_name("Qarafa")
+		phone, email = unique_phone(), unique_email()
+		customer, contact = make_customer_with_contact(
+			customer_name=person, contact_name=person, phone=phone
+		)
+
+		with signup_enabled():
+			client, _r = self.run_flow(person, phone, email)
+			client.call(signup_api.decide, accept=True)
+			client.call(signup_api.complete, password=PASSWORD, confirm_password=PASSWORD)
+
+		with signup_enabled():
+			client, _r = start_signup(
+				full_name=person, phone=phone, email=email,
+				account_type="Company", company_name=company,
+			)
+			verify_both_channels(client)
+			client.call(signup_api.resolve)
+			client.call(signup_api.decide, accept=False)
+			client.call(signup_api.complete, password=PASSWORD, confirm_password=PASSWORD)
+
+		sess = frappe.get_all("Webshop Signup Session", filters={"email_normalized": email},
+		                      pluck="name", order_by="creation desc")[0]
+		conflict = frappe.get_all("Webshop Identity Conflict",
+		                          filters={"signup_session": sess}, pluck="name")[0]
+		return {"conflict": conflict, "customer": customer.name,
+		        "contact": contact.name, "company": company, "person": person}
+
+	def test_switching_to_a_company_puts_it_on_the_contact(self):
+		state = self.returning_owner_claims_a_business()
+		# The premise: this path left it empty.
+		self.assertIsNone(frappe.db.get_value("Contact", state["contact"], "company_name"))
+
+		conflicts_api.resolve_conflict(state["conflict"], "make_company")
+
+		self.assertEqual(
+			frappe.db.get_value("Contact", state["contact"], "company_name"), state["company"]
+		)
+		self.assertEqual(
+			frappe.db.get_value("Customer", state["customer"], "customer_type"), "Company"
+		)
+		self.assertEqual(
+			frappe.db.get_value("Customer", state["customer"], "customer_name"), state["company"]
+		)
+		# The person's own name is not touched by any of it.
+		self.assertEqual(
+			frappe.db.get_value("Contact", state["contact"], "full_name"), state["person"]
+		)
+
+	def a_business_record_signed_into_as_a_person(self):
+		person, business = unique_name("Khaled"), unique_name("Acme")
+		phone, email = unique_phone(), unique_email()
+		customer, contact = make_customer_with_contact(
+			customer_name=business, contact_name=person, phone=phone
+		)
+		frappe.db.set_value("Customer", customer.name, "customer_type", "Company")
+		frappe.db.set_value("Contact", contact.name, "company_name", business)
+
+		with signup_enabled():
+			client, review = self.run_flow(person, phone, email)
+			answer_name_card(client, client.call(signup_api.decide, accept=True))
+			client.call(signup_api.complete, password=PASSWORD, confirm_password=PASSWORD)
+
+		sess = frappe.db.get_value("Webshop Signup Session", {"email_normalized": email}, "name")
+		conflict = frappe.get_all("Webshop Identity Conflict",
+		                          filters={"signup_session": sess}, pluck="name")[0]
+		return {"conflict": conflict, "customer": customer.name,
+		        "contact": contact.name, "business": business, "person": person}
+
+	def test_the_reverse_switch_is_offered(self):
+		state = self.a_business_record_signed_into_as_a_person()
+		options = conflicts_api.get_resolution_options(state["conflict"])
+
+		self.assertEqual(options["individual_conversion"], state["person"])
+		# The other direction has nothing to offer here.
+		self.assertIsNone(options["company_conversion"])
+
+	def test_switching_to_an_individual_takes_the_persons_name(self):
+		state = self.a_business_record_signed_into_as_a_person()
+
+		conflicts_api.resolve_conflict(state["conflict"], "make_individual")
+
+		self.assertEqual(
+			frappe.db.get_value("Customer", state["customer"], "customer_type"), "Individual"
+		)
+		# An Individual customer is a person, so it carries a person's name.
+		self.assertEqual(
+			frappe.db.get_value("Customer", state["customer"], "customer_name"), state["person"]
+		)
+
+	def test_it_clears_a_company_name_that_named_this_record(self):
+		state = self.a_business_record_signed_into_as_a_person()
+
+		conflicts_api.resolve_conflict(state["conflict"], "make_individual")
+
+		self.assertIsNone(frappe.db.get_value("Contact", state["contact"], "company_name"))
+
+	def test_it_leaves_a_company_name_that_names_somewhere_else(self):
+		# Where they work is none of this app's business.
+		state = self.a_business_record_signed_into_as_a_person()
+		elsewhere = unique_name("Beta")
+		frappe.db.set_value("Contact", state["contact"], "company_name", elsewhere)
+
+		conflicts_api.resolve_conflict(state["conflict"], "make_individual")
+
+		self.assertEqual(
+			frappe.db.get_value("Contact", state["contact"], "company_name"), elsewhere
+		)
+
+	def test_neither_switch_is_offered_when_the_types_agree(self):
+		person = unique_name("Khaled")
+		phone, email = unique_phone(), unique_email()
+		customer, _c = make_customer_with_contact(
+			customer_name=person, contact_name=person, phone=phone
+		)
+		with signup_enabled():
+			client, _r = self.run_flow(unique_name("Mohamed"), phone, email)
+			answer_name_card(client, client.call(signup_api.decide, accept=True))
+			client.call(signup_api.complete, password=PASSWORD, confirm_password=PASSWORD)
+
+		conflict = conflict_with("ACCOUNT_TYPE_MISMATCH", created_customer=customer.name)
+		self.assertIsNone(conflict, "types that agree should raise no type problem")
+
+	def test_the_reverse_switch_refuses_when_it_does_not_apply(self):
+		state = self.returning_owner_claims_a_business()
+		with self.assertRaises(frappe.ValidationError):
+			conflicts_api.resolve_conflict(state["conflict"], "make_individual")

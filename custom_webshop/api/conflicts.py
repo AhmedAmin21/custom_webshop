@@ -82,6 +82,7 @@ def get_resolution_options(conflict):
 		# click; the other needs nothing done. Only the fixable one is
 		# offered a button.
 		"company_conversion": merge.company_conversion_offer(doc),
+		"individual_conversion": merge.individual_conversion_offer(doc),
 		"claimed_company_name": doc.claimed_company_name,
 		"nameable": (
 			bool(doc.submitted_name)
@@ -170,6 +171,9 @@ def resolve_conflict(conflict, action, survivor=None, note=None, problem=None):
 	Three outcomes, and the destructive one is the only one that needs an
 	argument:
 
+	* `make_individual` - the mirror: the record is a business but the
+	  person signed up as themselves and it was never a business. Takes
+	  the person's own name, since an Individual customer is a person.
 	* `make_company` - the record is an individual but the person signed
 	  up as a business and gave its name. Converts the Customer's type and
 	  name together, leaving them as its contact. The only place this app
@@ -252,6 +256,26 @@ def resolve_conflict(conflict, action, survivor=None, note=None, problem=None):
 			doc, action, note or _("Looked at; nothing to change."), problem=problem
 		)
 		return {"action": action, "conflict": doc.name, "closed": closed}
+
+	if action == merge.MAKE_INDIVIDUAL:
+		savepoint = "custom_webshop_make_individual"
+		frappe.db.savepoint(savepoint)
+		try:
+			steps = merge.make_individual(doc)
+		except Exception:
+			frappe.db.rollback(save_point=savepoint)
+			raise
+
+		closed = merge.settle(
+			doc,
+			action,
+			"\n".join(
+				[_("Converted {0} to an individual.").format(doc.created_customer)]
+				+ steps
+				+ ([note] if note else [])
+			),
+		)
+		return {"action": action, "conflict": doc.name, "steps": steps, "closed": closed}
 
 	if action == merge.MAKE_COMPANY:
 		savepoint = "custom_webshop_make_company"

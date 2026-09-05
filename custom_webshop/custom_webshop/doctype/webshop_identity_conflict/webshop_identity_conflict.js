@@ -96,7 +96,7 @@ const ANSWERS = {
     PROFILE_DISCREPANCY: ["add_foreign_name", "apply_name"],
     PHONE_NAME_MISMATCH: ["add_foreign_name", "apply_name"],
     EMAIL_NAME_MISMATCH: ["add_foreign_name", "apply_name"],
-    ACCOUNT_TYPE_MISMATCH: ["make_company", "keep_type"],
+    ACCOUNT_TYPE_MISMATCH: ["make_company", "make_individual", "keep_type"],
     MULTIPLE_PHONE_MATCHES: ["merge", "keep_separate"],
     PHONE_ALREADY_ASSOCIATED: ["merge", "keep_separate"],
     CUSTOMER_ALREADY_LINKED: ["merge", "keep_separate"],
@@ -268,6 +268,14 @@ function choices(o, allowed, problem) {
             hint: __("Nothing changes — a person being the contact on a company account is the ordinary shape of one"),
         });
     }
+    if (o.individual_conversion) {
+        buttons.push({
+            action: "make_individual",
+            label: __("Switch it to an individual"),
+            hint: __("Renames this customer to {0} and sets its type to Individual — for a person entered as a business",
+                     [o.individual_conversion]),
+        });
+    }
     if (o.foreign_name) {
         buttons.push({
             action: "add_foreign_name",
@@ -368,6 +376,7 @@ function confirm_simple(frm, options, action, problem) {
     const label = {
         add_foreign_name: __("Add {0} to the contact's Foreign Name field?", [options.foreign_name]),
         make_company: __("Convert this customer to the company {0}?", [options.company_conversion]),
+        make_individual: __("Convert this customer to the individual {0}?", [options.individual_conversion]),
         apply_name: __("Rename the contact and account to {0}?", [options.submitted_name]),
         keep_separate: __("Keep both records as they are?"),
         keep_type: __("Leave this customer's type as it is?"),

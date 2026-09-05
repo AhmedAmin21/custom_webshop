@@ -60,8 +60,9 @@ KEEP_TYPE = "keep_type"
 #: to apply, and a record that was already the right kind has nothing to
 #: convert. Without this the section sat there with no way to answer it.
 SETTLE_ONE = "settle_one"
+MAKE_INDIVIDUAL = "make_individual"
 ACTIONS = (MERGE, KEEP_SEPARATE, DISMISS, APPLY_NAME, ADD_FOREIGN_NAME,
-           MAKE_COMPANY, KEEP_TYPE, SETTLE_ONE)
+           MAKE_COMPANY, MAKE_INDIVIDUAL, KEEP_TYPE, SETTLE_ONE)
 
 #: Arabic letters, including the presentation forms text sometimes
 #: arrives in.
@@ -795,6 +796,95 @@ def company_conversion_offer(conflict):
 	return claimed
 
 
+def individual_conversion_offer(conflict):
+	"""Whether this is a business record that should be a person's.
+
+	The other direction. Somebody signed up as an individual and the
+	record they reached is a company or a partnership - usually because
+	they are its contact, which needs nothing done, but sometimes because
+	a person was entered as a business years ago and nobody corrected it.
+
+	Only staff can tell those apart, so the button is offered whenever the
+	types disagree this way and the name to fall back to is known.
+
+	Args:
+		conflict: the Webshop Identity Conflict document.
+
+	Returns:
+		The person's name to convert to, or None when this is not that.
+	"""
+	if conflict.account_type != "Individual":
+		return None
+
+	customer = conflict.created_customer
+	if not customer or not frappe.db.exists("Customer", customer):
+		return None
+
+	if frappe.db.get_value("Customer", customer, "customer_type") == "Individual":
+		return None
+
+	contact = _contact_for(conflict)
+	person = (contact and frappe.db.get_value("Contact", contact, "full_name")) or (
+		conflict.submitted_name or ""
+	).strip()
+
+	return person or None
+
+
+def make_individual(conflict):
+	"""Turn a business record into the person's, deliberately.
+
+	The mirror of `make_company`, and the same rule holds: this is the
+	only place the type is written, never a signup. The customer takes the
+	person's own name - a Customer of type Individual *is* a person, so
+	leaving a business name on it would be the same confusion in reverse.
+
+	The contact's own company name is cleared only when it named this very
+	customer. If it names somewhere else, that is where they work and none
+	of this app's business.
+
+	Args:
+		conflict: the Webshop Identity Conflict document.
+
+	Returns:
+		A list of what was changed, in words.
+
+	Raises:
+		frappe.ValidationError: when this is not that situation.
+	"""
+	person = individual_conversion_offer(conflict)
+	if not person:
+		frappe.throw(
+			_(
+				"This is not a business record with a person's name to take - "
+				"check the customer's type and the name given at signup."
+			)
+		)
+
+	customer = conflict.created_customer
+	before = frappe.db.get_value(
+		"Customer", customer, ["customer_name", "customer_type"], as_dict=True
+	)
+	frappe.db.set_value(
+		"Customer", customer, {"customer_type": "Individual", "customer_name": person}
+	)
+
+	steps = [
+		_("Customer {0}: {1} → {2}, and {3} → Individual.").format(
+			customer, before.customer_name, person, before.customer_type
+		)
+	]
+
+	contact = _contact_for(conflict)
+	if contact and frappe.db.get_value("Contact", contact, "company_name") == before.customer_name:
+		frappe.db.set_value("Contact", contact, "company_name", None)
+		steps.append(
+			_("Contact {0}: cleared the company name, which named this record.").format(contact)
+		)
+
+	return steps
+
+
 def make_company(conflict):
 	"""Convert the matched customer into a company, deliberately.
 
@@ -847,6 +937,19 @@ def make_company(conflict):
 				contact
 			)
 		)
+		# The person now belongs to a company, so their Contact says so.
+		# The signup writes this when it builds or reuses a Contact, but
+		# not when somebody comes back to an account they already have -
+		# and the conversion is where it matters most, so it is done here
+		# regardless of how the conflict was raised.
+		previous = frappe.db.get_value("Contact", contact, "company_name")
+		if previous != claimed:
+			frappe.db.set_value("Contact", contact, "company_name", claimed)
+			steps.append(
+				_("Contact {0}: company name set to {1}{2}.").format(
+					contact, claimed, _(", replacing {0}").format(previous) if previous else ""
+				)
+			)
 
 	return steps
 
@@ -876,6 +979,7 @@ SETTLES = {
 	APPLY_NAME: ("PROFILE_DISCREPANCY", "PHONE_NAME_MISMATCH", "EMAIL_NAME_MISMATCH"),
 	ADD_FOREIGN_NAME: ("PROFILE_DISCREPANCY", "PHONE_NAME_MISMATCH", "EMAIL_NAME_MISMATCH"),
 	MAKE_COMPANY: ("ACCOUNT_TYPE_MISMATCH",),
+	MAKE_INDIVIDUAL: ("ACCOUNT_TYPE_MISMATCH",),
 	KEEP_TYPE: ("ACCOUNT_TYPE_MISMATCH",),
 	# Merging says these are the same person, which is the answer to a
 	# rejection as much as to a duplicate: staff decided the "no" was
