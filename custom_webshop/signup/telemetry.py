@@ -12,8 +12,8 @@ via Frappe's own site logger. Two rules hold everywhere:
   and phone of everyone who ever started a signup is its own liability.
 
 `log_dev_otp` is the single sanctioned exception, gated on the
-`otp_dev_mode` setting whose own description says never to turn it on in
-production.
+`email_otp_dev_mode`/`phone_otp_dev_mode` settings whose own descriptions
+say never to turn them on in production.
 """
 
 import logging
@@ -126,7 +126,11 @@ def log_transition(doc, from_state, to_state, **fields):
 
 
 def log_dev_otp(channel, destination, code):
-	"""Write a passcode to the log. Only ever called under otp_dev_mode.
+	"""Write a passcode to the log. Only ever called when the calling
+	channel's own dev-mode setting is on (`email_otp_dev_mode` or
+	`phone_otp_dev_mode`). The event name stays channel-agnostic - the
+	`channel` field below already says which one - so it does not need
+	to change if either setting is ever renamed again.
 
 	Args:
 		channel: "email" or "phone".

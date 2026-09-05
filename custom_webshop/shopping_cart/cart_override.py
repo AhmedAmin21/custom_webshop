@@ -566,7 +566,7 @@ def _send_order_email(sales_order, email_type):
 		subject = _("Your order {0} has been created - payment required").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_created.html"
 	else:
-		subject = _("Payment confirmed for order {0}").format(sales_order.name)
+		subject = _("We received your payment proof for order {0}").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
 
 	message = frappe.render_template(template, context)

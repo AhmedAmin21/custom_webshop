@@ -16,6 +16,7 @@ is neither.
 import json
 
 import frappe
+from frappe import _
 from frappe.utils import now_datetime
 
 from custom_webshop.signup.telemetry import log_event
@@ -207,7 +208,8 @@ def short_label(conflict_type):
 	Returns:
 		A short human-readable string.
 	"""
-	return SHORT_LABELS.get(conflict_type) or (conflict_type or "").replace("_", " ").title()
+	label = SHORT_LABELS.get(conflict_type)
+	return _(label) if label else (conflict_type or "").replace("_", " ").title()
 
 
 #: Problems that are recorded rather than asked about. Nothing here has
@@ -234,7 +236,14 @@ def describe(conflict_type):
 	Returns:
 		A tuple of three strings.
 	"""
-	return EXPLANATIONS.get(
+	# Wrapped here, at return time, rather than on the EXPLANATIONS dict
+	# itself. `_()` resolves against the language active *when it runs* -
+	# a module-level dict would freeze every string in whatever language
+	# happened to be active the moment this file was first imported
+	# (usually server start, English), and no Arabic-language staff
+	# member would ever see it change. Calling it inside the function
+	# means every request re-translates under its own session's language.
+	headline, happened, todo = EXPLANATIONS.get(
 		conflict_type,
 		(
 			conflict_type.replace("_", " ").title(),
@@ -242,6 +251,7 @@ def describe(conflict_type):
 			"Read the notes below and decide.",
 		),
 	)
+	return _(headline), _(happened), _(todo)
 
 
 def type_for_result(result):

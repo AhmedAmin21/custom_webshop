@@ -30,7 +30,7 @@ def _load(conflict):
 
 
 @frappe.whitelist()
-def get_resolution_options(conflict):
+def get_resolution_options(conflict, lang=None):
 	"""Everything the resolve dialog needs to show a choice.
 
 	Read-only. Deliberately computed fresh on every open rather than
@@ -40,11 +40,20 @@ def get_resolution_options(conflict):
 
 	Args:
 		conflict: the Webshop Identity Conflict's name.
+		lang: render this one call's translatable text in this language,
+			regardless of the caller's own session language. The form's
+			language toggle uses this so a staff member can read one
+			document in Arabic without their account, the rest of the
+			Desk, or anyone else's session changing - the same pattern
+			`signup.countries.for_signup` uses for the same reason.
 
 	Returns:
 		A dict with the parties, the suggested survivor and the reason
 		for suggesting it, and whether the conflict is already closed.
 	"""
+	if lang:
+		return _with_language(lang, get_resolution_options, conflict)
+
 	doc = _load(conflict)
 	parties = merge.conflict_parties(doc)
 	survivor, reason = merge.suggest_survivor(parties)
@@ -92,6 +101,31 @@ def get_resolution_options(conflict):
 		"stored_name": _stored_name(doc),
 		"problems": _problems(doc),
 	}
+
+
+def _with_language(lang, fn, *args, **kwargs):
+	"""Run a call under a different language, then put the real one back.
+
+	`frappe.local.lang` is request-global - every `_()` in this process
+	reads it - so this only exists to make the swap last exactly as long
+	as the one call it wraps. `finally` restores it even if `fn` raises,
+	so a bad `lang` value or an error inside the call can never leave a
+	staff member's own session reading in a language they never chose.
+
+	Args:
+		lang: the language to render this call's text in.
+		fn: the function to call - itself, recursively, without `lang`.
+		*args, **kwargs: passed through to `fn`.
+
+	Returns:
+		Whatever `fn` returns.
+	"""
+	previous = frappe.local.lang
+	frappe.local.lang = lang
+	try:
+		return fn(*args, **kwargs)
+	finally:
+		frappe.local.lang = previous
 
 
 def _outstanding(doc, answers):

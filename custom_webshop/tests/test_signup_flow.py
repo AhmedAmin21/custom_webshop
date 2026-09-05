@@ -1470,7 +1470,9 @@ class TestLifecycle(SignupFlowTestCase):
 	def test_signup_is_refused_when_a_channel_cannot_deliver(self):
 		# Fails closed: the phone is the primary identity signal, so a
 		# site that cannot send SMS must not run identity resolution.
-		with signup_enabled(), signup_settings_as(phone_otp_enabled=0, otp_dev_mode=0):
+		with signup_enabled(), signup_settings_as(
+			phone_otp_enabled=0, email_otp_dev_mode=0, phone_otp_dev_mode=0
+		):
 			self.assertRaises(frappe.ValidationError, start_signup)
 
 

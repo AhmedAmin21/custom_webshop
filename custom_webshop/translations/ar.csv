@@ -1,0 +1,219 @@
+", replacing {0}",، ليحل محل {0}
+A lead's details disagree with the account,بيانات العميل المحتمل لا تتطابق مع الحساب
+A merge cannot be undone.,لا يمكن التراجع عن الدمج.
+"A signup collects no address - it is captured at the first checkout - but the field is mandatory, so the record cannot be saved from the Desk until it has one.",لا يجمع التسجيل أي عنوان - إذ يُلتقط عند أول عملية دفع - لكن الحقل إلزامي، لذا لا يمكن حفظ السجل من لوحة التحكم حتى يحصل على عنوان.
+Account,الحساب
+Account Type,نوع الحساب
+Account {0}: {1} → {2},الحساب {0}: {1} ← {2}
+Add to Foreign Name,إضافة إلى الاسم الأجنبي
+Add {0} to the contact's Foreign Name field?,"إضافة {0} إلى حقل ""الاسم الأجنبي"" الخاص بجهة الاتصال؟"
+Already in the system,موجود بالفعل في النظام
+Already {0}. Nothing further to do here.,تم بالفعل {0}. لا يوجد ما يُتخذ هنا بعد الآن.
+"An existing customer already had this email, but the name did not agree - too weak a signal to put a stranger's record in front of anybody, so a new customer was created rather than guessing.",كان هذا البريد الإلكتروني مسجَّلاً بالفعل لعميل موجود، لكن الاسم لم يتطابق - وهذه إشارة ضعيفة جدًا لعرض سجل شخص غريب على أي أحد، لذا تم إنشاء عميل جديد بدلاً من التخمين.
+Answer no longer fitted,لم تعد الإجابة مطابقة
+Applied the submitted name {0!r}.,تم تطبيق الاسم المُقدَّم {0!r}.
+Applying…,جارٍ التطبيق…
+"Both codes were proved, and the email turned out to belong to an existing account that the phone number does not reach.",تم إثبات كلا الرمزين، وتبيّن أن البريد الإلكتروني يخص حسابًا موجودًا لا يصل إليه رقم الهاتف.
+"Both codes were proved, and the number turned out to belong to an existing account that the email does not reach.",تم إثبات كلا الرمزين، وتبيّن أن الرقم يخص حسابًا موجودًا لا يصل إليه البريد الإلكتروني.
+"Both records have submitted documents. This one has the most ({0}); check the other before merging - whichever you keep, the other's history moves onto it.",كلا السجلين يحتوي على مستندات مُرسَلة. هذا السجل لديه الأكثر ({0})؛ تحقّق من الآخر قبل الدمج - أيًّا كان السجل الذي ستبقي عليه، سينتقل إليه تاريخ الآخر.
+Briefing,الموجز
+Candidates considered (raw),المرشحون الذين تم فحصهم (بيانات خام)
+Change nothing and stop it resurfacing,عدم تغيير أي شيء ووقف ظهوره مجددًا
+"Check the two are the same person. Egyptian numbers get reassigned, and if this one was, an account is now attached to somebody else's order history. If they are the same person under an old name, put the submitted name on the records.",تحقّق من أن الاثنين هما نفس الشخص. يُعاد تخصيص الأرقام المصرية لأشخاص آخرين، وإذا كان هذا الرقم كذلك، فإن حسابًا أصبح الآن مرتبطًا بسجل طلبات شخص آخر. وإذا كانا نفس الشخص تحت اسم قديم، ضع الاسم المُقدَّم على السجلات.
+Choose which customer record to keep before merging.,اختر سجل العميل الذي سيتم الإبقاء عليه قبل الدمج.
+Cleared the pending-number marker on {0}.,"تمت إزالة علامة ""الرقم قيد الانتظار"" من {0}."
+Company Name Given,اسم الشركة المُدخل
+Company given,اسم الشركة المقدَّم
+"Compare the name they gave with the one on the records below, and check the address and phone on the customer too. If the name they gave is right, apply it - that puts it on the contact, on the customer when it is an individual, and on the account. If the records are right as they stand, dismiss this.",قارن الاسم الذي قدّموه بالاسم الموجود على السجلات أدناه، وتحقّق أيضًا من العنوان ورقم الهاتف الخاصين بالعميل. إذا كان الاسم الذي قدّموه صحيحًا، فطبّقه - إذ يضعه على جهة الاتصال، وعلى العميل عندما يكون فردًا، وعلى الحساب. أما إذا كانت السجلات صحيحة كما هي، فتجاهل هذا التعارض.
+Confirm,تأكيد
+Confirmed portal access for {0}.,تم تأكيد صلاحية الوصول إلى البوابة لـ {0}.
+Conflict Type,نوع التعارض
+Contact,جهة الاتصال
+Contact {0} already carried that foreign name.,كانت جهة الاتصال {0} تحمل هذا الاسم الأجنبي بالفعل.
+Contact {0} stays as the company's contact; their own name is unchanged.,تبقى جهة الاتصال {0} هي جهة اتصال الشركة؛ ولم يتغيّر اسمها الخاص.
+"Contact {0}: cleared the company name, which named this record.",جهة الاتصال {0}: تمت إزالة اسم الشركة الذي كان يُسمّي هذا السجل.
+Contact {0}: company name set to {1}{2}.,جهة الاتصال {0}: تم ضبط اسم الشركة على {1}{2}.
+"Contact {0}: kept {1}, filed {2} as the foreign name, replacing {3}.",جهة الاتصال {0}: تم الإبقاء على {1}، وتسجيل {2} كاسم أجنبي، ليحل محل {3}.
+"Contact {0}: kept {1}, filed {2} as the foreign name.",جهة الاتصال {0}: تم الإبقاء على {1}، وتسجيل {2} كاسم أجنبي.
+Contact {0}: {1} → {2},جهة الاتصال {0}: {1} ← {2}
+Convert this customer to the company {0}?,تحويل هذا العميل إلى الشركة {0}؟
+Convert this customer to the individual {0}?,تحويل هذا العميل إلى الفرد {0}؟
+Converted {0} to a company.,تم تحويل {0} إلى شركة.
+Converted {0} to an individual.,تم تحويل {0} إلى فرد.
+Copied email {0} onto {1}.,تم نسخ البريد الإلكتروني {0} إلى {1}.
+Could not merge contact {0}: {1},تعذّر دمج جهة الاتصال {0}: {1}
+Could not read this conflict.,تعذّرت قراءة بيانات هذا التعارض.
+Created Customer,العميل الذي تم إنشاؤه
+Customer,العميل
+Customer already has an account,العميل لديه حساب بالفعل
+Customer has no address,لا يوجد عنوان للعميل
+Customer has no address yet,لا يوجد عنوان للعميل بعد
+Customer {0} kept as {1} - a company's name is not a person's.,تم الإبقاء على العميل {0} باسم {1} - فاسم الشركة ليس اسم شخص.
+Customer {0}: {1} → {2},العميل {0}: {1} ← {2}
+"Customer {0}: {1} → {2}, and {3} → Company.",العميل {0}: {1} ← {2}، و{3} ← شركة.
+"Customer {0}: {1} → {2}, and {3} → Individual.",العميل {0}: {1} ← {2}، و{3} ← فرد.
+"Decide what the disabling was for. If it no longer applies, re-enable the customer - they cannot place an order against a disabled one. If it does still apply, move the account to a new customer record and leave this one off.",حدِّد سبب التعطيل. فإذا لم يعد ذلك السبب قائمًا، فأعد تفعيل العميل - إذ لا يمكنه تقديم طلب على عميل مُعطَّل. أما إذا كان السبب لا يزال قائمًا، فانقل الحساب إلى سجل عميل جديد واترك هذا معطَّلاً.
+Decide which source is right and correct the record by hand.,حدِّد المصدر الصحيح وصحِّح السجل يدويًا.
+"Decide which the record should be. If a person signed in to a company they work for, there is nothing to do - close this. If somebody trading as a business is sitting on an individual record, 'Make it a company' converts it and puts the business name on it; the person stays as its contact.","قرِّر ما ينبغي أن يكون عليه هذا السجل. فإذا كان شخصًا قد سجّل الدخول إلى شركة يعمل بها، فلا حاجة لأي إجراء - أغلق هذا التعارض. أما إذا كان شخص يتعامل تجاريًا كشركة موجودًا على سجل فردي، فإن زر ""تحويله إلى شركة"" يحوّله ويضع اسم الشركة عليه؛ ويبقى الشخص جهة الاتصال الخاصة به."
+Deliveries,مذكرات التسليم
+Different people,أشخاص مختلفون
+Dismiss the whole case,تجاهل الحالة بالكامل
+Dismiss this conflict?,تجاهل هذا التعارض؟
+Dismissed,تم التجاهل
+Dismissed without changes.,تم التجاهل دون أي تغييرات.
+Disputes stored details,يعترض على البيانات المخزَّنة
+Done.,تم.
+Every record already carried that name.,كان كل سجل يحمل هذا الاسم بالفعل.
+Everything on this signup was settled.,تمت تسوية كل ما يخص هذا التسجيل.
+Filed {0!r} as the contact's foreign name.,تم تسجيل {0!r} كاسم أجنبي لجهة الاتصال.
+History,السجل التاريخي
+"If the two are the same person, merge them. If a household or an office shares one mailbox, keep them apart.",إذا كان الاثنان هما نفس الشخص، فادمجهما. وإذا كانت أسرة واحدة أو مكتب واحد يشتركان في صندوق بريد واحد، فأبقهما منفصلين.
+In Review,قيد المراجعة
+Invoices,الفواتير
+Keep both records as they are?,الإبقاء على كلا السجلين كما هما؟
+Keep it as {0},الإبقاء عليه كـ {0}
+Keep the record as it is,الإبقاء على السجل كما هو
+Keeps {0} as the contact's name and saves {1} in its Foreign Name field — matched on {2},"يُبقي {0} اسمًا لجهة الاتصال، ويحفظ {1} في حقل ""الاسم الأجنبي"" الخاص بها — تمت المطابقة عبر {2}"
+Lead details disagree,بيانات العميل المحتمل غير متطابقة
+Leave it; the first order fills it in. Dismiss if it is cluttering the queue.,اتركه؛ سيقوم أول طلب بملئه. تجاهله إذا كان يُثقل قائمة الانتظار.
+Leave this customer's type as it is?,الإبقاء على نوع هذا العميل كما هو؟
+"Linked on a phone number, name never shown",تم الربط برقم هاتف، دون إظهار الاسم قط
+Linked to a customer that is switched off,تم الربط بعميل مُعطَّل
+"Linked, name never shown",تم الربط، دون إظهار الاسم
+"Look at whether the two records are the same person, and merge if so.",تحقّق مما إذا كان السجلان لنفس الشخص، وادمجهما إن كان الأمر كذلك.
+Looked at; nothing to change.,تمت المراجعة؛ لا يوجد ما يتطلب التغيير.
+Mark this one settled with nothing changed?,وضع علامة على هذه المشكلة كمحلولة دون تغيير أي شيء؟
+Marks this one looked at and leaves every record as it is,يضع علامة على أنه تمت مراجعة هذه المشكلة، ويُبقي كل سجل كما هو
+Matched record is disabled,السجل المطابق مُعطَّل
+Merge Incomplete,الدمج غير مكتمل
+Merge Permanently,الدمج بشكل نهائي
+"Merge the duplicates into whichever record has the history, then merge the new one into it too.",ادمج السجلات المكررة في السجل الذي يحتوي على تاريخ المعاملات، ثم ادمج السجل الجديد فيه أيضًا.
+Merge these records,دمج هذين السجلين
+Merged contact {0} into {1}.,تم دمج جهة الاتصال {0} في {1}.
+Merged contacts {0} into {1} via contact_enhancements.,تم دمج جهات الاتصال {0} في {1} عبر contact_enhancements.
+Merged customer {0} into {1}.,تم دمج العميل {0} في {1}.
+Merged {0} into {1}.,تم دمج {0} في {1}.
+"More than one customer record carries this number, so the engine refused to choose between them and made a new one.",يحمل أكثر من سجل عميل هذا الرقم، لذا رفض النظام الاختيار بينهم وأنشأ سجلاً جديدًا.
+Moved website account {0} onto {1}.,تم نقل حساب الموقع {0} إلى {1}.
+Name,الاسم
+"Neither record has any submitted documents, so there is no history to weigh. The older one is suggested because other records are more likely to point at it.",لا يحتوي أيّ من السجلين على مستندات مُرسَلة، لذا لا يوجد تاريخ معاملات يُرجَّح على أساسه. يُقترح الأقدم لأن السجلات الأخرى أكثر احتمالاً للإشارة إليه.
+"Neither record has submitted documents, so nothing is at risk beyond the record itself.",لا يحتوي أيّ من السجلين على مستندات مُرسَلة، لذا لا يوجد ما هو معرَّض للخطر سوى السجل نفسه.
+No customer records are attached to this conflict.,لا توجد سجلات عملاء مرتبطة بهذا التعارض.
+None of this was a real problem,لم يكن أيٌّ من هذا مشكلة حقيقية
+Not Merged,لم يتم الدمج
+Note (optional),ملاحظة (اختياري)
+Note for the record (optional),ملاحظة للسجل (اختياري)
+Nothing changes — a person being the contact on a company account is the ordinary shape of one,لا شيء يتغيّر — كون الشخص هو جهة الاتصال لحساب شركة هو الشكل المعتاد لهذا النوع من الحسابات
+Nothing to change here,لا شيء يتطلب التغيير هنا
+Nothing to fix here unless the number was reassigned and the new holder is locked out. Dismiss.,لا يوجد ما يجب إصلاحه هنا ما لم يكن الرقم قد أُعيد تخصيصه وأصبح صاحبه الجديد غير قادر على الدخول. تجاهل.
+Nothing to fix here unless the person says they cannot get in. Dismiss.,لا يوجد ما يجب إصلاحه هنا ما لم يقل الشخص إنه غير قادر على الدخول. تجاهل.
+"One number, many customers",رقم واحد، عملاء متعددون
+"One number, several customers",رقم واحد، عدة عملاء
+One record survives; this cannot be undone,يبقى سجل واحد فقط بعد الدمج؛ ولا يمكن التراجع عن ذلك
+Only one customer record is involved; there is nothing to merge.,لا يوجد سوى سجل عميل واحد معني بهذا؛ فلا يوجد ما يمكن دمجه.
+"Only the phone matched this record — the email did not. If that number was reassigned, these are two people and this would put one person's name on the other's contact. Check before confirming.",رقم الهاتف فقط هو ما طابق هذا السجل — أما البريد الإلكتروني فلم يطابقه. إذا كان هذا الرقم قد أُعيد تخصيصه لشخص آخر، فهذان شخصان مختلفان، وهذا الإجراء سيضع اسم أحدهما على جهة اتصال الآخر. تحقّق قبل التأكيد.
+Only this record has submitted documents ({0}). Merging it away would move real history.,هذا السجل هو الوحيد الذي يحتوي على مستندات مُرسَلة ({0}). سيؤدي دمجه بعيدًا إلى نقل تاريخ معاملات حقيقي.
+Open,مفتوح
+Opened On,تاريخ الفتح
+"Or, for the whole case",أو، بالنسبة للحالة بأكملها
+Payments,الدفعات
+Person/business disagree,تعارض بين شخص وشركة
+Point the person at sign-in or password reset. Merge only if there really are two accounts for one person.,وجّه الشخص إلى تسجيل الدخول أو إعادة تعيين كلمة المرور. لا تدمج إلا إذا كان هناك بالفعل حسابان لشخص واحد.
+Problem,المشكلة
+Problems,المشكلات
+Reading the records…,جارٍ قراءة السجلات…
+Record detail,تفاصيل السجل
+Record to keep,السجل الذي سيتم الإبقاء عليه
+Record type,نوع السجل
+Records Involved,السجلات المعنية
+Rename the contact and account to {0}?,إعادة تسمية جهة الاتصال والحساب إلى {0}؟
+"Renames the contact and their account to {0}, and the customer too when it is an individual",يعيد تسمية جهة الاتصال وحسابهم إلى {0}، وكذلك العميل عندما يكون فردًا
+Renames this customer to {0} and sets its type to Company — the person stays as its contact,"يعيد تسمية هذا العميل إلى {0} ويضبط نوعه على ""شركة"" — ويبقى الشخص جهة الاتصال الخاصة بها"
+Renames this customer to {0} and sets its type to Individual — for a person entered as a business,"يعيد تسمية هذا العميل إلى {0} ويضبط نوعه على ""فرد"" — لشخص تم إدخاله سابقًا كشركة"
+Resolution,الحل
+Resolution Notes,ملاحظات الحل
+Resolved,تم الحل
+Resolved By,تم الحل بواسطة
+Resolved On,تاريخ الحل
+"Reviewed and kept separate: these are different people. The number stays on the record that holds it, and the other account keeps it recorded as pending.","تمت المراجعة والإبقاء عليهما منفصلين: فهما شخصان مختلفان. يبقى الرقم على السجل الذي يحمله، ويظل الحساب الآخر مُسجَّلاً بحالة ""قيد الانتظار""."
+Reviewed and left as it is: the record is the right kind. A person being the contact on a company account is the ordinary shape of one.,تمت المراجعة والإبقاء على السجل كما هو: فنوعه صحيح. كون الشخص هو جهة الاتصال لحساب شركة هو الشكل المعتاد لهذا النوع من الحسابات.
+Sales Orders,أوامر البيع
+"Same email address, different name",نفس عنوان البريد الإلكتروني، باسم مختلف
+"Same email, different name",نفس البريد الإلكتروني، باسم مختلف
+Same person twice? Merge them and the number settles on one record. Genuinely two people sharing a line? Keep them separate and this stops resurfacing.,هل هما نفس الشخص مرتين؟ ادمجهما وسيستقر الرقم على سجل واحد. أم هما فعلاً شخصان يشتركان في خط واحد؟ أبقهما منفصلين وسيتوقف هذا عن الظهور مجددًا.
+Same person — merge,نفس الشخص — دمج
+Say which part of this conflict is being settled.,حدِّد الجزء الذي تتم تسويته من هذا التعارض.
+Series,سلسلة التسمية
+Signed up as,سجّل باعتباره
+"Signed up as one kind of party, matched another",سجّل كنوع من الأطراف، وتمت مطابقته بنوع آخر
+Signup Session,جلسة التسجيل
+Signup stopped: that email is registered,تم إيقاف التسجيل: هذا البريد الإلكتروني مسجَّل بالفعل
+Signup stopped: that number is registered,تم إيقاف التسجيل: هذا الرقم مسجَّل بالفعل
+Status,الحالة
+Stopped: email registered,تم الإيقاف: البريد الإلكتروني مسجَّل مسبقًا
+Stopped: number registered,تم الإيقاف: الرقم مسجَّل مسبقًا
+Submitted Identity,الهوية المقدَّمة
+Submitted Name,الاسم المقدَّم
+Switch it to a company,تحويله إلى شركة
+Switch it to an individual,تحويله إلى فرد
+That customer already has an account,هذا العميل لديه حساب بالفعل
+That part of this conflict has already been settled.,تمت تسوية هذا الجزء من التعارض بالفعل.
+The answer stopped fitting before they finished,توقفت الإجابة عن المطابقة قبل أن ينهوا التسجيل
+The merge left these accounts inconsistent:,ترك الدمج هذه الحسابات غير متسقة:
+"The record this signup matched already has a website account attached, so the signup was stopped rather than attaching a second one.",السجل الذي طابقه هذا التسجيل مرتبط بالفعل بحساب على الموقع، لذا تم إيقاف عملية التسجيل بدلاً من ربط حساب ثانٍ به.
+"The signup said one thing about who this is - a person or a business - and the record it matched says the other. That is not necessarily wrong: a real person is very often the contact on a company account, and somebody trading under a business name may have been entered as an individual years ago. So the account was linked rather than refused. Nothing about the customer was changed: its type, its name and its history are exactly as they were.",قال التسجيل شيئًا واحدًا عن هوية هذا الطرف - شخص أم شركة - بينما يقول السجل المطابق له عكس ذلك. وهذا ليس خطأً بالضرورة: فكثيرًا ما يكون الشخص الحقيقي هو جهة الاتصال لحساب شركة، وقد يكون شخص يتعامل تحت اسم تجاري قد أُدخل كفرد منذ سنوات. لذلك تم ربط الحساب بدلاً من رفضه. لم يتغيّر أي شيء في العميل: نوعه واسمه وتاريخه بقيت كما كانت تمامًا.
+"The verified number could not be written onto this signup's contact, because another contact already holds it - one mobile belongs to one contact. It is recorded on the new contact as pending instead.",تعذّر تسجيل الرقم الموثّق على جهة اتصال هذا المسجِّل، لأن جهة اتصال أخرى تحمله بالفعل - إذ ينتمي كل رقم جوّال إلى جهة اتصال واحدة فقط. وبدلاً من ذلك، سُجِّل على جهة الاتصال الجديدة كرقم قيد الانتظار.
+Their name is right,اسمهم صحيح
+"They approved a link, but by the time the account was created the database had changed and the match no longer held. A new customer was made instead.",وافقوا على الربط، لكن بحلول وقت إنشاء الحساب كانت قاعدة البيانات قد تغيّرت ولم تعد المطابقة صحيحة. تم إنشاء عميل جديد بدلاً من ذلك.
+They declined the match,رفضوا المطابقة
+"They proved both the email and the phone on this customer record, so it is almost certainly theirs - but somebody had disabled it. The signup asked them and they confirmed, so the account was linked rather than turned away; a real owner should not be stranded by a flag they cannot see.",أثبتوا ملكية كل من البريد الإلكتروني ورقم الهاتف على سجل هذا العميل، لذا فمن شبه المؤكد أنه سجلهم - لكن أحدهم كان قد عطّله. سألهم التسجيل فأكدوا ذلك، لذا تم ربط الحساب بدلاً من رفضه؛ فلا ينبغي أن يُترك المالك الحقيقي عالقًا بسبب علامة لا يمكنه رؤيتها.
+"They proved this phone number and confirmed the record was theirs - but the name on it was withheld from them, because the number was the only thing that matched. So they cannot have been agreeing to the name.",أثبتوا ملكية رقم الهاتف هذا وأكدوا أن السجل يخصهم - لكن الاسم الموجود عليه أُخفي عنهم، لأن الرقم كان الشيء الوحيد المتطابق. لذا لا يمكن أن يكونوا قد وافقوا على هذا الاسم.
+They said the record we found was not theirs,قالوا إن السجل الذي وجدناه ليس ملكهم
+They say the details on this account are not theirs,يقولون إن البيانات الموجودة على هذا الحساب ليست بياناتهم
+They signed in to an existing account after proving both its email and its phone - so the account is theirs - but said the details stored on it are wrong. Nothing was changed.,سجّلوا الدخول إلى حساب موجود بعد إثبات ملكيتهم لبريده الإلكتروني ورقم هاتفه معًا - أي أن الحساب يخصهم فعلاً - لكنهم قالوا إن البيانات المخزَّنة عليه خاطئة. لم يتم تغيير أي شيء.
+This conflict carries no submitted name to apply.,لا يحمل هذا التعارض اسمًا مُقدَّمًا يمكن تطبيقه.
+"This conflict involves only {0}, so there is nothing to merge.",لا يخص هذا التعارض سوى {0}، فلا يوجد ما يمكن دمجه.
+This conflict names no contact or customer to apply it to.,لا يحدد هذا التعارض جهة اتصال أو عميلاً يمكن تطبيقه عليه.
+This conflict was already {0} by {1}.,تمت بالفعل معالجة هذا التعارض بحالة {0} بواسطة {1}.
+This is not a business record with a person's name to take - check the customer's type and the name given at signup.,هذا ليس سجل شركة يحمل اسم شخص يمكن أخذه - تحقّق من نوع العميل والاسم المُقدَّم عند التسجيل.
+This is not an individual record with a business name to take - check the customer's type and the name given at signup.,هذا ليس سجلاً فرديًا يحمل اسم شركة يمكن أخذه - تحقّق من نوع العميل والاسم المُقدَّم عند التسجيل.
+This one is not an Arabic record with a foreign spelling that a verified phone or email reaches - check the two names below before filing one as the other.,هذا ليس سجلاً بالعربية يحمل تهجئة أجنبية يصل إليها رقم هاتف أو بريد إلكتروني موثّق - تحقّق من الاسمين أدناه قبل تسجيل أحدهما كاسم أجنبي للآخر.
+Two records want one number,سجلان يطالبان برقم واحد
+Two records want the same number,سجلان يطالبان بنفس الرقم
+Type <b>{0}</b> exactly to confirm.,اكتب <b>{0}</b> بالضبط للتأكيد.
+Type the name of the record you are keeping,اكتب اسم السجل الذي ستبقي عليه
+"Typed rather than clicked, because it cannot be undone.",يُكتب بدلاً من النقر عليه، لأنه لا يمكن التراجع عنه.
+Unknown action {0}.,إجراء غير معروف: {0}.
+Usually nothing - they knew better than the engine. Worth a look if the two records clearly are the same person.,لا شيء عادةً - فهم أدرى من النظام بحالتهم. يستحق الأمر النظر إذا كان من الواضح أن السجلين لنفس الشخص.
+Verified Email,البريد الإلكتروني الموثّق
+Verified Phone (E.164),رقم الهاتف الموثّق (E.164)
+Verified email,البريد الإلكتروني الموثّق
+Verified phone,رقم الهاتف الموثّق
+Waiting {0} days,في الانتظار منذ {0} يومًا
+We showed them an existing record and they declined it. A new customer was created and the number stayed where it was.,عرضنا عليهم سجلاً موجودًا فرفضوه. تم إنشاء عميل جديد وبقي الرقم في مكانه.
+Webshop Identity Conflict,تعارض هوية المتجر
+Webshop Identity Problem,مشكلة هوية المتجر
+Website User,مستخدم الموقع
+What happened,ماذا حدث
+What they submitted,ما قدّموه
+both channels,كلا القناتين
+"contact_enhancements prefilled this customer from a lead, and the values do not match what the person signed up with.",قام تطبيق contact_enhancements بتعبئة بيانات هذا العميل مسبقًا من عميل محتمل، والقيم لا تتطابق مع ما سجّل به الشخص.
+disabled,مُعطَّل
+holds the number,يحمل هذا الرقم
+made by this signup,أنشأه هذا التسجيل
+no existing customer,لا يوجد عميل حالي
+none,لا شيء
+nothing submitted yet,لم يُقدَّم شيء بعد
+nothing verified,لا شيء تم التحقق منه
+number pending,الرقم قيد الانتظار
+settled,تمت التسوية
+someone,أحد ما
+the email,البريد الإلكتروني
+the phone,رقم الهاتف
+the stored name,الاسم المخزَّن
+"{0} has submitted documents. Whichever you keep, the other's history moves onto it — but the record itself is deleted.",لدى {0} مستندات مُرسَلة. أيًّا كان السجل الذي ستبقي عليه، سينتقل إليه سجل الآخر التاريخي — لكن السجل نفسه سيُحذف.
+{0} is not one of the records this conflict is about ({1}).,{0} ليس أحد السجلات التي يخصها هذا التعارض ({1}).
+"{0}: contact {1} belongs to {2}, not {3}.",{0}: جهة الاتصال {1} تنتمي إلى {2}، وليس {3}.
+{0}: its contact no longer exists.,{0}: جهة اتصاله لم تعد موجودة.
+{0}: its user no longer exists.,{0}: مستخدمه لم يعد موجودًا.
+{0}: {1} has no portal access to {2}.,{0}: لا يملك {1} صلاحية وصول إلى بوابة {2}.

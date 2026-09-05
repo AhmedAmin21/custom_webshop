@@ -19,7 +19,7 @@ bench --site erpnext console
 frappe.db.set_single_value("Website Settings", "disable_signup", 0)
 frappe.db.set_single_value("Webshop Signup Settings", {
     "signup_enabled": 1, "email_otp_enabled": 1,
-    "phone_otp_enabled": 1, "otp_dev_mode": 1,
+    "phone_otp_enabled": 1, "email_otp_dev_mode": 1, "phone_otp_dev_mode": 1,
 })
 frappe.db.commit()
 ```
@@ -35,7 +35,7 @@ When you are done, go to **§9 Resetting**.
 
 ---
 
-## 1. The five switches
+## 1. The six switches
 
 Signup only runs when **all** of these agree. `custom_webshop.api.signup.is_available()`
 is the single function that decides, and the login page renders its
@@ -48,7 +48,8 @@ only if the flow behind it will work.
 | `signup_enabled` | Webshop Signup Settings | This app's own switch. |
 | `email_otp_enabled` | Webshop Signup Settings | Email verification step. |
 | `phone_otp_enabled` | Webshop Signup Settings | SMS verification step. |
-| `otp_dev_mode` | Webshop Signup Settings | Writes passcodes to the log **instead of sending them**. Lets you test with no Email Account and no SMS gateway. |
+| `email_otp_dev_mode` | Webshop Signup Settings | Writes email passcodes to the log **instead of emailing them**. Lets you test with no Email Account. |
+| `phone_otp_dev_mode` | Webshop Signup Settings | Writes phone passcodes to the log **instead of texting them**. Lets you test with no SMS gateway. Independent of the email flag — one channel can go live while the other stays in dev mode. |
 
 One more worth knowing about, though it is not a switch:
 `signup_starts_per_hour_per_ip` (default **30**) caps how many signups one IP
@@ -92,8 +93,8 @@ A line looks like this — note the destination is masked even here:
 There are two copies of the log: `logs/custom_webshop.signup.log` (bench-wide)
 and `sites/erpnext/logs/custom_webshop.signup.log` (per-site). Either works.
 
-> **Never enable `otp_dev_mode` in production.** It is the only place a
-> passcode is ever written down.
+> **Never enable `email_otp_dev_mode` or `phone_otp_dev_mode` in
+> production.** They are the only place a passcode is ever written down.
 
 ---
 
@@ -404,8 +405,8 @@ frappe.db.commit()
 
 ```python
 frappe.db.set_single_value("Webshop Signup Settings",
-                           {"signup_enabled": 0, "otp_dev_mode": 0,
-                            "otp_resend_cooldown_seconds": 60})
+                           {"signup_enabled": 0, "email_otp_dev_mode": 0,
+                            "phone_otp_dev_mode": 0, "otp_resend_cooldown_seconds": 60})
 frappe.db.set_single_value("Website Settings", "disable_signup", 1)
 frappe.db.commit()
 ```
@@ -416,14 +417,14 @@ frappe.db.commit()
 
 | Symptom | Cause |
 |---|---|
-| No "Create one" button on `/login` | One of the five switches (§1). Check `custom_webshop.api.signup.is_available()`. |
-| *"Sign up is currently unavailable"* | Same. With dev mode off, **both** OTP channels must be enabled. |
-| *"We could not send the verification email"* | No outgoing Email Account. Turn on `otp_dev_mode` for testing, or configure one. |
-| *"SMS verification is not available right now"* | SMS Settings has no gateway URL. Same options. |
+| No "Create one" button on `/login` | One of the six switches (§1). Check `custom_webshop.api.signup.is_available()`. |
+| *"Sign up is currently unavailable"* | Same. With both dev-mode flags off, **both** OTP channels must be enabled. |
+| *"We could not send the verification email"* | No outgoing Email Account. Turn on `email_otp_dev_mode` for testing, or configure one. |
+| *"SMS verification is not available right now"* | SMS Settings has no gateway URL. Turn on `phone_otp_dev_mode` for testing, or configure one. |
 | `SignupNotFound` on every call after `start` | You are not sending the cookie. Use the same cookie jar / browser. |
 | *"This signup has expired"* | Past `session_ttl_minutes` (default 30). Start again. |
 | *"Please wait N seconds"* | Resend cooldown. Set `otp_resend_cooldown_seconds` to 0 while testing. |
-| Nothing in the OTP log | `otp_dev_mode` is off, so it really tried to send. |
+| Nothing in the OTP log for a channel | That channel's own dev-mode flag (`email_otp_dev_mode`/`phone_otp_dev_mode`) is off, so it really tried to send. |
 | *"You hit the rate limit"* | The per-IP signup cap. Run `custom_webshop.signup.audit.clear_rate_limits`. |
 | Every signup refused right after a `bench migrate` | A newly-added Int setting lands on the existing Single as **0**. `settings.get_int` now falls back to the default for these, and `backfill_zeroed_signup_settings` repairs the stored values — check that patch ran. |
 | Customer creation fails site-wide | Not this app — check `contact_enhancements`, which makes `customer_primary_contact` and `customer_primary_address` mandatory. |

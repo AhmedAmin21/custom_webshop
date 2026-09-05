@@ -1,0 +1,40 @@
+{% macro brand_button(url, label_ar, label_en) %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:6px auto 4px;">
+	<tr>
+		<td bgcolor="#2563EB" style="border-radius:8px; box-shadow:0 4px 14px rgba(37,99,235,.30);">
+			<a href="{{ url }}" target="_blank" style="display:inline-block; padding:14px 34px; font-family:'Outfit',-apple-system,'Segoe UI',Arial,sans-serif; font-weight:600; font-size:15px; line-height:1.3; color:#ffffff; text-decoration:none; border-radius:8px;">
+				{{ label_ar }}<span style="display:block; font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif; font-weight:400; font-size:11px; opacity:.85; margin-top:3px;" dir="ltr">{{ label_en }}</span>
+			</a>
+		</td>
+	</tr>
+</table>
+{% endmacro %}
+
+{% macro items_table(sales_order) %}
+<table role="presentation" dir="rtl" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid rgba(226,232,240,.8); border-radius:12px; margin:20px 0; border-collapse:separate;">
+	<tr>
+		<td align="right" style="padding:10px 14px; font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid rgba(226,232,240,.8);">
+			الصنف <span style="font-weight:400; color:#94A3B8;" dir="ltr">/ Item</span>
+		</td>
+		<td align="center" style="padding:10px 14px; font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid rgba(226,232,240,.8);">
+			الكمية <span style="font-weight:400; color:#94A3B8;" dir="ltr">/ Qty</span>
+		</td>
+		<td align="left" style="padding:10px 14px; font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid rgba(226,232,240,.8);">
+			الإجمالي <span style="font-weight:400; color:#94A3B8;" dir="ltr">/ Total</span>
+		</td>
+	</tr>
+	{% for item in sales_order.items %}
+	<tr>
+		<td align="right" style="padding:12px 14px; font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif; font-size:13px; color:#1E293B; {% if not loop.last %}border-bottom:1px solid rgba(226,232,240,.8);{% endif %}">
+			{{ item.item_name | e }}
+		</td>
+		<td align="center" style="padding:12px 14px; font-family:'JetBrains Mono','Courier New',monospace; font-size:13px; color:#1E293B; direction:ltr; unicode-bidi:embed; {% if not loop.last %}border-bottom:1px solid rgba(226,232,240,.8);{% endif %}">
+			{{ "%g" | format(item.qty) }}
+		</td>
+		<td align="left" style="padding:12px 14px; font-family:'JetBrains Mono','Courier New',monospace; font-size:13px; color:#1E293B; direction:ltr; unicode-bidi:embed; {% if not loop.last %}border-bottom:1px solid rgba(226,232,240,.8);{% endif %}">
+			{{ frappe.format_value(item.amount, {"fieldtype": "Currency", "options": sales_order.currency}) }}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endmacro %}

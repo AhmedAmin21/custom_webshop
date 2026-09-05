@@ -8,3 +8,5 @@ custom_webshop.patches.backfill_contact_phone_e164
 custom_webshop.patches.backfill_zeroed_signup_settings
 custom_webshop.patches.canonicalize_webshop_owned_phones
 custom_webshop.patches.grant_portal_shopping_permissions
+custom_webshop.patches.disable_standard_email_footer
+custom_webshop.patches.split_otp_dev_mode

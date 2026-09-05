@@ -1,20 +1,53 @@
-<p>
-    {{ _("Hello") }} {{ first_name | e }},
-</p>
+{% from "custom_webshop/templates/emails/_partials/macros.html" import brand_button %}
+<style>
+	@media only screen and (max-width:600px) {
+		.cw-card { padding: 28px 20px !important; }
+	}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#F8FAFC;">
+	<tr>
+		<td align="center" style="padding:32px 16px;">
+			<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff; border:1px solid rgba(226,232,240,.8); border-radius:24px; overflow:hidden; box-shadow:0 24px 48px -24px rgba(15,23,42,.18), 0 2px 8px -2px rgba(15,23,42,.06);">
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/header.html" %}
+					</td>
+				</tr>
+				<tr>
+					<td class="cw-card" style="padding:40px 36px 8px;">
 
-<p>
-    {{ _("Welcome to {0}!").format(site_name) }}
-</p>
+						<div dir="rtl" lang="ar" style="font-family:'Cairo',Tahoma,Arial,sans-serif;">
+							<h1 style="margin:0 0 18px; font-size:23px; font-weight:700; color:#1E293B;">
+								أهلاً بك في {{ site_name | e }}، {{ first_name | e }}!
+							</h1>
+							<p style="margin:0 0 16px; font-size:15px; line-height:1.8; color:#1E293B;">
+								حسابك جاهز الآن. يمكنك تصفح منتجاتنا، إدارة بياناتك، ومتابعة طلباتك في أي وقت.
+							</p>
+							<p style="margin:0 0 24px; font-size:14px; line-height:1.9; color:#64748B;">
+								تصفّح أحدث المنتجات · احفظ عنوانك لتسريع الطلبات القادمة · تابع حالة طلباتك من حسابك
+							</p>
+						</div>
 
-<p>
-    {{ _("Your account has been created successfully. You can now log in using your email and password.") }}
-</p>
+						{{ brand_button(site_url, "تسوق الآن", "Shop Now") }}
 
-<p style="margin: 15px 0px;">
-    <a href="{{ site_url }}" rel="nofollow" class="btn btn-primary">{{ _("Visit Website") }}</a>
-</p>
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 20px;">
+							<tr><td style="border-top:1px solid rgba(226,232,240,.8); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+						</table>
 
-<p>
-    {{ _("Thanks") }},<br>
-    {{ site_name }} {{ _("Team") }}
-</p>
+						<div dir="ltr" lang="en" style="font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;">
+							<p style="margin:0 0 24px; font-size:13px; line-height:1.7; color:#94A3B8;">
+								Welcome, {{ full_name | e }}! Your {{ site_name | e }} account is ready — browse products, save your address, and track orders any time.
+							</p>
+						</div>
+
+					</td>
+				</tr>
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/footer.html" %}
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>

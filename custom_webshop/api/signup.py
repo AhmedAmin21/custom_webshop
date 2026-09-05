@@ -85,13 +85,14 @@ def is_available():
 	to walk somebody through half a signup and strand them, or to quietly
 	resolve customers against an unproven number.
 
-	`otp_dev_mode` is *not* an exception to that and never checked here.
-	It changes only how a code is delivered - written to the site log
-	instead of sent - so the flow stays exercisable before an Email
-	Account or an SMS gateway exists while still requiring both codes to
-	be typed. A switch that skipped verification outright would mean a
-	site could resolve identities against an unproven number, which is
-	the one thing this whole module exists to prevent.
+	`email_otp_dev_mode`/`phone_otp_dev_mode` are *not* an exception to
+	that and never checked here. Either changes only how its own code is
+	delivered - written to the site log instead of sent - so the flow
+	stays exercisable before an Email Account or an SMS gateway exists
+	while still requiring both codes to be typed. A switch that skipped
+	verification outright would mean a site could resolve identities
+	against an unproven number, which is the one thing this whole module
+	exists to prevent.
 
 	The login page renders its "Create one" link from this same function,
 	so the link appears if and only if the endpoint behind it will work -
@@ -1069,6 +1070,8 @@ def complete(signup_id, password, confirm_password, redirect_to=None):
 		return session.envelope(
 			doc, _("Welcome back — you're signed in."), {"redirect_to": target}
 		)
+
+	notifications.send_welcome_email(doc.email, doc.full_name)
 
 	return session.envelope(
 		doc,

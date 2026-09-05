@@ -39,14 +39,16 @@ class TestSignupAvailability(FrappeTestCase):
 
 	def test_available_when_every_switch_is_on(self):
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1, otp_dev_mode=0
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1,
+			email_otp_dev_mode=0, phone_otp_dev_mode=0,
 		):
 			self.assertTrue(is_available())
 
 	def test_unavailable_when_the_site_wide_switch_is_set(self):
 		# The outermost kill switch wins over every app-level flag.
 		with signup_blocked_site_wide(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1, otp_dev_mode=1
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1,
+			email_otp_dev_mode=1, phone_otp_dev_mode=1,
 		):
 			self.assertFalse(is_available())
 
@@ -56,7 +58,8 @@ class TestSignupAvailability(FrappeTestCase):
 
 	def test_unavailable_when_a_channel_cannot_deliver(self):
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0, otp_dev_mode=0
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0,
+			email_otp_dev_mode=0, phone_otp_dev_mode=0,
 		):
 			self.assertFalse(is_available())
 
@@ -66,7 +69,8 @@ class TestSignupAvailability(FrappeTestCase):
 		# identity resolution safely, and saying "but it is only dev" does
 		# not change that - so the signup is unavailable either way.
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0, otp_dev_mode=1
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0,
+			email_otp_dev_mode=1, phone_otp_dev_mode=1,
 		):
 			self.assertFalse(is_available())
 
@@ -74,7 +78,8 @@ class TestSignupAvailability(FrappeTestCase):
 		# The case dev mode does exist for: no Email Account, no SMS
 		# gateway, both channels required, codes go to the site log.
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1, otp_dev_mode=1
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1,
+			email_otp_dev_mode=1, phone_otp_dev_mode=1,
 		):
 			self.assertTrue(is_available())
 
@@ -131,7 +136,8 @@ class TestLoginPageContext(FrappeTestCase):
 
 	def test_offers_signup_exactly_when_the_api_would_accept_it(self):
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1, otp_dev_mode=0
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=1,
+			email_otp_dev_mode=0, phone_otp_dev_mode=0,
 		):
 			context = build_context()
 			self.assertTrue(context.signup_available)
@@ -148,14 +154,17 @@ class TestLoginPageContext(FrappeTestCase):
 		# Website Settings, so it would advertise a signup that the first
 		# request then declined.
 		with signup_allowed(), signup_settings_as(
-			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0, otp_dev_mode=0
+			signup_enabled=1, email_otp_enabled=1, phone_otp_enabled=0,
+			email_otp_dev_mode=0, phone_otp_dev_mode=0,
 		):
 			context = build_context()
 			self.assertFalse(context.signup_available)
 
 	def test_disable_signup_context_mirrors_availability(self):
 		# page-login.js reads LOGIN_CONTEXT.disable_signup.
-		with signup_allowed(), signup_settings_as(signup_enabled=1, otp_dev_mode=1):
+		with signup_allowed(), signup_settings_as(
+			signup_enabled=1, email_otp_dev_mode=1, phone_otp_dev_mode=1
+		):
 			context = build_context()
 			self.assertFalse(context.disable_signup)
 

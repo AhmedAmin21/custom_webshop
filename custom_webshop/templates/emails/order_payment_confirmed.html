@@ -1,24 +1,71 @@
-<p>
-    {{ _("Hello") }} {{ first_name | e }},
-</p>
+{% from "custom_webshop/templates/emails/_partials/macros.html" import brand_button, items_table %}
+<style>
+	@media only screen and (max-width:600px) {
+		.cw-card { padding: 28px 20px !important; }
+	}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#F8FAFC;">
+	<tr>
+		<td align="center" style="padding:32px 16px;">
+			<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff; border:1px solid rgba(226,232,240,.8); border-radius:24px; overflow:hidden; box-shadow:0 24px 48px -24px rgba(15,23,42,.18), 0 2px 8px -2px rgba(15,23,42,.06);">
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/header.html" %}
+					</td>
+				</tr>
+				<tr>
+					<td class="cw-card" style="padding:40px 36px 8px;">
 
-<p>
-    {{ _("We have received your payment confirmation for order <strong>{0}</strong>.").format(sales_order.name) }}
-</p>
+						<div dir="rtl" lang="ar" style="font-family:'Cairo',Tahoma,Arial,sans-serif;">
+							<h1 style="margin:0 0 18px; font-size:23px; font-weight:700; color:#1E293B;">
+								استلمنا إثبات دفعك
+							</h1>
+							<p style="margin:0 0 4px; font-size:15px; line-height:1.8; color:#1E293B;">
+								مرحباً {{ first_name | e }}، استلمنا إثبات الدفع الخاص بطلبك رقم
+								<span dir="ltr" style="font-family:'JetBrains Mono','Courier New',monospace; font-weight:700; color:#2563EB; unicode-bidi:embed;">{{ sales_order.name }}</span>
+								وهو الآن قيد المراجعة.
+							</p>
+						</div>
 
-<p>
-    {{ _("Your order has been confirmed and is now being processed.") }}
-</p>
+						{{ items_table(sales_order) }}
 
-<p>
-    {{ _("Order Total: {0}").format(frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency})) }}
-</p>
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+							<tr>
+								<td align="right" dir="rtl" style="font-family:'Cairo',Tahoma,Arial,sans-serif; font-size:15px; font-weight:700; color:#1E293B;">
+									الإجمالي:
+									<span dir="ltr" style="font-family:'JetBrains Mono','Courier New',monospace; color:#2563EB; unicode-bidi:embed;">{{ frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency}) }}</span>
+								</td>
+							</tr>
+						</table>
 
-<p style="margin: 15px 0px;">
-    <a href="{{ order_url }}" rel="nofollow" class="btn btn-primary">{{ _("View Order") }}</a>
-</p>
+						<div dir="rtl" lang="ar" style="font-family:'Cairo',Tahoma,Arial,sans-serif;">
+							<p style="margin:0 0 22px; font-size:14px; line-height:1.8; color:#64748B;">
+								سيقوم فريقنا بمراجعة إثبات الدفع وإخطارك فور تأكيده.
+							</p>
+						</div>
 
-<p>
-    {{ _("Thanks") }},<br>
-    {{ site_name }} {{ _("Team") }}
-</p>
+						{{ brand_button(order_url, "عرض الطلب", "View Order") }}
+
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 20px;">
+							<tr><td style="border-top:1px solid rgba(226,232,240,.8); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+						</table>
+
+						<div dir="ltr" lang="en" style="font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;">
+							<p style="margin:0 0 24px; font-size:13px; line-height:1.7; color:#94A3B8;">
+								We've received your payment proof for order {{ sales_order.name }} — total
+								{{ frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency}) }}.
+								It's under review; we'll notify you once it's verified.
+							</p>
+						</div>
+
+					</td>
+				</tr>
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/footer.html" %}
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>

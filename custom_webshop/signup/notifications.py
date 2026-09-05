@@ -9,9 +9,11 @@ leaving a signup stuck waiting for a message that will never arrive.
 
 Dev mode is the exception and the reason it exists: on a site with no
 outgoing Email Account and no SMS gateway - which is the state of this
-bench today - `otp_dev_mode` writes the code to the site log instead of
-sending it, so the whole flow is exercisable end to end before either
-piece of infrastructure is configured.
+bench today - `email_otp_dev_mode`/`phone_otp_dev_mode` write the code to
+the site log instead of sending it, so the whole flow is exercisable end
+to end before either piece of infrastructure is configured. The two
+flags are independent, so one channel can go live in production while
+the other stays in dev mode until its own infrastructure is ready.
 """
 
 import frappe
@@ -21,6 +23,7 @@ from custom_webshop.signup import settings
 from custom_webshop.signup.telemetry import log_dev_otp
 
 EMAIL_TEMPLATE = "custom_webshop/templates/emails/signup_otp.html"
+WELCOME_EMAIL_TEMPLATE = "custom_webshop/templates/emails/custom_welcome_email.html"
 
 
 class OTPDeliveryFailed(frappe.ValidationError):
@@ -62,7 +65,7 @@ def send_email_otp(doc, code):
 	Raises:
 		OTPDeliveryFailed: if the site cannot send mail.
 	"""
-	if settings.is_enabled("otp_dev_mode"):
+	if settings.is_enabled("email_otp_dev_mode"):
 		_deliver_in_dev_mode("email", doc.email, code)
 		return
 
@@ -94,6 +97,36 @@ def send_email_otp(doc, code):
 		)
 
 
+def send_welcome_email(user_email, full_name):
+	"""Email a welcome message to a newly created account.
+
+	Best-effort, like `_send_order_email` in cart_override.py: a missed
+	welcome email must never undo or block account creation, so a failure
+	here is logged and swallowed rather than raised.
+
+	Args:
+		user_email: the new account's email address.
+		full_name: the person's full name, for greeting and salutation.
+	"""
+	first_name = (full_name or "").split(" ")[0] or full_name
+	context = {
+		"full_name": full_name,
+		"first_name": first_name,
+		"site_name": _site_name(),
+		"site_url": frappe.utils.get_url(),
+	}
+
+	try:
+		frappe.sendmail(
+			recipients=[user_email],
+			subject=_("Welcome to {0}!").format(_site_name()),
+			message=frappe.render_template(WELCOME_EMAIL_TEMPLATE, context),
+			now=True,
+		)
+	except Exception:
+		frappe.log_error("custom_webshop: welcome email delivery failed")
+
+
 def send_phone_otp(doc, code):
 	"""Send a passcode by SMS to the number on a signup session.
 
@@ -109,7 +142,7 @@ def send_phone_otp(doc, code):
 	Raises:
 		OTPDeliveryFailed: if no gateway is configured or the send fails.
 	"""
-	if settings.is_enabled("otp_dev_mode"):
+	if settings.is_enabled("phone_otp_dev_mode"):
 		_deliver_in_dev_mode("phone", doc.phone_e164, code)
 		return
 

@@ -10,7 +10,8 @@
   "email_otp_enabled",
   "column_break_flags",
   "phone_otp_enabled",
-  "otp_dev_mode",
+  "email_otp_dev_mode",
+  "phone_otp_dev_mode",
   "otp_section",
   "otp_length",
   "otp_ttl_seconds",
@@ -64,10 +65,17 @@
   },
   {
    "default": "0",
-   "description": "Write OTP codes to the site log instead of sending them. Codes must still be entered. NEVER enable in production.",
-   "fieldname": "otp_dev_mode",
+   "description": "Write email OTP codes to the site log instead of emailing them. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "email_otp_dev_mode",
    "fieldtype": "Check",
-   "label": "OTP Dev Mode"
+   "label": "Email OTP Dev Mode"
+  },
+  {
+   "default": "0",
+   "description": "Write phone OTP codes to the site log instead of sending them by SMS. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "phone_otp_dev_mode",
+   "fieldtype": "Check",
+   "label": "Phone OTP Dev Mode"
   },
   {
    "fieldname": "otp_section",
@@ -188,7 +196,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-03 12:00:00.000000",
+ "modified": "2026-09-05 15:30:38.107374",
  "modified_by": "Administrator",
  "module": "custom_webshop",
  "name": "Webshop Signup Settings",

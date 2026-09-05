@@ -39,9 +39,10 @@ can only ever touch records it created itself.
 ## Prerequisites
 
 * The site is serving on `http://127.0.0.1:8000`.
-* `Webshop Signup Settings` has `otp_dev_mode`, `email_otp_enabled`,
-  `phone_otp_enabled` and `signup_enabled` all on. Dev mode only changes
-  *delivery* — both codes are still typed into the page.
+* `Webshop Signup Settings` has `email_otp_dev_mode`, `phone_otp_dev_mode`,
+  `email_otp_enabled`, `phone_otp_enabled` and `signup_enabled` all on.
+  Dev mode only changes *delivery* — both codes are still typed into the
+  page.
 * Nine signups from one address would trip the per-IP hourly cap on
   `start`, so the fixture step clears this app's rate-limit counters
   first (`signup.audit.clear_rate_limits`). Without that, the run reports
