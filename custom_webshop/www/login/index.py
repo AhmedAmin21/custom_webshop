@@ -1,7 +1,7 @@
 import frappe
 
 from custom_webshop.api.signup import is_available
-from custom_webshop.signup import passwords
+from custom_webshop.signup import passwords, settings
 
 no_cache = 1
 
@@ -34,6 +34,15 @@ def get_context(context):
 
 	# Kept for the inline LOGIN_CONTEXT block, which page-login.js reads.
 	context.disable_signup = not context.signup_available
+
+	# Gates whether page-signup.js offers WhatsApp as a phone OTP delivery
+	# choice at all. Independent of signup_available: a site can run
+	# SMS-only signup perfectly well with this off, so a failure reading it
+	# degrades to "don't offer WhatsApp" rather than breaking the page.
+	try:
+		context.whatsapp_otp_enabled = settings.is_enabled("whatsapp_otp_enabled")
+	except Exception:
+		context.whatsapp_otp_enabled = False
 
 	# The password guide is rendered from the server's own rules, so the
 	# thing shown as you type and the thing enforced on submit cannot

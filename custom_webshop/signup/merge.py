@@ -61,8 +61,9 @@ KEEP_TYPE = "keep_type"
 #: convert. Without this the section sat there with no way to answer it.
 SETTLE_ONE = "settle_one"
 MAKE_INDIVIDUAL = "make_individual"
+REENABLE_CUSTOMER = "reenable_customer"
 ACTIONS = (MERGE, KEEP_SEPARATE, DISMISS, APPLY_NAME, ADD_FOREIGN_NAME,
-           MAKE_COMPANY, MAKE_INDIVIDUAL, KEEP_TYPE, SETTLE_ONE)
+           MAKE_COMPANY, MAKE_INDIVIDUAL, KEEP_TYPE, SETTLE_ONE, REENABLE_CUSTOMER)
 
 #: Arabic letters, including the presentation forms text sometimes
 #: arrives in.
@@ -885,6 +886,67 @@ def make_individual(conflict):
 	return steps
 
 
+def reenable_offer(conflict):
+	"""Whether this conflict is a linked Customer that's been disabled.
+
+	Only one situation ever raises MATCHED_CUSTOMER_DISABLED - a clean
+	reconfirmation at finalize whose matched Customer turned out disabled
+	(see `linking._note_disabled_record`) - so this only needs to check the
+	type and the record's current state, not re-derive the match.
+
+	Args:
+		conflict: the Webshop Identity Conflict document.
+
+	Returns:
+		The disabled Customer's name, or None when this is not that.
+	"""
+	if conflict.conflict_type != "MATCHED_CUSTOMER_DISABLED":
+		return None
+
+	customer = conflict.created_customer
+	if not customer or not frappe.db.exists("Customer", customer):
+		return None
+
+	if not frappe.db.get_value("Customer", customer, "disabled"):
+		return None
+
+	return customer
+
+
+def reenable_customer(conflict):
+	"""Turn a disabled Customer back on, deliberately.
+
+	The safe half of what MATCHED_CUSTOMER_DISABLED's own explanation
+	promises: the disabling no longer applies, so the record the person
+	already proved is theirs is switched back on rather than left
+	stranding them. The other half - moving the account to a fresh
+	Customer when the disabling still applies - would mean creating a new
+	Customer, Contact and portal grant from inside a resolve dialog, which
+	is a bigger decision than a button click should make on its own; for
+	now that stays a manual fix outside this form.
+
+	Args:
+		conflict: the Webshop Identity Conflict document.
+
+	Returns:
+		A list of what was changed, in words.
+
+	Raises:
+		frappe.ValidationError: when this is not that situation.
+	"""
+	customer = reenable_offer(conflict)
+	if not customer:
+		frappe.throw(
+			_(
+				"This is not a linked customer that is currently disabled - "
+				"check the customer's Disabled flag."
+			)
+		)
+
+	frappe.db.set_value("Customer", customer, "disabled", 0)
+	return [_("Customer {0}: re-enabled.").format(customer)]
+
+
 def make_company(conflict):
 	"""Convert the matched customer into a company, deliberately.
 
@@ -976,11 +1038,12 @@ def _contact_for(conflict):
 #: whether the customer is a company, and converting a company says
 #: nothing about the name.
 SETTLES = {
-	APPLY_NAME: ("PROFILE_DISCREPANCY", "PHONE_NAME_MISMATCH", "EMAIL_NAME_MISMATCH"),
-	ADD_FOREIGN_NAME: ("PROFILE_DISCREPANCY", "PHONE_NAME_MISMATCH", "EMAIL_NAME_MISMATCH"),
+	APPLY_NAME: ("PROFILE_DISCREPANCY", "NAME_MISMATCH"),
+	ADD_FOREIGN_NAME: ("PROFILE_DISCREPANCY", "NAME_MISMATCH"),
 	MAKE_COMPANY: ("ACCOUNT_TYPE_MISMATCH",),
 	MAKE_INDIVIDUAL: ("ACCOUNT_TYPE_MISMATCH",),
 	KEEP_TYPE: ("ACCOUNT_TYPE_MISMATCH",),
+	REENABLE_CUSTOMER: ("MATCHED_CUSTOMER_DISABLED",),
 	# Merging says these are the same person, which is the answer to a
 	# rejection as much as to a duplicate: staff decided the "no" was
 	# wrong, and there is nothing left to review about it.

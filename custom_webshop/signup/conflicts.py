@@ -23,18 +23,28 @@ from custom_webshop.signup.telemetry import log_event
 
 # Matching results whose name differs from the conflict type that records
 # them. Everything not listed here uses its own name verbatim.
+#
+# EMAIL_ACCOUNT_EXISTS and PHONE_ACCOUNT_EXISTS collapse into one type: both
+# are the same blocking outcome ("dismiss, unless the person says they're
+# locked out"), differing only in which channel matched - a distinction
+# that belongs in the per-conflict reason string, not in the taxonomy.
+# PHONE_NAME_MISMATCH and EMAIL_NAME_MISMATCH collapse the same way: same
+# staff question, same buttons, differing only by which verified channel
+# found the record.
 _RESULT_TO_CONFLICT_TYPE = {
 	"MULTIPLE_MATCH": "MULTIPLE_PHONE_MATCHES",
+	"EMAIL_ACCOUNT_EXISTS": "ACCOUNT_ALREADY_EXISTS",
+	"PHONE_ACCOUNT_EXISTS": "ACCOUNT_ALREADY_EXISTS",
+	"PHONE_NAME_MISMATCH": "NAME_MISMATCH",
+	"EMAIL_NAME_MISMATCH": "NAME_MISMATCH",
 }
 
 VALID_CONFLICT_TYPES = frozenset(
 	{
-		"PHONE_NAME_MISMATCH",
-		"EMAIL_NAME_MISMATCH",
+		"NAME_MISMATCH",
 		"MULTIPLE_PHONE_MATCHES",
 		"CUSTOMER_ALREADY_LINKED",
-		"EMAIL_ACCOUNT_EXISTS",
-		"PHONE_ACCOUNT_EXISTS",
+		"ACCOUNT_ALREADY_EXISTS",
 		"USER_REJECTED_MATCH",
 		# The verified number is on somebody else's Contact, so it was
 		# left off this one. Raised whenever a signup ends up with a
@@ -44,9 +54,8 @@ VALID_CONFLICT_TYPES = frozenset(
 		# identity field, disagrees with what was submitted. The link
 		# stands; the existing record is never rewritten to match.
 		"PROFILE_DISCREPANCY",
-		"STALE_LINK_DECISION",
-		"INCOMPLETE_PROFILE",
-		"LEAD_PREFILL_DIVERGENCE",
+		"ACCOUNT_TYPE_MISMATCH",
+		"MATCHED_CUSTOMER_DISABLED",
 	}
 )
 
@@ -58,22 +67,16 @@ VALID_CONFLICT_TYPES = frozenset(
 #:
 #: Each entry is (headline, what happened, what to do about it).
 EXPLANATIONS = {
-	"PHONE_NAME_MISMATCH": (
-		"Linked on a phone number, name never shown",
-		"They proved this phone number and confirmed the record was theirs - but the name "
-		"on it was withheld from them, because the number was the only thing that matched. "
-		"So they cannot have been agreeing to the name.",
-		"Check the two are the same person. Egyptian numbers get reassigned, and if this "
-		"one was, an account is now attached to somebody else's order history. If they are "
-		"the same person under an old name, put the submitted name on the records.",
-	),
-	"EMAIL_NAME_MISMATCH": (
-		"Same email address, different name",
-		"An existing customer already had this email, but the name did not agree - too "
-		"weak a signal to put a stranger's record in front of anybody, so a new customer "
-		"was created rather than guessing.",
-		"If the two are the same person, merge them. If a household or an office shares "
-		"one mailbox, keep them apart.",
+	"NAME_MISMATCH": (
+		"Linked on a verified channel, but the name doesn't match",
+		"They proved a phone number or email address that already belongs to an existing "
+		"customer, but the name on that record disagrees with what they typed - too weak a "
+		"signal to put a stranger's record in front of anybody, so a new customer was "
+		"created rather than guessing.",
+		"Check whether the two are the same person. Egyptian phone numbers get reassigned, "
+		"and an email can be shared by a household or an office. If they are the same "
+		"person under a different spelling or script, apply the submitted name or file it "
+		"as a foreign-script spelling. If they're different people, dismiss this.",
 	),
 	"MULTIPLE_PHONE_MATCHES": (
 		"One number, several customers",
@@ -114,30 +117,12 @@ EXPLANATIONS = {
 		"Point the person at sign-in or password reset. Merge only if there really are "
 		"two accounts for one person.",
 	),
-	"EMAIL_ACCOUNT_EXISTS": (
-		"Signup stopped: that email is registered",
-		"Both codes were proved, and the email turned out to belong to an existing "
-		"account that the phone number does not reach.",
-		"Nothing to fix here unless the person says they cannot get in. Dismiss.",
-	),
-	"PHONE_ACCOUNT_EXISTS": (
-		"Signup stopped: that number is registered",
-		"Both codes were proved, and the number turned out to belong to an existing "
-		"account that the email does not reach.",
-		"Nothing to fix here unless the number was reassigned and the new holder is "
-		"locked out. Dismiss.",
-	),
-	"STALE_LINK_DECISION": (
-		"The answer stopped fitting before they finished",
-		"They approved a link, but by the time the account was created the database had "
-		"changed and the match no longer held. A new customer was made instead.",
-		"Look at whether the two records are the same person, and merge if so.",
-	),
-	"INCOMPLETE_PROFILE": (
-		"Customer has no address yet",
-		"A signup collects no address - it is captured at the first checkout - but the "
-		"field is mandatory, so the record cannot be saved from the Desk until it has one.",
-		"Leave it; the first order fills it in. Dismiss if it is cluttering the queue.",
+	"ACCOUNT_ALREADY_EXISTS": (
+		"Signup stopped: already registered",
+		"Both codes were proved, and the email or phone number turned out to belong to an "
+		"existing account that the other channel does not reach.",
+		"Nothing to fix here unless the person says they cannot get in, or the number was "
+		"reassigned and the new holder is locked out. Dismiss.",
 	),
 	"ACCOUNT_TYPE_MISMATCH": (
 		"Signed up as one kind of party, matched another",
@@ -158,38 +143,27 @@ EXPLANATIONS = {
 		"almost certainly theirs - but somebody had disabled it. The signup asked them "
 		"and they confirmed, so the account was linked rather than turned away; a real "
 		"owner should not be stranded by a flag they cannot see.",
-		"Decide what the disabling was for. If it no longer applies, re-enable the "
-		"customer - they cannot place an order against a disabled one. If it does still "
-		"apply, move the account to a new customer record and leave this one off.",
-	),
-	"LEAD_PREFILL_DIVERGENCE": (
-		"A lead's details disagree with the account",
-		"contact_enhancements prefilled this customer from a lead, and the values do not "
-		"match what the person signed up with.",
-		"Decide which source is right and correct the record by hand.",
+		"Decide what the disabling was for. If it no longer applies, use 'Re-enable the "
+		"customer' - they cannot place an order against a disabled one. If it does still "
+		"apply, move the account to a new customer record by hand and leave this one off.",
 	),
 }
 
 
-#: The same twelve types said in three or four words, for the places a
+#: The same nine types said in three or four words, for the places a
 #: headline does not fit: the chart's axis and the list view's type
 #: column. Kept under about 27 characters, which is where frappe-charts
 #: starts truncating an axis label into an ellipsis. EXPLANATIONS stays the long form; this is the short one, and
 #: both live here so the queue, the chart and the list cannot drift into
 #: calling one situation three different things.
 SHORT_LABELS = {
-	"PHONE_NAME_MISMATCH": "Linked, name never shown",
-	"EMAIL_NAME_MISMATCH": "Same email, different name",
+	"NAME_MISMATCH": "Linked, name doesn't match",
 	"MULTIPLE_PHONE_MATCHES": "One number, many customers",
 	"PHONE_ALREADY_ASSOCIATED": "Two records want one number",
 	"USER_REJECTED_MATCH": "They declined the match",
 	"PROFILE_DISCREPANCY": "Disputes stored details",
 	"CUSTOMER_ALREADY_LINKED": "Customer already has an account",
-	"EMAIL_ACCOUNT_EXISTS": "Stopped: email registered",
-	"PHONE_ACCOUNT_EXISTS": "Stopped: number registered",
-	"STALE_LINK_DECISION": "Answer no longer fitted",
-	"INCOMPLETE_PROFILE": "Customer has no address",
-	"LEAD_PREFILL_DIVERGENCE": "Lead details disagree",
+	"ACCOUNT_ALREADY_EXISTS": "Stopped: already registered",
 	"MATCHED_CUSTOMER_DISABLED": "Matched record is disabled",
 	"ACCOUNT_TYPE_MISMATCH": "Person/business disagree",
 }
@@ -212,16 +186,15 @@ def short_label(conflict_type):
 	return _(label) if label else (conflict_type or "").replace("_", " ").title()
 
 
-#: Problems that are recorded rather than asked about. Nothing here has
-#: an answer a button could give: a customer with no address needs an
-#: address, not a decision, and a lead whose details diverged is a note
-#: about how the record came to look the way it does. They appear on the
-#: conflict so the case is complete, and they never hold it open - a case
-#: that cannot be closed because of a line nobody can act on is a case
-#: that sits in the queue forever.
-INFORMATIONAL = frozenset(
-	{"INCOMPLETE_PROFILE", "LEAD_PREFILL_DIVERGENCE", "STALE_LINK_DECISION"}
-)
+#: Problems that are recorded rather than asked about. Nothing here has an
+#: answer a button could give. Empty now: the three types that used to live
+#: here (a customer with no address, a lead's prefill diverging, a stale
+#: re-check with nowhere else to go) were removed from the taxonomy outright
+#: rather than kept as unactionable rows - see `type_for_result` for the
+#: stale-decision case. Left defined, rather than deleted, so a future
+#: type that is genuinely recorded-not-asked-about has somewhere to go
+#: without re-deriving this mechanism.
+INFORMATIONAL = frozenset()
 
 
 def describe(conflict_type):
@@ -255,22 +228,29 @@ def describe(conflict_type):
 
 
 def type_for_result(result):
-	"""Map a matching result to the conflict type that records it.
+	"""Map a matching result to the conflict type that records it, if any.
 
-	A result with no conflict of its own - NO_MATCH, STRONG_MATCH - can
-	still reach here when a link approved earlier no longer holds up on
-	the re-check at finalise. That is its own situation, not the absence
-	of one, so it gets STALE_LINK_DECISION rather than being forced into
-	an ill-fitting category or crashing on an invalid Select value.
+	A result with no conflict of its own - NO_MATCH, STRONG_MATCH, OWN_ACCOUNT -
+	can still reach here when a link approved earlier no longer holds up on
+	the re-check at finalise: the record was merged, renamed, disabled or
+	reassigned between approval and account creation. That situation isn't
+	filed as a conflict of its own - there's nothing for staff to do beyond
+	what a new Customer already did on its own - so it is logged here and
+	`None` is returned, and the caller opens no queue row.
 
 	Args:
 		result: a custom_webshop.signup.matching result constant.
 
 	Returns:
-		A valid Webshop Identity Conflict type.
+		A valid Webshop Identity Conflict type, or None when the result
+		doesn't correspond to one.
 	"""
 	mapped = _RESULT_TO_CONFLICT_TYPE.get(result, result)
-	return mapped if mapped in VALID_CONFLICT_TYPES else "STALE_LINK_DECISION"
+	if mapped in VALID_CONFLICT_TYPES:
+		return mapped
+
+	log_event("signup_stale_link_decision", None, matching_result=result)
+	return None
 
 
 def open_conflict(doc, conflict_type, reason=None, candidates=None, created_user=None, created_customer=None):

@@ -1,25 +1,32 @@
 # Copyright (c) 2026, ahmedamin and contributors
 # For license information, please see license.txt
 
-"""Delivery of signup passcodes over email and SMS.
+"""Delivery of signup passcodes over email, SMS and WhatsApp.
 
 Every sender here fails *closed*: if a code cannot be delivered, the
 caller is told so and the surrounding transaction rolls back, rather than
 leaving a signup stuck waiting for a message that will never arrive.
 
 Dev mode is the exception and the reason it exists: on a site with no
-outgoing Email Account and no SMS gateway - which is the state of this
-bench today - `email_otp_dev_mode`/`phone_otp_dev_mode` write the code to
-the site log instead of sending it, so the whole flow is exercisable end
-to end before either piece of infrastructure is configured. The two
-flags are independent, so one channel can go live in production while
-the other stays in dev mode until its own infrastructure is ready.
+outgoing Email Account and no SMS/WhatsApp gateway - which is the state of
+this bench today - `email_otp_dev_mode`/`phone_otp_dev_mode`/
+`whatsapp_otp_dev_mode` write the code to the site log instead of sending
+it, so the whole flow is exercisable end to end before any of that
+infrastructure is configured. The flags are independent, so one channel
+can go live in production while another stays in dev mode until its own
+infrastructure is ready.
+
+Phone OTPs are sent by SMS (`send_phone_otp`) or WhatsApp
+(`send_whatsapp_otp`) depending on the signup session's
+`phone_otp_channel` - the choice of which function to call lives in
+`custom_webshop.api.signup`, not here; both functions are self-contained
+and neither knows the other exists.
 """
 
 import frappe
 from frappe import _
 
-from custom_webshop.signup import settings
+from custom_webshop.signup import settings, whatsapp
 from custom_webshop.signup.telemetry import log_dev_otp
 
 EMAIL_TEMPLATE = "custom_webshop/templates/emails/signup_otp.html"
@@ -212,4 +219,55 @@ def _send_via_sms_settings(phone_e164, message):
 			_("We could not send the verification SMS. Please try again shortly."),
 			exc=OTPDeliveryFailed,
 			title=_("SMS Not Sent"),
+		)
+
+
+def send_whatsapp_otp(doc, code):
+	"""Send a passcode over WhatsApp, through Evolution API.
+
+	Mirrors `send_phone_otp` exactly in shape and failure behaviour - dev
+	mode short-circuits to the site log, everything else fails closed
+	through the same `OTPDeliveryFailed`, so callers treat a WhatsApp
+	failure identically to an SMS one. `send_phone_otp` itself is untouched
+	by this function's existence.
+
+	Args:
+		doc: the Webshop Signup Session document.
+		code: the plaintext passcode.
+
+	Raises:
+		OTPDeliveryFailed: if Evolution API is not configured, or the send
+			fails.
+	"""
+	if settings.is_enabled("whatsapp_otp_dev_mode"):
+		_deliver_in_dev_mode("phone", doc.phone_e164, code)
+		return
+
+	message = _("{0} is your {1} verification code.").format(code, _site_name())
+
+	base_url = settings.get("evolution_api_base_url")
+	instance = settings.get("evolution_instance_name")
+	api_key = settings.get_evolution_api_key()
+	if not base_url or not instance or not api_key:
+		frappe.throw(
+			_("WhatsApp verification is not available right now. Please try again later."),
+			exc=OTPDeliveryFailed,
+			title=_("WhatsApp Not Configured"),
+		)
+
+	try:
+		whatsapp.send_text(
+			base_url,
+			instance,
+			api_key,
+			doc.phone_e164,
+			message,
+			timeout=settings.get_int("evolution_api_timeout_seconds"),
+		)
+	except Exception:
+		frappe.log_error("custom_webshop: signup WhatsApp OTP delivery failed")
+		frappe.throw(
+			_("We could not send the verification WhatsApp message. Please try again shortly."),
+			exc=OTPDeliveryFailed,
+			title=_("WhatsApp Not Sent"),
 		)

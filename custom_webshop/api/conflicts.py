@@ -92,6 +92,9 @@ def get_resolution_options(conflict, lang=None):
 		# offered a button.
 		"company_conversion": merge.company_conversion_offer(doc),
 		"individual_conversion": merge.individual_conversion_offer(doc),
+		# The disabled Customer this conflict is about, when re-enabling it
+		# is actually on offer - see `merge.reenable_offer`.
+		"reenable_offer": merge.reenable_offer(doc),
 		"claimed_company_name": doc.claimed_company_name,
 		"nameable": (
 			bool(doc.submitted_name)
@@ -229,6 +232,8 @@ def resolve_conflict(conflict, action, survivor=None, note=None, problem=None):
 	  exactly the accident this refuses to have.
 	* `keep_separate` - two different people who share a number. Nothing
 	  is changed; the conflict is closed so the pair stops resurfacing.
+	* `reenable_customer` - the matched Customer was disabled and the
+	  disabling no longer applies, so it is switched back on.
 	* `dismiss` - not a real problem, or already handled elsewhere.
 
 	The whole thing runs inside one savepoint. A merge touches Contacts,
@@ -363,6 +368,20 @@ def resolve_conflict(conflict, action, survivor=None, note=None, problem=None):
 		account = _("Applied the submitted name {0!r}.").format(doc.submitted_name)
 		closed = merge.settle(
 			doc, action, "\n".join([account] + steps + ([note] if note else []))
+		)
+		return {"action": action, "conflict": doc.name, "steps": steps, "closed": closed}
+
+	if action == merge.REENABLE_CUSTOMER:
+		savepoint = "custom_webshop_reenable_customer"
+		frappe.db.savepoint(savepoint)
+		try:
+			steps = merge.reenable_customer(doc)
+		except Exception:
+			frappe.db.rollback(save_point=savepoint)
+			raise
+
+		closed = merge.settle(
+			doc, action, "\n".join(steps + ([note] if note else []))
 		)
 		return {"action": action, "conflict": doc.name, "steps": steps, "closed": closed}
 

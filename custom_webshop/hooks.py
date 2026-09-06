@@ -309,7 +309,13 @@ home_page = "shop"
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------
 
-# ignore_links_on_delete = ["Communication", "ToDo"]
+# Both doctypes are a record of what a signup did, not a business record in
+# their own right - a Webshop Signup Session outlives the attempt it logged,
+# and a Webshop Account Identity just names which User/Contact/Customer a
+# signup ended up as. Neither should be the reason a Contact or Customer
+# can't be deleted; a dangling reference in a log is fine, a login nobody
+# can clean up because a log still points at it is not.
+ignore_links_on_delete = ["Webshop Account Identity", "Webshop Signup Session"]
 
 # Request Events
 # ----------------

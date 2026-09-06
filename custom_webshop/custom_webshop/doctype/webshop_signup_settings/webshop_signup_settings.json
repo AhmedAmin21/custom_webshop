@@ -7,20 +7,8 @@
  "field_order": [
   "feature_flags_section",
   "signup_enabled",
-  "email_otp_enabled",
   "column_break_flags",
-  "phone_otp_enabled",
-  "email_otp_dev_mode",
-  "phone_otp_dev_mode",
-  "otp_section",
-  "otp_length",
-  "otp_ttl_seconds",
-  "otp_max_attempts",
-  "column_break_otp",
-  "otp_resend_cooldown_seconds",
-  "otp_max_sends_per_channel",
   "signup_starts_per_hour_per_ip",
-  "sms_sender_method",
   "session_section",
   "session_ttl_minutes",
   "column_break_session",
@@ -30,7 +18,26 @@
   "default_phone_region",
   "column_break_identity",
   "default_customer_group",
-  "default_territory"
+  "default_territory",
+  "otp_messages_section",
+  "otp_length",
+  "otp_ttl_seconds",
+  "otp_max_attempts",
+  "column_break_otp_messages_1",
+  "otp_resend_cooldown_seconds",
+  "otp_max_sends_per_channel",
+  "email_otp_enabled",
+  "email_otp_dev_mode",
+  "phone_otp_enabled",
+  "phone_otp_dev_mode",
+  "sms_sender_method",
+  "column_break_otp_messages_2",
+  "whatsapp_otp_enabled",
+  "whatsapp_otp_dev_mode",
+  "evolution_instance_name",
+  "evolution_api_key",
+  "evolution_api_base_url",
+  "evolution_api_timeout_seconds"
  ],
  "fields": [
   {
@@ -46,78 +53,8 @@
    "label": "Signup Enabled"
   },
   {
-   "default": "1",
-   "description": "Require email OTP verification. Turning this off disables signup entirely.",
-   "fieldname": "email_otp_enabled",
-   "fieldtype": "Check",
-   "label": "Email OTP Enabled"
-  },
-  {
    "fieldname": "column_break_flags",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "1",
-   "description": "Require phone OTP verification. Needs a configured gateway in SMS Settings, or Dev Mode. Turning this off disables signup entirely.",
-   "fieldname": "phone_otp_enabled",
-   "fieldtype": "Check",
-   "label": "Phone OTP Enabled"
-  },
-  {
-   "default": "0",
-   "description": "Write email OTP codes to the site log instead of emailing them. Codes must still be entered. NEVER enable in production.",
-   "fieldname": "email_otp_dev_mode",
-   "fieldtype": "Check",
-   "label": "Email OTP Dev Mode"
-  },
-  {
-   "default": "0",
-   "description": "Write phone OTP codes to the site log instead of sending them by SMS. Codes must still be entered. NEVER enable in production.",
-   "fieldname": "phone_otp_dev_mode",
-   "fieldtype": "Check",
-   "label": "Phone OTP Dev Mode"
-  },
-  {
-   "fieldname": "otp_section",
-   "fieldtype": "Section Break",
-   "label": "One Time Passwords"
-  },
-  {
-   "default": "6",
-   "fieldname": "otp_length",
-   "fieldtype": "Int",
-   "label": "OTP Length"
-  },
-  {
-   "default": "600",
-   "description": "How long a code stays valid, in seconds.",
-   "fieldname": "otp_ttl_seconds",
-   "fieldtype": "Int",
-   "label": "OTP Validity (seconds)"
-  },
-  {
-   "default": "5",
-   "description": "Wrong guesses allowed per issued code before it is destroyed.",
-   "fieldname": "otp_max_attempts",
-   "fieldtype": "Int",
-   "label": "Max Verify Attempts"
-  },
-  {
-   "fieldname": "column_break_otp",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "60",
-   "fieldname": "otp_resend_cooldown_seconds",
-   "fieldtype": "Int",
-   "label": "Resend Cooldown (seconds)"
-  },
-  {
-   "default": "5",
-   "description": "Total codes that may be sent per channel, per signup session.",
-   "fieldname": "otp_max_sends_per_channel",
-   "fieldtype": "Int",
-   "label": "Max Sends Per Channel"
   },
   {
    "default": "30",
@@ -125,12 +62,6 @@
    "fieldname": "signup_starts_per_hour_per_ip",
    "fieldtype": "Int",
    "label": "Signup Starts Per Hour Per IP"
-  },
-  {
-   "description": "Dotted path to a custom SMS sender, called as sender(phone_e164, message). Leave blank to use Frappe's SMS Settings gateway.",
-   "fieldname": "sms_sender_method",
-   "fieldtype": "Data",
-   "label": "SMS Sender Method"
   },
   {
    "fieldname": "session_section",
@@ -191,12 +122,131 @@
    "fieldtype": "Link",
    "label": "Default Territory",
    "options": "Territory"
+  },
+  {
+   "fieldname": "otp_messages_section",
+   "fieldtype": "Section Break",
+   "label": "OTP Messages Settings"
+  },
+  {
+   "default": "6",
+   "fieldname": "otp_length",
+   "fieldtype": "Int",
+   "label": "OTP Length"
+  },
+  {
+   "default": "600",
+   "description": "How long a code stays valid, in seconds.",
+   "fieldname": "otp_ttl_seconds",
+   "fieldtype": "Int",
+   "label": "OTP Validity (seconds)"
+  },
+  {
+   "default": "5",
+   "description": "Wrong guesses allowed per issued code before it is destroyed.",
+   "fieldname": "otp_max_attempts",
+   "fieldtype": "Int",
+   "label": "Max Verify Attempts"
+  },
+  {
+   "fieldname": "column_break_otp_messages_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "60",
+   "fieldname": "otp_resend_cooldown_seconds",
+   "fieldtype": "Int",
+   "label": "Resend Cooldown (seconds)"
+  },
+  {
+   "default": "5",
+   "description": "Total codes that may be sent per channel, per signup session. Shared by SMS and WhatsApp, since both deliver the same underlying phone code.",
+   "fieldname": "otp_max_sends_per_channel",
+   "fieldtype": "Int",
+   "label": "Max Sends Per Channel"
+  },
+  {
+   "default": "1",
+   "description": "Require email OTP verification. Turning this off disables signup entirely.",
+   "fieldname": "email_otp_enabled",
+   "fieldtype": "Check",
+   "label": "Email OTP Enabled"
+  },
+  {
+   "default": "0",
+   "description": "Write email OTP codes to the site log instead of emailing them. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "email_otp_dev_mode",
+   "fieldtype": "Check",
+   "label": "Email OTP Dev Mode"
+  },
+  {
+   "default": "1",
+   "description": "Require phone OTP verification (delivered by SMS or WhatsApp, per the signup's chosen channel). Needs a configured gateway, or Dev Mode. Turning this off disables signup entirely.",
+   "fieldname": "phone_otp_enabled",
+   "fieldtype": "Check",
+   "label": "Phone OTP Enabled"
+  },
+  {
+   "default": "0",
+   "description": "Write SMS OTP codes to the site log instead of sending them. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "phone_otp_dev_mode",
+   "fieldtype": "Check",
+   "label": "SMS OTP Dev Mode"
+  },
+  {
+   "description": "Dotted path to a custom SMS sender, called as sender(phone_e164, message). Leave blank to use Frappe's SMS Settings gateway.",
+   "fieldname": "sms_sender_method",
+   "fieldtype": "Data",
+   "label": "SMS Sender Method"
+  },
+  {
+   "fieldname": "column_break_otp_messages_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Offer WhatsApp as an OTP delivery channel at signup, sent through Evolution API. Requires the instance name, API key and base URL below to be filled in - leaving this on with any of them blank fails a WhatsApp send with a clear error rather than a silent one, but does not affect SMS-based signup.",
+   "fieldname": "whatsapp_otp_enabled",
+   "fieldtype": "Check",
+   "label": "Enable WhatsApp OTP (Evolution API)"
+  },
+  {
+   "default": "0",
+   "description": "Write WhatsApp OTP codes to the site log instead of sending them through Evolution API. Codes must still be entered. NEVER enable in production.",
+   "fieldname": "whatsapp_otp_dev_mode",
+   "fieldtype": "Check",
+   "label": "WhatsApp OTP Dev Mode"
+  },
+  {
+   "description": "The Evolution API instance name/identifier this site sends WhatsApp messages through.",
+   "fieldname": "evolution_instance_name",
+   "fieldtype": "Data",
+   "label": "Evolution Instance Name"
+  },
+  {
+   "description": "API key for the Evolution API instance above, sent as the request's apikey header. Stored encrypted.",
+   "fieldname": "evolution_api_key",
+   "fieldtype": "Password",
+   "label": "Evolution API Key"
+  },
+  {
+   "description": "Base URL of the Evolution API server, e.g. https://evolution.example.com (no trailing slash needed).",
+   "fieldname": "evolution_api_base_url",
+   "fieldtype": "Data",
+   "label": "Evolution API Base URL"
+  },
+  {
+   "default": "15",
+   "description": "How long to wait for Evolution API to respond before treating the send as failed.",
+   "fieldname": "evolution_api_timeout_seconds",
+   "fieldtype": "Int",
+   "label": "Evolution API Timeout (seconds)"
   }
  ],
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-05 15:30:38.107374",
+ "modified": "2026-09-06 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "custom_webshop",
  "name": "Webshop Signup Settings",

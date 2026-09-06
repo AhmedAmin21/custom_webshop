@@ -33,7 +33,7 @@ can only ever touch records it created itself.
 | A5 | phone only, new email, different name | Yes | the name **is** shown — a verified phone is trusted — linked, keeping the record's spelling, nothing queued |
 | A6 | phone only, different name | No | own new customer; zero phone rows on the new contact; two conflicts |
 | A7 | email only, new phone, same name | Yes | linked; the new number is added to the **existing** contact |
-| A8 | email only, new phone, different name | — | no card offered; new customer; `EMAIL_NAME_MISMATCH` |
+| A8 | email only, new phone, different name | — | no card offered; new customer; `NAME_MISMATCH` |
 | A9 | the matched customer is disabled | Yes | never linked silently; staff review either way |
 
 ## Prerequisites

@@ -24,7 +24,7 @@ const Signup = {
     // the details form. Every other panel is named after a server state.
     localStep: "type",
     accountType: "Individual",
-    details: { full_name: "", company_name: "", email: "", phone: "" },
+    details: { full_name: "", company_name: "", email: "", phone: "", phone_otp_channel: "SMS" },
     resendTimer: null,
     // Country picker: the list comes from the server (Frappe's own Country
     // doctype plus phonenumbers), so no country table ships in this file.
@@ -322,6 +322,31 @@ const Signup = {
                 ${this.countryList()}
             </div>
             <p class="field-note" id="phone-note" role="status" aria-live="polite"></p>
+            </div>`;
+    },
+
+    /** The delivery-channel row: SMS vs WhatsApp for the phone code.
+     * Only rendered when the site has WhatsApp/Evolution API configured -
+     * `window.LOGIN_CONTEXT.whatsapp_otp_enabled` is the single source of
+     * truth for that, set from `Webshop Signup Settings` at page load. A
+     * site that hasn't configured it sees no trace of this control. */
+    otpChannelField() {
+        if (!(window.LOGIN_CONTEXT || {}).whatsapp_otp_enabled) return "";
+
+        const option = (value, labelKey) => `
+            <button type="button" class="otp-channel-choice${this.details.phone_otp_channel === value ? " selected" : ""}"
+                    data-channel="${value}" aria-pressed="${this.details.phone_otp_channel === value}">
+                <span class="signup-choice-label">${this.esc(this.t(labelKey))}</span>
+                <i data-lucide="check" class="signup-choice-check"></i>
+            </button>`;
+
+        return `
+            <div class="field">
+                <span class="signup-label">${this.esc(this.t("su_otp_channel_label"))}</span>
+                <div class="otp-channel-choices">
+                    ${option.call(this, "SMS", "su_otp_channel_sms")}
+                    ${option.call(this, "WhatsApp", "su_otp_channel_whatsapp")}
+                </div>
             </div>`;
     },
 
@@ -714,6 +739,7 @@ const Signup = {
                         this.details.full_name, "su_full_name_ph", isCompany ? "" : "data-autofocus")}
                     ${this.field("su-email", "su_email", "email", this.details.email, "su_email_ph", 'autocomplete="username" dir="ltr"')}
                     ${this.phoneField()}
+                    ${this.otpChannelField()}
                     <div class="signup-actions">
                         <button type="button" class="auth-secondary-btn" id="details-back">${this.esc(this.t("su_back"))}</button>
                         <button type="submit" class="auth-submit-btn" id="details-next" data-busy-key="su_sending">
@@ -865,6 +891,11 @@ const Signup = {
         const target = isEmail ? this.envelope.email : this.envelope.phone;
         const length = data.otp_length || 6;
         const remaining = data.sends_remaining;
+        // Only the phone panel has a delivery channel to switch, and only
+        // when the site offers WhatsApp at all.
+        const canSwitchChannel = !isEmail && (window.LOGIN_CONTEXT || {}).whatsapp_otp_enabled;
+        const otherChannel = this.envelope.phone_otp_channel === "WhatsApp" ? "SMS" : "WhatsApp";
+        const switchLabel = otherChannel === "SMS" ? "su_switch_to_sms" : "su_switch_to_whatsapp";
 
         return `
             ${this.header(isEmail ? "su_email_otp_title" : "su_phone_otp_title", null, isEmail ? 3 : 4)}
@@ -892,6 +923,10 @@ const Signup = {
                 <button type="button" class="auth-link-btn" id="otp-change" data-channel="${channel}">
                     ${this.esc(this.t(isEmail ? "su_change_email" : "su_change_phone"))}
                 </button>
+                ${canSwitchChannel ? `
+                <button type="button" class="auth-link-btn" id="otp-channel-switch" data-channel="${otherChannel}">
+                    ${this.esc(this.t(switchLabel))}
+                </button>` : ""}
             </div>
             ${remaining != null ? `<p class="signup-hint">${this.esc(this.t("su_sends_left", { n: remaining }))}</p>` : ""}`;
     },
@@ -943,11 +978,19 @@ const Signup = {
             });
         });
 
+        this.root.querySelectorAll(".otp-channel-choice").forEach(button => {
+            button.addEventListener("click", () => {
+                this.details.phone_otp_channel = button.dataset.channel;
+                this.render();
+            });
+        });
+
         on("type-next", "click", () => { this.localStep = "details"; this.render(); });
         on("details-back", "click", () => { this.localStep = "type"; this.render(); });
         on("details-form", "submit", e => this.submitDetails(e));
         on("otp-form", "submit", e => this.submitOtp(e));
         on("otp-resend", "click", e => this.resend(e));
+        on("otp-channel-switch", "click", e => this.switchChannel(e));
         on("otp-change", "click", e => {
             this.state = e.currentTarget.dataset.channel === "email" ? "change_email" : "change_phone";
             this.render();
@@ -985,6 +1028,9 @@ const Signup = {
             company_name: value("su-company"),
             email: value("su-email"),
             phone: value("su-phone"),
+            // Untouched by the fields read above: set by the channel
+            // picker's own click handler, and defaults to "SMS".
+            phone_otp_channel: this.details.phone_otp_channel || "SMS",
         };
 
         // Mirrors of the server's rules, for instant feedback only. The
@@ -1021,6 +1067,7 @@ const Signup = {
             email: this.details.email,
             phone: this.details.phone,
             phone_country: this.countryCode,
+            phone_otp_channel: this.details.phone_otp_channel,
         }, document.getElementById("details-next"));
     },
 
@@ -1036,6 +1083,14 @@ const Signup = {
     resend(event) {
         const channel = event.currentTarget.dataset.channel;
         this.run(channel === "email" ? "send_email_otp" : "send_phone_otp", {});
+    },
+
+    /** Switch the phone OTP delivery channel and resend on the new one.
+     * `data-channel` on the link already carries the *other* channel -
+     * this only ever moves to the one not currently in use. */
+    switchChannel(event) {
+        const channel = event.currentTarget.dataset.channel;
+        this.run("switch_phone_otp_channel", { channel: channel });
     },
 
     submitChange(event) {

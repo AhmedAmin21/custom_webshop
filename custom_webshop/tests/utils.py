@@ -199,12 +199,16 @@ def capture_otps():
 
 	The codes are never returned by any endpoint and never stored in
 	plaintext, which is the point - so a test that needs to submit one has
-	to stand where the sender stands. Patching the two senders is also a
+	to stand where the sender stands. Patching the three senders is also a
 	faithful stand-in for delivery: everything up to and including
-	`otp.issue` runs for real.
+	`otp.issue` runs for real. Only one of `send_phone_otp`/
+	`send_whatsapp_otp` actually fires per phone send - which one depends
+	on the signup's `phone_otp_channel` - but both are patched so a test
+	can use either channel without choosing which sender to intercept.
 
 	Yields:
-		A dict mapping "email"/"phone" to the most recent code sent.
+		A dict mapping "email"/"phone"/"whatsapp" to the most recent code
+		sent on that channel.
 	"""
 	from unittest.mock import patch
 
@@ -216,9 +220,15 @@ def capture_otps():
 	def fake_phone(doc, code):
 		codes["phone"] = code
 
+	def fake_whatsapp(doc, code):
+		codes["whatsapp"] = code
+
 	with (
 		patch("custom_webshop.api.signup.notifications.send_email_otp", side_effect=fake_email),
 		patch("custom_webshop.api.signup.notifications.send_phone_otp", side_effect=fake_phone),
+		patch(
+			"custom_webshop.api.signup.notifications.send_whatsapp_otp", side_effect=fake_whatsapp
+		),
 	):
 		yield codes
 
@@ -283,6 +293,7 @@ def start_signup(
 	phone=None,
 	company_name=None,
 	phone_country=None,
+	phone_otp_channel=None,
 ):
 	"""Start a signup and return the client driving it.
 
@@ -292,6 +303,8 @@ def start_signup(
 		email: defaults to a generated unique address.
 		phone: defaults to a generated unique Egyptian mobile.
 		company_name: required for a Company signup.
+		phone_otp_channel: "SMS" or "WhatsApp"; defaults to "SMS" server-side
+			when omitted.
 
 	Returns:
 		A (SignupClient, envelope) tuple.
@@ -307,12 +320,18 @@ def start_signup(
 		phone=phone or unique_phone(),
 		company_name=company_name,
 		phone_country=phone_country,
+		phone_otp_channel=phone_otp_channel,
 	)
 	return client, envelope
 
 
 def verify_both_channels(client):
 	"""Take a started signup through email and phone verification.
+
+	Works for either phone OTP delivery channel: the phone code lands
+	under `client.codes["phone"]` (SMS) or `client.codes["whatsapp"]`,
+	depending on which one the signup chose, and this reads whichever one
+	the send actually populated.
 
 	Args:
 		client: the SignupClient returned by start_signup.
@@ -324,7 +343,8 @@ def verify_both_channels(client):
 
 	client.call(signup_api.verify_email, code=client.codes["email"])
 	client.call(signup_api.send_phone_otp)
-	return client.call(signup_api.verify_phone, code=client.codes["phone"])
+	phone_code = client.codes.get("whatsapp") or client.codes["phone"]
+	return client.call(signup_api.verify_phone, code=phone_code)
 
 
 @contextlib.contextmanager

@@ -80,8 +80,11 @@ class TestConcurrentSignupsOnOnePhone(RaceTestCase):
 			self.complete(first)
 			self.complete(second)
 
+		# The race-lost handler still stamps `matching.PHONE_ACCOUNT_EXISTS`
+		# as the classification (see linking._finalize_locked's except
+		# clause); the queue files it under the merged ACCOUNT_ALREADY_EXISTS.
 		self.assertTrue(
-			conflict_with(matching.PHONE_ACCOUNT_EXISTS, phone_e164=to_e164(phone)) is not None
+			conflict_with("ACCOUNT_ALREADY_EXISTS", phone_e164=to_e164(phone)) is not None
 		)
 
 	def test_the_loser_creates_no_customer(self):

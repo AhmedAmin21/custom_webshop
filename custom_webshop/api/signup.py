@@ -174,7 +174,15 @@ def _signup_start_limit():
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(limit=_signup_start_limit, seconds=60 * 60, methods=["POST"])
-def start(account_type, full_name, email, phone, company_name=None, phone_country=None):
+def start(
+	account_type,
+	full_name,
+	email,
+	phone,
+	company_name=None,
+	phone_country=None,
+	phone_otp_channel=None,
+):
 	"""Begin a signup and send the first email passcode.
 
 	Deliberately does not check whether the email or phone already has an
@@ -193,6 +201,10 @@ def start(account_type, full_name, email, phone, company_name=None, phone_countr
 		phone_country: ISO region the number was entered under, from the
 			country picker. Decides which rules the number is judged by;
 			falls back to the configured default if missing or unknown.
+		phone_otp_channel: "SMS" or "WhatsApp" - how the phone OTP will be
+			delivered for the rest of this signup. Ignored (falls back to
+			"SMS") if WhatsApp is not enabled site-wide, so a raw API call
+			cannot request a channel the frontend never offered.
 
 	Returns:
 		The standard signup envelope.
@@ -201,6 +213,11 @@ def start(account_type, full_name, email, phone, company_name=None, phone_countr
 
 	if account_type not in ACCOUNT_TYPES:
 		frappe.throw(_("Please choose whether this is a personal or a company account."))
+
+	if phone_otp_channel == session.PHONE_OTP_WHATSAPP and not settings.is_enabled(
+		"whatsapp_otp_enabled"
+	):
+		phone_otp_channel = session.PHONE_OTP_SMS
 
 	submitted_name = (full_name or "").strip()
 	full_name = validate_full_name(full_name, min_parts=settings.get_int("require_name_parts"))
@@ -227,6 +244,7 @@ def start(account_type, full_name, email, phone, company_name=None, phone_countr
 		phone_raw=(phone or "").strip(),
 		phone_e164=phone_e164,
 		phone_country=region,
+		phone_otp_channel=phone_otp_channel,
 	)
 	log_event("signup_started", doc, name_adjusted=bool(name_adjusted))
 
@@ -426,6 +444,24 @@ def change_email(signup_id, email):
 	return _resend_after_change(doc, otp.EMAIL)
 
 
+def _deliver_phone_otp(doc, code):
+	"""Send a phone passcode over whichever channel this signup chose.
+
+	The single dispatch point between OTP generation (channel-agnostic)
+	and the two delivery implementations. `notifications.send_phone_otp`
+	(SMS) is never touched by this - it is called exactly as it always
+	was, unconditionally, for every signup that has not chosen WhatsApp.
+
+	Args:
+		doc: the Webshop Signup Session document.
+		code: the plaintext passcode.
+	"""
+	if doc.phone_otp_channel == session.PHONE_OTP_WHATSAPP:
+		notifications.send_whatsapp_otp(doc, code)
+	else:
+		notifications.send_phone_otp(doc, code)
+
+
 def _resend_after_change(doc, channel):
 	"""Issue and send a fresh code after the address or number changed.
 
@@ -445,7 +481,7 @@ def _resend_after_change(doc, channel):
 		notifications.send_email_otp(doc, code)
 		message = _("We sent a verification code to {0}.").format(doc.email)
 	else:
-		notifications.send_phone_otp(doc, code)
+		_deliver_phone_otp(doc, code)
 		message = _("We sent a verification code to {0}.").format(doc.phone_raw)
 
 	return session.envelope(doc, message, _otp_data(doc, channel))
@@ -456,13 +492,45 @@ def _resend_after_change(doc, channel):
 # ──────────────────────────────────────────────────────────────────────────
 
 
+def _issue_and_send_phone_otp(doc):
+	"""Issue a fresh phone code and deliver it over the session's channel.
+
+	Shared by `send_phone_otp` (first send and ordinary resend) and
+	`switch_phone_otp_channel` (resend after switching channel), so there
+	is exactly one place that does issue-save-deliver for the phone
+	channel.
+
+	Args:
+		doc: the Webshop Signup Session document.
+
+	Returns:
+		The standard signup envelope.
+	"""
+	code = otp.issue(doc, otp.PHONE)
+	if doc.status != session.PHONE_PENDING:
+		session.transition(doc, session.PHONE_PENDING)
+	session.touch(doc)
+	doc.flags.ignore_permissions = True
+	doc.save(ignore_permissions=True)
+	_deliver_phone_otp(doc, code)
+
+	log_event("otp_sent", doc, channel="phone")
+	return session.envelope(
+		doc,
+		_("We sent a verification code to {0}.").format(doc.phone_raw),
+		_otp_data(doc, otp.PHONE),
+	)
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(key="signup_id", limit=5, seconds=60 * 60, methods=["POST"])
 def send_phone_otp(signup_id):
-	"""Send, or re-send, the SMS passcode.
+	"""Send, or re-send, the phone passcode (SMS or WhatsApp).
 
 	Only reachable once the email is verified - the ordering is enforced
 	by the accepted states, not by the browser following instructions.
+	Delivers over whichever channel this signup already chose; it never
+	changes the channel itself - see `switch_phone_otp_channel` for that.
 
 	Args:
 		signup_id: the opaque signup handle.
@@ -474,27 +542,49 @@ def send_phone_otp(signup_id):
 	doc = session.load(
 		signup_id, expected_states=[session.EMAIL_VERIFIED, session.PHONE_PENDING]
 	)
+	return _issue_and_send_phone_otp(doc)
 
-	code = otp.issue(doc, otp.PHONE)
-	if doc.status != session.PHONE_PENDING:
-		session.transition(doc, session.PHONE_PENDING)
-	session.touch(doc)
-	doc.flags.ignore_permissions = True
-	doc.save(ignore_permissions=True)
-	notifications.send_phone_otp(doc, code)
 
-	log_event("otp_sent", doc, channel="phone")
-	return session.envelope(
-		doc,
-		_("We sent a verification code to {0}.").format(doc.phone_raw),
-		_otp_data(doc, otp.PHONE),
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="signup_id", limit=10, seconds=60 * 60, methods=["POST"])
+def switch_phone_otp_channel(signup_id, channel):
+	"""Switch the phone OTP delivery channel and resend on the new one.
+
+	Invalidates whatever code was outstanding on the old channel (`issue`
+	always overwrites the hash) and sends a fresh one on the new channel.
+	Deliberately does **not** call `otp.reset`: that would clear the
+	resend-cooldown timer, and since this changes only *how* the same
+	number is reached rather than *which* number, clearing it would let
+	someone bypass the cooldown by toggling SMS/WhatsApp back and forth.
+	The per-channel send cap and cooldown in `otp.issue` are keyed on the
+	verification channel "phone" regardless of delivery method, so
+	switching repeatedly still cannot yield more codes than SMS-only
+	signup allows today.
+
+	Args:
+		signup_id: the opaque signup handle.
+		channel: "SMS" or "WhatsApp".
+
+	Returns:
+		The standard signup envelope.
+	"""
+	_assert_signup_available()
+	if channel == session.PHONE_OTP_WHATSAPP and not settings.is_enabled("whatsapp_otp_enabled"):
+		frappe.throw(_("WhatsApp verification is not available right now."))
+	if channel not in session.PHONE_OTP_CHANNELS:
+		frappe.throw(_("Please choose a valid delivery method."))
+
+	doc = session.load(
+		signup_id, expected_states=[session.EMAIL_VERIFIED, session.PHONE_PENDING]
 	)
+	doc.phone_otp_channel = channel
+	return _issue_and_send_phone_otp(doc)
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(key="signup_id", limit=20, seconds=60 * 60, methods=["POST"])
 def verify_phone(signup_id, code):
-	"""Check the SMS passcode.
+	"""Check the phone passcode (delivered by SMS or WhatsApp).
 
 	Args:
 		signup_id: the opaque signup handle.

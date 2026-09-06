@@ -47,6 +47,13 @@ CANCELLED = "CANCELLED"
 
 TERMINAL_STATES = frozenset({COMPLETED, BLOCKED, EXPIRED, CANCELLED})
 
+# How the phone OTP is delivered for a signup. Chosen once (at `start`, or
+# by `switch_phone_otp_channel` mid-flow) and persisted on the row, so it
+# survives resend and a page reload the same way `phone`/`phone_country` do.
+PHONE_OTP_SMS = "SMS"
+PHONE_OTP_WHATSAPP = "WhatsApp"
+PHONE_OTP_CHANNELS = (PHONE_OTP_SMS, PHONE_OTP_WHATSAPP)
+
 # Every state a signup may move to from a given state. A state absent from
 # a row's value is an invalid transition and raises. Terminal states have
 # no outgoing edges at all, which is what makes "STARTED -> COMPLETED"
@@ -96,8 +103,14 @@ ANSWERED = ("Accepted", "Rejected")
 ALLOWED_ACTIONS = {
 	STARTED: [],
 	EMAIL_PENDING: ["verify_email", "resend_email_otp", "change_email", "cancel"],
-	EMAIL_VERIFIED: ["send_phone_otp", "change_email", "cancel"],
-	PHONE_PENDING: ["verify_phone", "resend_phone_otp", "change_phone", "cancel"],
+	EMAIL_VERIFIED: ["send_phone_otp", "change_email", "switch_phone_otp_channel", "cancel"],
+	PHONE_PENDING: [
+		"verify_phone",
+		"resend_phone_otp",
+		"change_phone",
+		"switch_phone_otp_channel",
+		"cancel",
+	],
 	PHONE_VERIFIED: ["resolve", "change_phone", "cancel"],
 	MATCH_REVIEW: ["decide", "cancel"],
 	READY: ["complete", "cancel"],
@@ -204,6 +217,7 @@ def create(
 	phone_raw,
 	phone_e164,
 	phone_country=None,
+	phone_otp_channel=None,
 ):
 	"""Insert a new signup session in STARTED.
 
@@ -218,10 +232,18 @@ def create(
 		email_normalized: its canonical form.
 		phone_raw: the number as typed, kept for display.
 		phone_e164: its canonical form.
+		phone_otp_channel: "SMS" or "WhatsApp", the phone OTP delivery
+			channel to use for the whole flow. Never trusted blindly from
+			the client - anything other than a recognised value falls back
+			to "SMS", the same way an unrecognised `phone_country` falls
+			back to the configured default region.
 
 	Returns:
 		The inserted Webshop Signup Session document.
 	"""
+	if phone_otp_channel not in PHONE_OTP_CHANNELS:
+		phone_otp_channel = PHONE_OTP_SMS
+
 	doc = frappe.new_doc("Webshop Signup Session")
 	doc.update(
 		{
@@ -235,6 +257,7 @@ def create(
 			"phone_raw": phone_raw,
 			"phone_country": phone_country,
 			"phone_e164": phone_e164,
+			"phone_otp_channel": phone_otp_channel,
 			"binding_hash": _issue_binding_secret(),
 			"expires_at": _new_expiry(),
 			"ip_address": getattr(frappe.local, "request_ip", None),
@@ -451,6 +474,7 @@ def envelope(doc, message=None, data=None):
 		"email": doc.email,
 		"phone": doc.phone_raw,
 		"phone_country": doc.phone_country,
+		"phone_otp_channel": doc.phone_otp_channel or PHONE_OTP_SMS,
 		"email_verified": bool(doc.email_verified),
 		"phone_verified": bool(doc.phone_verified),
 		"message": message or "",

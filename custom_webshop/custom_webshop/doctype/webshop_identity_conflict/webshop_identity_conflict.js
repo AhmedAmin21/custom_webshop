@@ -97,6 +97,8 @@ const WIC_AR = {
     "Open": "مفتوح",
     "Or, for the whole case": "أو، بالنسبة للحالة بأكملها",
     "Payments": "الدفعات",
+    "Re-enable the customer": "إعادة تفعيل العميل",
+    "Re-enable {0}?": "إعادة تفعيل {0}؟",
     "Reading the records…": "جارٍ قراءة السجلات…",
     "Record to keep": "السجل الذي سيتم الإبقاء عليه",
     "Record type": "نوع السجل",
@@ -110,6 +112,7 @@ const WIC_AR = {
     "Signed up as": "سجّل باعتباره",
     "Switch it to a company": "تحويله إلى شركة",
     "Switch it to an individual": "تحويله إلى فرد",
+    "Switches {0} back on — they proved both channels, so a flag they can't see shouldn't strand them": "يعيد تفعيل {0} — فقد أثبتوا كلتا القناتين، فلا ينبغي أن تحرمهم علامة لا يستطيعون رؤيتها",
     "Their name is right": "اسمهم صحيح",
     "Type <b>{0}</b> exactly to confirm.": "اكتب <b>{0}</b> بالضبط للتأكيد.",
     "Type the name of the record you are keeping": "اكتب اسم السجل الذي ستبقي عليه",
@@ -245,14 +248,20 @@ function build(o) {
 //: into sections rather than showing every action against every row.
 const ANSWERS = {
     PROFILE_DISCREPANCY: ["add_foreign_name", "apply_name"],
-    PHONE_NAME_MISMATCH: ["add_foreign_name", "apply_name"],
-    EMAIL_NAME_MISMATCH: ["add_foreign_name", "apply_name"],
+    NAME_MISMATCH: ["add_foreign_name", "apply_name"],
     ACCOUNT_TYPE_MISMATCH: ["make_company", "make_individual", "keep_type"],
     MULTIPLE_PHONE_MATCHES: ["merge", "keep_separate"],
     PHONE_ALREADY_ASSOCIATED: ["merge", "keep_separate"],
     CUSTOMER_ALREADY_LINKED: ["merge", "keep_separate"],
     USER_REJECTED_MATCH: ["keep_separate"],
-    MATCHED_CUSTOMER_DISABLED: [],
+    // Deliberately empty, not absent: every type here is meant to be
+    // filtered down to only what answers it, and a type missing from this
+    // map falls through to the *unfiltered* set in `choices()` below -
+    // whatever the conflict's other flags happen to compute - rather than
+    // to nothing. ACCOUNT_ALREADY_EXISTS really has no button of its own;
+    // "Dismiss the whole case" (always offered) is the answer.
+    ACCOUNT_ALREADY_EXISTS: [],
+    MATCHED_CUSTOMER_DISABLED: ["reenable_customer"],
 };
 
 // One section per thing wrong with the signup, each asking its own
@@ -427,6 +436,14 @@ function choices(o, allowed, problem) {
                      [o.individual_conversion]),
         });
     }
+    if (o.reenable_offer) {
+        buttons.push({
+            action: "reenable_customer",
+            label: wicText("Re-enable the customer"),
+            hint: wicText("Switches {0} back on — they proved both channels, so a flag they can't see shouldn't strand them",
+                     [o.reenable_offer]),
+        });
+    }
     if (o.foreign_name) {
         buttons.push({
             action: "add_foreign_name",
@@ -533,6 +550,7 @@ function confirm_simple(frm, options, action, problem) {
         apply_name: wicText("Rename the contact and account to {0}?", [options.submitted_name]),
         keep_separate: wicText("Keep both records as they are?"),
         keep_type: wicText("Leave this customer's type as it is?"),
+        reenable_customer: wicText("Re-enable {0}?", [options.reenable_offer]),
         settle_one: wicText("Mark this one settled with nothing changed?"),
         dismiss: wicText("Dismiss this conflict?"),
     }[action];

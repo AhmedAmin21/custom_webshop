@@ -24,7 +24,10 @@
             csrf_token: "{{ csrf_token }}",
             // From signup/passwords.py, so the guide beside the field and
             // the check on submit are the same rules.
-            password_rules: {{ password_rules | tojson }}
+            password_rules: {{ password_rules | tojson }},
+            // Whether to offer WhatsApp as a phone OTP delivery choice.
+            // False on any site that hasn't configured Evolution API.
+            whatsapp_otp_enabled: {{ 'true' if whatsapp_otp_enabled else 'false' }}
         };
     </script>
 
@@ -224,6 +227,38 @@
             transition: var(--transition-fast);
         }
         .signup-choice.selected .signup-choice-check { opacity: 1; }
+
+        /* ── OTP delivery channel (SMS / WhatsApp) ────────────────────
+           A secondary, compact cousin of .signup-choice: same selected
+           state and check glyph, but a single row rather than a full
+           card, since this is a lightweight preference next to the phone
+           field rather than the page's primary decision. */
+        .otp-channel-choices {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; margin-top: 10px;
+        }
+        .otp-channel-choice {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface-opaque);
+            cursor: pointer; width: 100%;
+            font-family: var(--font-heading);
+            transition: var(--transition-fast);
+        }
+        .otp-channel-choice:hover { border-color: #CBD5E1; }
+        .otp-channel-choice.selected {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.04);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+        }
+        .otp-channel-choice .signup-choice-label { font-size: 0.92rem; }
+        .otp-channel-choice .signup-choice-check {
+            position: absolute; top: 8px; inset-inline-end: 8px;
+            width: 13px; height: 13px;
+        }
 
         /* ── Buttons ────────────────────────────────────────────────── */
         .auth-submit-btn {

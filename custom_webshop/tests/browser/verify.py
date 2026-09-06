@@ -35,13 +35,6 @@ WALK = _walk["cases"]
 
 FAIL = []
 
-#: A signup that has to make its own Customer has no address to put on
-#: it, and `customer_primary_address` is genuinely required - so every
-#: such case also queues this. It is expected, not a defect, and listing
-#: it explicitly keeps the real conflicts of each scenario readable.
-NO_ADDRESS_YET = "INCOMPLETE_PROFILE"
-
-
 def check(case, label, got, want):
 	ok = got == want
 	if not ok:
@@ -100,7 +93,11 @@ for case in sorted(PLAN):
 		      frappe.db.get_value("Customer", acct.customer, "customer_primary_contact"),
 		      acct.contact)
 		check(case, "number on the contact", e164 in phone_rows(acct.contact), True)
-		check(case, "only the missing address is queued", found, [NO_ADDRESS_YET])
+		# A signup that has to make its own Customer has no address to put
+		# on it - `customer_primary_address` is genuinely required - but
+		# that no longer raises a conflict of its own (it fired on every
+		# such case and held nothing open; see conflicts.INFORMATIONAL).
+		check(case, "nothing queued", found, [])
 
 	elif case == "A2":
 		check(case, "card was shown", seen.get("state"), "MATCH_REVIEW")
@@ -117,7 +114,7 @@ for case in sorted(PLAN):
 		      frappe.db.get_value("Contact", acct.contact, "custom_pending_phone_e164"), e164)
 		check(case, "number still on the original contact", e164 in phone_rows(fix["contact"]), True)
 		check(case, "both conflicts queued", found,
-		      sorted([NO_ADDRESS_YET, "PHONE_ALREADY_ASSOCIATED", "USER_REJECTED_MATCH"]))
+		      sorted(["PHONE_ALREADY_ASSOCIATED", "USER_REJECTED_MATCH"]))
 
 	elif case == "A4":
 		check(case, "card was shown", seen.get("state"), "MATCH_REVIEW")
@@ -152,7 +149,7 @@ for case in sorted(PLAN):
 	elif case == "A8":
 		check(case, "no card offered", seen.get("state"), "READY")
 		check(case, "own new customer", acct.customer != fix["customer"], True)
-		check(case, "queued for review", found, sorted([NO_ADDRESS_YET, "EMAIL_NAME_MISMATCH"]))
+		check(case, "queued for review", found, ["NAME_MISMATCH"])
 
 	elif case == "A9":
 		# `classify` refuses to link a disabled record automatically -

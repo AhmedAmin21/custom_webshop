@@ -411,7 +411,9 @@ def _record_block(doc, result, reason, candidates=None):
 	Returns:
 		A dict marking the signup blocked.
 	"""
-	conflicts.open_conflict(doc, conflicts.type_for_result(result), reason, candidates)
+	conflict_type = conflicts.type_for_result(result)
+	if conflict_type:
+		conflicts.open_conflict(doc, conflict_type, reason, candidates)
 	session.block(doc, result, reason)
 	log_event("signup_blocked_at_finalize", doc, reason=result)
 	return {"blocked": True, "result": result}
@@ -644,14 +646,16 @@ def _reconcile(doc, verdict):
 				_note_disabled_record(doc) or _note_account_type_mismatch(doc),
 			)
 
-		conflict = conflicts.open_conflict(
-			doc,
-			conflicts.type_for_result(result),
-			"Link was approved for {0} but re-checking found {1}; created a new customer instead.".format(
-				doc.candidate_customer, result
-			),
-			verdict["candidates"],
-		).name
+		conflict_type = conflicts.type_for_result(result)
+		if conflict_type:
+			conflict = conflicts.open_conflict(
+				doc,
+				conflict_type,
+				"Link was approved for {0} but re-checking found {1}; created a new customer instead.".format(
+					doc.candidate_customer, result
+				),
+				verdict["candidates"],
+			).name
 		return CREATE_NEW_WITH_CONFLICT, None, conflict
 
 	if stored == CREATE_NEW_WITH_CONFLICT:
@@ -665,9 +669,11 @@ def _reconcile(doc, verdict):
 	# No stored decision, or a plain CREATE_NEW: if the re-run turned up
 	# something that needs review, record it before proceeding.
 	if result in matching.CONFLICT_RESULTS:
-		conflict = conflicts.open_conflict(
-			doc, conflicts.type_for_result(result), verdict["reason"], verdict["candidates"]
-		).name
+		conflict_type = conflicts.type_for_result(result)
+		if conflict_type:
+			conflict = conflicts.open_conflict(
+				doc, conflict_type, verdict["reason"], verdict["candidates"]
+			).name
 		return CREATE_NEW_WITH_CONFLICT, None, conflict
 
 	return CREATE_NEW, None, None
@@ -920,22 +926,13 @@ def _create_customer(doc, contact):
 	_assert_identity_not_overwritten(doc, customer)
 
 	if not customer.get("customer_primary_address"):
-		# The docstring above has always said this happens; until now it
-		# did not. A Customer saved past a mandatory field is one nobody
-		# can edit in the Desk without supplying it, so leaving it
-		# unrecorded means staff meet the problem as an unsaveable form
-		# rather than as a queued item explaining itself.
-		conflicts.open_conflict(
-			doc,
-			"INCOMPLETE_PROFILE",
-			(
-				"Customer {0} was created without a primary address, which is "
-				"mandatory. A signup collects no address; it is captured at "
-				"first checkout. Until then the record cannot be saved from "
-				"the Desk without one."
-			).format(customer.name),
-			created_customer=customer.name,
-		)
+		# Every signup-created Customer lacks one - a signup collects no
+		# address; it is captured at first checkout - so this is a logged
+		# fact, not a staff decision. It used to open a queue conflict
+		# ("INCOMPLETE_PROFILE"), which meant it fired on effectively every
+		# signup and taught staff nothing they could act on; the first
+		# order fills the field in regardless.
+		log_event("signup_customer_missing_address", doc, customer=customer.name)
 
 	return customer.name
 
@@ -961,11 +958,15 @@ def _assert_identity_not_overwritten(doc, customer):
 	# ERPNext suffixes " - N" on a name collision, which is expected and
 	# not a divergence.
 	if actual and actual != expected and not actual.startswith(f"{expected} - "):
-		conflicts.open_conflict(
+		# Logged, not queued: the only remedy is "decide which source is
+		# right and correct the record by hand" - a note about a different
+		# app's hook, not a decision staff can make from this form.
+		log_event(
+			"signup_lead_prefill_diverged",
 			doc,
-			"LEAD_PREFILL_DIVERGENCE",
-			"Customer was created as '{0}' but the signup submitted '{1}'.".format(actual, expected),
-			created_customer=customer.name,
+			customer=customer.name,
+			expected=expected,
+			actual=actual,
 		)
 
 

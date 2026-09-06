@@ -1261,8 +1261,11 @@ class TestExistingAccountBlocks(SignupFlowTestCase):
 
 		self.assertEqual(result["state"], session.BLOCKED)
 		self.assertFalse(frappe.db.exists("User", email))
+		# matching.PHONE_ACCOUNT_EXISTS is still the classification that
+		# raised this block; the queue itself files it under the merged
+		# type ACCOUNT_ALREADY_EXISTS (see conflicts._RESULT_TO_CONFLICT_TYPE).
 		self.assertTrue(
-			conflict_with(matching.PHONE_ACCOUNT_EXISTS, phone_e164=to_e164(phone)) is not None
+			conflict_with("ACCOUNT_ALREADY_EXISTS", phone_e164=to_e164(phone)) is not None
 		)
 
 

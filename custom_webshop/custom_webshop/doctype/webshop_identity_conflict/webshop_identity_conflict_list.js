@@ -7,18 +7,13 @@
 // chart's axis reads from that one, and JavaScript cannot import it.
 // Change them together, or the same situation ends up with two names.
 const WIC_LABELS = {
-    PHONE_NAME_MISMATCH: __("Linked, name never shown"),
-    EMAIL_NAME_MISMATCH: __("Same email, different name"),
+    NAME_MISMATCH: __("Linked, name doesn't match"),
     MULTIPLE_PHONE_MATCHES: __("One number, many customers"),
     PHONE_ALREADY_ASSOCIATED: __("Two records want one number"),
     USER_REJECTED_MATCH: __("They declined the match"),
     PROFILE_DISCREPANCY: __("Disputes stored details"),
     CUSTOMER_ALREADY_LINKED: __("Customer already has an account"),
-    EMAIL_ACCOUNT_EXISTS: __("Stopped: email registered"),
-    PHONE_ACCOUNT_EXISTS: __("Stopped: number registered"),
-    STALE_LINK_DECISION: __("Answer no longer fitted"),
-    INCOMPLETE_PROFILE: __("Customer has no address"),
-    LEAD_PREFILL_DIVERGENCE: __("Lead details disagree"),
+    ACCOUNT_ALREADY_EXISTS: __("Stopped: already registered"),
     MATCHED_CUSTOMER_DISABLED: __("Matched record is disabled"),
     ACCOUNT_TYPE_MISMATCH: __("Person/business disagree"),
 };

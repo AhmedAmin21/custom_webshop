@@ -36,6 +36,11 @@ DEFAULTS = {
 	"default_customer_group": None,
 	"default_territory": None,
 	"sms_sender_method": None,
+	"whatsapp_otp_enabled": 0,
+	"whatsapp_otp_dev_mode": 0,
+	"evolution_instance_name": None,
+	"evolution_api_base_url": None,
+	"evolution_api_timeout_seconds": 15,
 }
 
 
@@ -92,6 +97,7 @@ MUST_BE_POSITIVE = frozenset(
 		"session_ttl_minutes",
 		"session_retention_days",
 		"require_name_parts",
+		"evolution_api_timeout_seconds",
 	}
 )
 
@@ -128,6 +134,26 @@ def is_enabled(fieldname):
 def get_phone_region():
 	"""Return the ISO region used to parse numbers typed without a country code."""
 	return get("default_phone_region") or "EG"
+
+
+def get_evolution_api_key():
+	"""Return the decrypted Evolution API key, or None if unset.
+
+	Deliberately bypasses `get()`: `evolution_api_key` is a Password field,
+	and once the Single has been saved once, the plaintext column holds a
+	dummy `"*****"` string rather than the real secret - Frappe keeps the
+	actual value in the encrypted `__Auth` table instead. Reading it via
+	`get()` would silently return that dummy string forever, which reads as
+	a valid-looking key that fails every request. `get_password` is the
+	only correct way to read a Password field back out.
+
+	Returns:
+		The plaintext API key, or None if it has never been set.
+	"""
+	try:
+		return get_settings().get_password("evolution_api_key", raise_exception=False)
+	except Exception:
+		return None
 
 
 def get_customer_group():

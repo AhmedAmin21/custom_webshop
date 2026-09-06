@@ -22,6 +22,7 @@
   "phone_raw",
   "phone_country",
   "phone_e164",
+  "phone_otp_channel",
   "verification_section",
   "email_verified",
   "email_otp_hash",
@@ -156,6 +157,15 @@
    "label": "Phone (E.164)",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "default": "SMS",
+   "description": "How the phone OTP is delivered for this signup - chosen once and reused for every send, resend and switch.",
+   "fieldname": "phone_otp_channel",
+   "fieldtype": "Select",
+   "label": "Phone OTP Channel",
+   "options": "SMS\nWhatsApp",
+   "read_only": 1
   },
   {
    "fieldname": "verification_section",

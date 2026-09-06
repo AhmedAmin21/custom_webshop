@@ -1056,15 +1056,19 @@ class TestASettledQuestionIsNotAskedAgain(ConflictTestCase):
 			frappe.db.get_value("Webshop Identity Conflict", conflict, "status"), "Resolved"
 		)
 
-	def test_a_note_never_holds_the_case_open(self):
-		"""INCOMPLETE_PROFILE has no answer a button could give.
+	def test_a_declined_match_no_longer_carries_an_unactionable_note(self):
+		"""A rejected match used to carry a third, unactionable problem.
 
-		It is recorded so the case is complete and skipped when deciding
-		whether anything is outstanding - otherwise every signup that
-		made its own customer would sit in the queue forever.
+		`_create_customer` no longer queues INCOMPLETE_PROFILE (it fired on
+		every signup-created customer and held no case open on its own -
+		see conflicts.INFORMATIONAL, now empty), so this conflict is just
+		the two real questions a declined, withheld-number signup raises.
 		"""
 		state = self.rejected_signup()
-		self.assertIn("INCOMPLETE_PROFILE", problem_types(state["conflict"]))
+		self.assertEqual(
+			problem_types(state["conflict"]),
+			["PHONE_ALREADY_ASSOCIATED", "USER_REJECTED_MATCH"],
+		)
 
 		conflicts_api.resolve_conflict(state["conflict"], "keep_separate")
 
