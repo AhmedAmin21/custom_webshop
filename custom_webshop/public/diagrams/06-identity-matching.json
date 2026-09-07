@@ -1,0 +1,367 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Who is this, really?",
+    "subtitle": "Every outcome a signup can reach once both the phone and the email are proved",
+    "output": "06-identity-matching.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "views": [
+      {
+        "id": "whole",
+        "label": "The whole picture",
+        "focus": [
+          "submit",
+          "prove",
+          "decide",
+          "fresh",
+          "card",
+          "linked",
+          "declined",
+          "soft",
+          "multi",
+          "taken",
+          "welcome"
+        ],
+        "note": "One decision point, seven ways out. Only three of them ever reach a person on staff, and nobody is ever left without a working account."
+      },
+      {
+        "id": "easy",
+        "label": "The easy case",
+        "focus": [
+          "submit",
+          "prove",
+          "decide",
+          "fresh"
+        ],
+        "note": "Nobody on file looks like this person. A new Customer and Contact are made and the shop is ready to use \u2014 most signups end here."
+      },
+      {
+        "id": "ask",
+        "label": "Is this you?",
+        "focus": [
+          "decide",
+          "card",
+          "linked",
+          "declined"
+        ],
+        "note": "Shown for any phone match, or an email match with the right name. Redacted, never assumed; \"no\" still finishes the signup."
+      },
+      {
+        "id": "soft",
+        "label": "Too soft to ask",
+        "focus": [
+          "decide",
+          "soft",
+          "multi"
+        ],
+        "note": "An email match with the wrong name, or a number fitting more than one record. No card either way; a new account is made and reviewed later."
+      },
+      {
+        "id": "already",
+        "label": "Already yours \u2014 either way",
+        "focus": [
+          "decide",
+          "taken",
+          "welcome"
+        ],
+        "note": "Two different reasons a second account never gets made: one because it plainly already exists, one because it's already theirs."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "visitor",
+      "label": "You"
+    },
+    {
+      "id": "server",
+      "label": "custom_webshop"
+    },
+    {
+      "id": "no_match",
+      "label": "No match"
+    },
+    {
+      "id": "confirmed",
+      "label": "Confirmed match"
+    },
+    {
+      "id": "declined_lane",
+      "label": "Declined match"
+    },
+    {
+      "id": "soft_lane",
+      "label": "Too soft to ask"
+    },
+    {
+      "id": "multi_lane",
+      "label": "More than one fits"
+    },
+    {
+      "id": "blocked_lane",
+      "label": "Already registered",
+      "variant": "exception"
+    },
+    {
+      "id": "welcome_lane",
+      "label": "Welcome back"
+    }
+  ],
+  "mainPath": [
+    "submit",
+    "prove",
+    "decide",
+    "fresh"
+  ],
+  "nodes": [
+    {
+      "id": "submit",
+      "lane": "visitor",
+      "col": 0,
+      "type": "frontend",
+      "label": "Sign up",
+      "sublabel": "name, phone, email",
+      "width": 132
+    },
+    {
+      "id": "prove",
+      "lane": "server",
+      "col": 1,
+      "type": "security",
+      "label": "Prove it",
+      "sublabel": "OTP, both",
+      "width": 132
+    },
+    {
+      "id": "decide",
+      "lane": "server",
+      "col": 2,
+      "type": "backend",
+      "label": "Who is this?",
+      "sublabel": "phone + email vs. name",
+      "tag": "rule-based",
+      "width": 132
+    },
+    {
+      "id": "fresh",
+      "lane": "no_match",
+      "col": 3,
+      "type": "database",
+      "label": "New account",
+      "sublabel": "nobody matched",
+      "width": 132
+    },
+    {
+      "id": "card",
+      "lane": "server",
+      "col": 3,
+      "type": "frontend",
+      "label": "Is this you?",
+      "sublabel": "redacted record shown",
+      "width": 132
+    },
+    {
+      "id": "linked",
+      "lane": "confirmed",
+      "col": 4,
+      "type": "database",
+      "label": "Linked",
+      "sublabel": "your existing account",
+      "width": 132
+    },
+    {
+      "id": "declined",
+      "lane": "declined_lane",
+      "col": 4,
+      "type": "database",
+      "label": "New account",
+      "sublabel": "you said no",
+      "width": 132
+    },
+    {
+      "id": "soft",
+      "lane": "soft_lane",
+      "col": 3,
+      "type": "database",
+      "label": "New account",
+      "sublabel": "email matched, name didn't",
+      "tag": "no card shown",
+      "width": 132
+    },
+    {
+      "id": "multi",
+      "lane": "multi_lane",
+      "col": 3,
+      "type": "database",
+      "label": "New account",
+      "sublabel": "same number, several records",
+      "tag": "no card shown",
+      "width": 132
+    },
+    {
+      "id": "taken",
+      "lane": "blocked_lane",
+      "col": 3,
+      "type": "security",
+      "label": "Signup stopped",
+      "sublabel": "an existing login uses it",
+      "tag": "checked first",
+      "width": 132
+    },
+    {
+      "id": "welcome",
+      "lane": "welcome_lane",
+      "col": 3,
+      "type": "database",
+      "label": "Welcome back",
+      "sublabel": "signed into your own account",
+      "width": 132
+    },
+    {
+      "id": "review1",
+      "lane": "declined_lane",
+      "col": 5,
+      "type": "backend",
+      "label": "Reviewed later",
+      "sublabel": "declined match",
+      "width": 132
+    },
+    {
+      "id": "review2",
+      "lane": "soft_lane",
+      "col": 4,
+      "type": "backend",
+      "label": "Reviewed later",
+      "sublabel": "quiet duplicate",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "from": "submit",
+      "to": "prove",
+      "role": "main"
+    },
+    {
+      "from": "prove",
+      "to": "decide",
+      "role": "main"
+    },
+    {
+      "from": "decide",
+      "to": "fresh",
+      "role": "main",
+      "label": "no match"
+    },
+    {
+      "from": "decide",
+      "to": "card",
+      "role": "main",
+      "label": "phone matches — any name"
+    },
+    {
+      "from": "decide",
+      "to": "card",
+      "role": "main",
+      "label": "email matches, name agrees"
+    },
+    {
+      "from": "card",
+      "to": "linked",
+      "role": "main",
+      "label": "yes"
+    },
+    {
+      "from": "card",
+      "to": "declined",
+      "role": "error",
+      "label": "no"
+    },
+    {
+      "from": "declined",
+      "to": "review1",
+      "role": "error"
+    },
+    {
+      "from": "decide",
+      "to": "soft",
+      "role": "error",
+      "label": "email matches, name doesn't"
+    },
+    {
+      "from": "soft",
+      "to": "review2",
+      "role": "error"
+    },
+    {
+      "from": "decide",
+      "to": "multi",
+      "role": "error",
+      "label": "fits more than one record"
+    },
+    {
+      "from": "multi",
+      "to": "review2",
+      "role": "error"
+    },
+    {
+      "from": "decide",
+      "to": "taken",
+      "role": "error",
+      "label": "email/phone already a login"
+    },
+    {
+      "from": "decide",
+      "to": "welcome",
+      "role": "main",
+      "label": "it's your own account"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "slate",
+      "title": "\"Signup stopped\" isn't the same as a withheld number",
+      "items": [
+        "Signup stopped means the phone or email is already the login of an existing website account — checked first, before any matching happens. Nothing is created; sign in instead",
+        "A verified number sitting on someone else's Contact (not an account) never stops the signup — a new account is still made, the number is held as pending, and staff reconcile it later"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Phone and email aren't trusted equally",
+      "items": [
+        "Number matches, name matches: shown a card and asked — the ordinary, confident case",
+        "Number matches, name doesn't: still shown a card and asked — a verified Egyptian mobile is trusted to identify its holder on its own, even if the name on the record looks wrong",
+        "Email matches, name matches: shown a card and asked, same as a phone match",
+        "Email matches, name doesn't: never shown a card — an email alone is too weak a signal to put a stranger's record in front of anybody, so a new account is made quietly instead and a person reviews it later"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Nobody waits on staff",
+      "items": [
+        "Every path that reaches \"New account\" or \"Linked\" finishes the signup immediately",
+        "A tracked duplicate is cheap and reversible \u2014 the person is never the one who pays for an ambiguous match"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "The person decides what they can",
+      "items": [
+        "A recognition card only ever shows a redacted record and asks a yes/no question",
+        "Saying \"no\" is trusted outright \u2014 it just means the account is made fresh instead of linked"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Where a person on staff gets involved",
+      "items": [
+        "Only after the account already works: a declined match, an email match with the wrong name, or more than one record fitting",
+        "Being blocked or welcomed back never reaches the queue \u2014 those two are already certain"
+      ]
+    }
+  ]
+}

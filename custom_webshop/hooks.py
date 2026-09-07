@@ -47,6 +47,14 @@ update_website_context = "custom_webshop.setup.assets.add_build_version"
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "custom_webshop/public/scss/website"
 
+# Archify diagrams live as static public assets, served at
+# /assets/custom_webshop/diagrams/* - not under any website route on their
+# own. These give the folder a normal-looking URL instead.
+website_redirects = [
+	{"source": "/diagrams", "target": "/assets/custom_webshop/diagrams/index.html"},
+	{"source": r"/diagrams/(.*)", "target": r"/assets/custom_webshop/diagrams/\1"},
+]
+
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
