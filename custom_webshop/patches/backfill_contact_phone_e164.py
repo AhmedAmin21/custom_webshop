@@ -22,6 +22,7 @@ command a person has to run.
 
 import frappe
 
+from custom_webshop.setup.custom_fields import create_signup_custom_fields
 from custom_webshop.signup.identity import try_to_e164
 
 BATCH_SIZE = 500
@@ -29,6 +30,14 @@ BATCH_SIZE = 500
 
 def execute():
 	"""Fill in the canonical form of every phone that has none yet."""
+	# Patches run before both doctype sync and hooks.py's own custom_fields
+	# sync in Frappe's migrate order (patches -> sync doctypes -> sync
+	# customizations), so a site that has never run after_install/
+	# after_migrate reaches this query with the column still missing.
+	# create_custom_fields(update=True) is idempotent - safe whether or
+	# not the field already exists.
+	create_signup_custom_fields()
+
 	rows = frappe.db.sql(
 		"""
 		SELECT name, phone

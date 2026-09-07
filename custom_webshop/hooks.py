@@ -208,7 +208,18 @@ scheduler_events = {
 
 # Custom Fields
 # -------------
+#
+# The Contact / Contact Phone fields here are the same ones
+# custom_webshop.setup.custom_fields.create_signup_custom_fields creates by
+# hand from after_install/after_migrate and from inside
+# patches.backfill_contact_phone_e164 - listed here too so a plain
+# `bench migrate` keeps them in step with this file on every run, the way
+# Frappe's own customization sync expects, rather than relying solely on
+# this app's own install hooks.
+from custom_webshop.setup.custom_fields import SIGNUP_CUSTOM_FIELDS
+
 custom_fields = {
+	**SIGNUP_CUSTOM_FIELDS,
 	"Webshop Settings": [
 		{
 			"fieldname": "custom_manual_payment_settings",
