@@ -15,7 +15,7 @@ from frappe.contacts.doctype.contact.contact import get_contact_name
 from webshop.webshop.doctype.webshop_settings.webshop_settings import (
 	get_shopping_cart_settings,
 )
-from webshop.webshop.utils.product import get_web_item_qty_in_stock
+from custom_webshop.shopping_cart.stock import get_web_item_qty_in_stock
 from erpnext.selling.doctype.quotation.quotation import _make_sales_order
 from custom_webshop.shopping_cart.shipping_api import (
 	_get_cart_weight_info,
@@ -74,7 +74,7 @@ def assert_purchasable(item_code):
 
 
 @frappe.whitelist()
-def place_order_from_cart():
+def place_order_from_cart(notes=None):
 	"""
 	Override for 'Place Order' and 'Request for Quotation'.
 	Instead of submitting the Sales Order immediately, we:
@@ -112,6 +112,10 @@ def place_order_from_cart():
 		if quotation.get(field):
 			sales_order.set(field, quotation.get(field))
 
+	# Save customer delivery notes if provided
+	if notes and str(notes).strip():
+		sales_order.custom_order_notes = str(notes).strip()
+
 	# Reserve stock for this Sales Order
 	sales_order.reserve_stock = 1
 
@@ -129,10 +133,11 @@ def place_order_from_cart():
 				if not cint(item_stock.in_stock):
 					frappe.throw(_("{0} Not in Stock").format(item.item_code))
 				if item.qty > item_stock.stock_qty:
+					avail = int(item_stock.stock_qty) if item_stock.stock_qty == int(item_stock.stock_qty) else item_stock.stock_qty
 					frappe.throw(
 						_(
 							"Only {0} in Stock for item {1}"
-						).format(item_stock.stock_qty, item.item_code)
+						).format(avail, item.item_code)
 					)
 
 	# Set contact info on Sales Order from customer's primary contact
@@ -158,6 +163,8 @@ def place_order_from_cart():
 	sales_order.flags.ignore_permissions = True
 	with shopping_as_customer():
 		sales_order.insert()
+		if notes and str(notes).strip():
+			sales_order.add_comment("Comment", text=f"Customer Order Notes / Delivery Instructions: {str(notes).strip()}")
 	# Keep Sales Order in Draft until customer uploads payment proof
 	# sales_order.submit()
 
@@ -422,6 +429,17 @@ def _update_cart(item_code, qty, additional_notes, with_items):
 			empty_card = True
 
 	else:
+		cart_settings = get_shopping_cart_settings()
+		if not cint(cart_settings.allow_items_not_in_stock):
+			is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
+			if is_stock_item:
+				item_stock = get_web_item_qty_in_stock(item_code, "website_warehouse")
+				if not cint(item_stock.in_stock):
+					frappe.throw(_("{0} Not in Stock").format(item_code))
+				if qty > flt(item_stock.stock_qty):
+					avail = int(item_stock.stock_qty) if item_stock.stock_qty == int(item_stock.stock_qty) else item_stock.stock_qty
+					frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item_code))
+
 		warehouse = frappe.get_cached_value(
 			"Website Item", {"item_code": item_code}, "website_warehouse"
 		)

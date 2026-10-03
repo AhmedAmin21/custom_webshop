@@ -73,7 +73,7 @@
 
                 <!-- Cart Items List -->
                 <div class="cart-items-panel">
-                    <h2 class="section-title" data-i18n="cart_selected">Your Selected Hardware</h2>
+                    <h2 class="section-title" data-i18n="cart_selected">Your Selected Items</h2>
                     <div class="cart-list" id="cart-page-list">
                         <div style="padding:48px;text-align:center;color:var(--text-muted);" data-i18n="loading">Loading...</div>
                     </div>
@@ -116,6 +116,12 @@
                             <label for="shipping-dest" data-i18n="shipping_destination">Shipping Destination (Governorate)</label>
                             <select id="shipping-dest" class="form-input">
                                 <option value="" data-i18n="shipping_select">Select governorate...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="shipping-district-group" style="display:none;">
+                            <label for="shipping-district" data-i18n="shipping_district">District</label>
+                            <select id="shipping-district" class="form-input">
+                                <option value="" data-i18n="shipping_district_select">Select district...</option>
                             </select>
                         </div>
 
@@ -163,12 +169,12 @@
     <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
     <div class="cart-drawer" id="cart-drawer">
         <div class="drawer-header">
-            <h2 class="drawer-title">Active Cart</h2>
+            <h2 class="drawer-title" data-i18n="drawer_title">Active Cart</h2>
             <button class="close-drawer-btn" id="close-drawer-btn"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-body" id="cart-drawer-body"></div>
         <div class="drawer-footer">
-            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn" data-i18n="drawer_proceed">Proceed to Full Form</a>
+            <a href="/cart" class="btn btn-primary btn-full center-text" id="drawer-checkout-btn" data-i18n="drawer_proceed">Proceed to Checkout</a>
         </div>
     </div>
 

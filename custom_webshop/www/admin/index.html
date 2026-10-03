@@ -90,7 +90,6 @@
                 </div>
                 <ul class="admin-menu">
                     <li><a href="#" class="admin-menu-link active" data-tab="slideshow">Slide Customizer</a></li>
-                    <li><a href="#" class="admin-menu-link" data-tab="attributes">Attribute Display</a></li>
                     <li><a href="#" class="admin-menu-link" data-tab="toolfamilies">Tool Family Display</a></li>
                 </ul>
             </div>
@@ -128,8 +127,26 @@
                                     <input type="text" id="slide-link" placeholder="e.g. /catalog" value="/catalog" class="form-input">
                                 </div>
                                 <div class="form-group" style="margin-top:10px;">
-                                    <label for="slide-image-url">Background Image URL</label>
-                                    <input type="text" id="slide-image-url" placeholder="e.g. /assets/custom_webshop/images/spindle.jpg" class="form-input">
+                                    <label>Background Image</label>
+                                    <input type="hidden" id="slide-image-url">
+                                    <div id="slide-image-selector-widget" style="display:flex; align-items:center; gap:12px; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px; background:var(--bg-card, #fff);">
+                                        <div id="slide-selected-thumb-wrap" style="width:56px; height:38px; border-radius:4px; overflow:hidden; background:var(--bg-subtle, #1e293b); display:flex; align-items:center; justify-content:center; border:1px solid var(--border-subtle); flex-shrink:0;">
+                                            <img id="slide-selected-thumb" src="" alt="Thumbnail" style="width:100%; height:100%; object-fit:cover; display:none;">
+                                            <i data-lucide="image" id="slide-selected-placeholder-icon" style="width:18px; height:18px; color:var(--text-muted);"></i>
+                                        </div>
+                                        <div style="flex:1; min-width:0;">
+                                            <div id="slide-selected-name" style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-main);">No image selected</div>
+                                            <div id="slide-selected-path" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Choose from media library or upload</div>
+                                        </div>
+                                        <div style="display:flex; gap:6px; flex-shrink:0;">
+                                            <button type="button" class="btn btn-secondary btn-sm" id="open-image-picker-btn" style="display:flex; align-items:center; gap:6px; padding:6px 12px; font-weight:600;">
+                                                <i data-lucide="folder-open" style="width:14px; height:14px;"></i> Choose Image
+                                            </button>
+                                            <button type="button" class="btn btn-secondary btn-sm" id="clear-selected-image-btn" style="display:none; color:#EF4444; padding:6px 8px;" title="Clear image">
+                                                <i data-lucide="x" style="width:14px; height:14px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="margin-top:16px; width:100%;">
                                     <i data-lucide="plus-circle" class="btn-icon"></i> Add Slide to Hero
@@ -176,26 +193,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Attribute Display Manager -->
-                <div class="admin-tab-content" id="admin-tab-attributes">
-                    <div class="inventory-table-card">
-                        <div class="card-header-flex">
-                            <h3>Shop Page Attribute Carousels</h3>
-                            <p style="font-size:0.85rem; color:var(--text-muted); width:100%;">Select which attributes appear on the home page and set their display order. Unchecked attributes are hidden.</p>
-                        </div>
-
-                        <div id="admin-attributes-list" style="margin:16px 0;">
-                            <p style="color:var(--text-muted);">Loading attributes…</p>
-                        </div>
-
-                        <div style="display:flex;gap:12px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border-subtle);">
-                            <button class="btn btn-primary" id="save-attributes-btn" style="padding:10px 24px;">
-                                <i data-lucide="save" class="btn-icon"></i> Save Display Order
-                            </button>
-                            <span id="save-attributes-status" style="font-size:0.85rem;color:var(--text-muted);"></span>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Tab: Tool Family Display Manager -->
                 <div class="admin-tab-content" id="admin-tab-toolfamilies">
@@ -222,6 +219,78 @@
         </div><!-- /admin-dashboard-container -->
 
     </main>
+
+    <!-- Image Picker Modal -->
+    <div id="image-picker-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px;">
+        <div style="background:var(--bg-card, #1e293b); border:1px solid var(--border-subtle); border-radius:12px; width:100%; max-width:760px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); overflow:hidden;">
+            <!-- Modal Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-subtle);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="image" style="width:20px; height:20px; color:var(--primary-blue, #2563eb);"></i>
+                    <h3 style="margin:0; font-size:1.1rem; font-weight:700;">Select Slide Background Image</h3>
+                </div>
+                <button type="button" id="close-image-modal-btn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:6px; border-radius:6px;" title="Close">
+                    <i data-lucide="x" style="width:20px; height:20px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal Nav Tabs -->
+            <div style="display:flex; gap:16px; padding:0 20px; border-bottom:1px solid var(--border-subtle); background:var(--bg-subtle, rgba(255,255,255,0.02));">
+                <button type="button" class="img-modal-tab-btn active" data-img-tab="library" style="padding:12px 6px; font-weight:600; font-size:0.9rem; background:transparent; border:none; border-bottom:2px solid var(--primary-blue, #2563eb); color:var(--primary-blue, #2563eb); cursor:pointer;">
+                    Media Library
+                </button>
+                <button type="button" class="img-modal-tab-btn" data-img-tab="upload" style="padding:12px 6px; font-weight:600; font-size:0.9rem; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--text-muted); cursor:pointer;">
+                    Upload from Device
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div style="flex:1; overflow-y:auto; padding:20px;">
+                <!-- Tab: Library -->
+                <div id="img-tab-library-panel">
+                    <div style="display:flex; gap:10px; margin-bottom:16px;">
+                        <div style="position:relative; flex:1;">
+                            <input type="text" id="img-modal-search" placeholder="Search images by name..." class="form-input" style="padding-left:36px; height:38px;">
+                            <i data-lucide="search" style="position:absolute; left:12px; top:11px; width:16px; height:16px; color:var(--text-muted); pointer-events:none;"></i>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="img-modal-refresh-btn" style="padding:8px 14px;" title="Refresh image list">
+                            <i data-lucide="rotate-cw" style="width:15px; height:15px;"></i>
+                        </button>
+                    </div>
+
+                    <div id="img-modal-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:12px; min-height:220px; max-height:360px; overflow-y:auto; padding:4px;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Tab: Upload -->
+                <div id="img-tab-upload-panel" style="display:none;">
+                    <div id="img-modal-dropzone" style="border:2px dashed var(--border-subtle); border-radius:10px; padding:36px 20px; text-align:center; cursor:pointer; background:var(--bg-subtle, rgba(255,255,255,0.01)); transition:all 0.2s;">
+                        <input type="file" id="img-modal-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="display:none;">
+                        <div style="width:50px; height:50px; border-radius:50%; background:rgba(37,99,235,0.1); color:var(--primary-blue, #2563eb); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+                            <i data-lucide="upload-cloud" style="width:26px; height:26px;"></i>
+                        </div>
+                        <h4 style="font-size:1rem; font-weight:600; margin:0 0 6px;">Click or drag &amp; drop an image here</h4>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">Supports JPG, PNG, WEBP, SVG (Max 10MB)</p>
+                    </div>
+                    <div id="img-modal-upload-status" style="margin-top:14px; text-align:center; font-size:0.85rem; color:var(--text-muted); display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-top:1px solid var(--border-subtle); background:var(--bg-subtle, rgba(255,255,255,0.02));">
+                <div style="font-size:0.8rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:400px;" id="img-modal-selected-status">
+                    No image selected
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="img-modal-cancel-btn" style="padding:8px 18px;">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="img-modal-select-btn" disabled style="padding:8px 18px;">
+                        <i data-lucide="check" class="btn-icon"></i> Use Selected Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container"></div>

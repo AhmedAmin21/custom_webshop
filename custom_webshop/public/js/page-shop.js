@@ -343,17 +343,22 @@ function loadToolFamilyCarousels() {
 
             container.innerHTML = "";
 
-            const renderFamilyCarousel = (familyName, products) => {
+            const renderFamilyCarousel = (family, products) => {
                 if (!products.length) return;
+                const familyName = (typeof family === "object" ? family.tool_family : family) || "";
+                const description = (typeof family === "object" ? family.description : "") || "";
                 const safeId = familyName.replace(/[^a-zA-Z0-9]/g, "-");
                 const trackId = `carousel-track-${safeId}`;
                 const section = document.createElement("div");
                 section.className = "category-carousel-section";
                 section.innerHTML = `
                     <div class="category-carousel-header">
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <h3 class="carousel-title">${Store.escapeHtml(familyName)}</h3>
-                            <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">${Store.t("view_more")} &rarr;</a>
+                        <div class="carousel-title-group" style="display:flex;flex-direction:column;gap:4px;">
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <h3 class="carousel-title" style="margin:0;">${Store.escapeHtml(familyName)}</h3>
+                                <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">${Store.t("view_more")} &rarr;</a>
+                            </div>
+                            ${description ? `<p class="carousel-subtitle" style="margin:0;font-size:0.9rem;color:var(--text-muted);font-weight:400;line-height:1.4;">${Store.escapeHtml(description)}</p>` : ""}
                         </div>
                         <div class="carousel-nav">
                             <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
@@ -375,8 +380,8 @@ function loadToolFamilyCarousels() {
                     tool_family: f.tool_family,
                     start: 0,
                     page_length: 8,
-                }).then(data => ({ family: f.tool_family, products: (data && data.items) || [] }))
-                  .catch(() => ({ family: f.tool_family, products: [] }))
+                }).then(data => ({ family: f, products: (data && data.items) || [] }))
+                  .catch(() => ({ family: f, products: [] }))
             );
 
             Promise.all(promises).then(results => {
@@ -389,14 +394,15 @@ function loadToolFamilyCarousels() {
 window.scrollCarousel = function(safeId, dir) {
     const track = document.getElementById(`carousel-track-${safeId}`);
     if (!track) return;
-    const isRtl = document.documentElement.getAttribute("dir") === "rtl" || Store.lang === "ar";
-    const scrollAmount = (isRtl ? -dir : dir) * 320;
+    const scrollAmount = dir * 320;
     track.scrollBy({ left: scrollAmount, behavior: "smooth" });
 };
 
 function renderTrendingGrid(products) {
     const grid = document.getElementById("home-trending-grid");
     if (!grid) return;
+    const section = document.getElementById("home-trending-section");
+    if (section) section.style.display = products.length ? "" : "none";
     const top = products.slice(0, 6);
     grid.innerHTML = top.map(p => buildProductCard(p, "TRENDING")).join("");
     if (window.lucide) lucide.createIcons({ nodes: [grid] });
@@ -417,10 +423,10 @@ function loadSlides() {
 }
 
 /* ── Load products from ERPNext ──────────────────────────────────────────── */
+// Trending = top items by qty sold on submitted Sales Invoices (ranked daily server-side)
 function loadHomeProducts() {
-    Store.call("custom_webshop.api.catalog.get_catalog_products", {
-        start: 0,
-        page_length: 20
+    Store.call("custom_webshop.api.catalog.get_trending_products", {
+        limit: 6
     }).then(data => {
         const products = (data && data.items) ? data.items : [];
         renderTrendingGrid(products);

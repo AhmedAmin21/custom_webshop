@@ -170,7 +170,51 @@ window.updateCartQty = function(itemCode, qty) {
     }).catch(err => Store.toast(err.message || Store.t("error_generic"), "error"));
 };
 
-/* ── Shipping company + governorate controls ───────────────────────────────── */
+/* ── Shipping company + governorate + district controls ──────────────────── */
+
+/**
+ * Load available districts for the selected shipping rule + governorate.
+ * Shows the district dropdown when at least one district is found;
+ * hides it (and resets the selection) otherwise.
+ */
+function loadDistricts(shippingRule, governorate, preselectDistrict) {
+    const districtGroup = document.getElementById("shipping-district-group");
+    const districtSelect = document.getElementById("shipping-district");
+    if (!districtGroup || !districtSelect) return;
+
+    if (!shippingRule || !governorate) {
+        districtGroup.style.display = "none";
+        districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+        return;
+    }
+
+    Store.call("custom_webshop.shopping_cart.shipping_api.get_districts_for_shipping", {
+        shipping_rule: shippingRule,
+        governorate: governorate,
+    }).then(districts => {
+        if (!districts || !districts.length) {
+            districtGroup.style.display = "none";
+            districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+            return;
+        }
+
+        districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+        districts.forEach(d => {
+            const opt = document.createElement("option");
+            opt.value = d.name;
+            opt.textContent = d.district_name || d.name;
+            districtSelect.appendChild(opt);
+        });
+
+        if (preselectDistrict) districtSelect.value = preselectDistrict;
+
+        districtGroup.style.display = "";
+    }).catch(() => {
+        districtGroup.style.display = "none";
+        districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+    });
+}
+
 function loadShippingControls() {
     const companySelect = document.getElementById("shipping-company");
     const destSelect = document.getElementById("shipping-dest");
@@ -185,7 +229,7 @@ function loadShippingControls() {
         const hasRules = rules && rules.length;
         const hasGovs = govs && govs.length;
 
-        // Shipping company select — populate independently of governorates
+        // Shipping company select
         if (hasRules) {
             companySelect.innerHTML = `<option value="">${Store.t("shipping_company_select")}</option>`;
             rules.forEach(rule => {
@@ -216,9 +260,16 @@ function loadShippingControls() {
         }
 
         if (!shippingControlsBound) {
-            companySelect.addEventListener("change", onShippingChange);
-            destSelect.addEventListener("change", onShippingChange);
+            companySelect.addEventListener("change", onShippingCompanyChange);
+            destSelect.addEventListener("change", onGovernorateChange);
+            const districtSelect = document.getElementById("shipping-district");
+            if (districtSelect) districtSelect.addEventListener("change", onDistrictChange);
             shippingControlsBound = true;
+        }
+
+        // Restore district from bootstrap if governorate is already set
+        if (bootstrap.shipping_rule && bootstrap.shipping_destination) {
+            loadDistricts(bootstrap.shipping_rule, bootstrap.shipping_destination, bootstrap.shipping_district || "");
         }
     }).catch(() => {
         const companyGroup = document.getElementById("shipping-company-group");
@@ -228,25 +279,71 @@ function loadShippingControls() {
     });
 }
 
-function onShippingChange() {
+function onShippingCompanyChange() {
     const companySelect = document.getElementById("shipping-company");
     const destSelect = document.getElementById("shipping-dest");
-    if (!companySelect || !destSelect) return;
+    const districtGroup = document.getElementById("shipping-district-group");
+    const districtSelect = document.getElementById("shipping-district");
 
-    const shippingRule = companySelect.value;
-    const shippingDestination = destSelect.value;
+    // Reset district when company changes
+    if (districtGroup) districtGroup.style.display = "none";
+    if (districtSelect) districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+
+    const shippingRule = companySelect ? companySelect.value : "";
+    const governorate = destSelect ? destSelect.value : "";
+
+    if (shippingRule && governorate) {
+        loadDistricts(shippingRule, governorate, "");
+    }
+
+    applyShippingUpdate();
+}
+
+function onGovernorateChange() {
+    const companySelect = document.getElementById("shipping-company");
+    const destSelect = document.getElementById("shipping-dest");
+    const districtGroup = document.getElementById("shipping-district-group");
+    const districtSelect = document.getElementById("shipping-district");
+
+    const shippingRule = companySelect ? companySelect.value : "";
+    const governorate = destSelect ? destSelect.value : "";
+
+    // Reset district — available options differ per governorate
+    if (districtGroup) districtGroup.style.display = "none";
+    if (districtSelect) districtSelect.innerHTML = `<option value="">${Store.t("shipping_district_select")}</option>`;
+
+    if (shippingRule && governorate) {
+        loadDistricts(shippingRule, governorate, "");
+        applyShippingUpdate();
+    }
+}
+
+function onDistrictChange() {
+    applyShippingUpdate();
+}
+
+function applyShippingUpdate() {
+    const companySelect = document.getElementById("shipping-company");
+    const destSelect = document.getElementById("shipping-dest");
+    const districtSelect = document.getElementById("shipping-district");
+
+    const shippingRule = companySelect ? companySelect.value : "";
+    const shippingDestination = destSelect ? destSelect.value : "";
+    const shippingDistrict = (districtSelect ? districtSelect.value : "") || "";
 
     if (!shippingRule || !shippingDestination) return;
 
     Store.call("custom_webshop.shopping_cart.shipping_api.update_cart_shipping", {
         shipping_rule: shippingRule,
         shipping_destination: shippingDestination,
+        shipping_district: shippingDistrict,
     }).then(data => {
         cartQuotation = data && data.doc ? data.doc : cartQuotation;
         cartBootstrap = {
             ...getBootstrap(),
             shipping_rule: shippingRule,
             shipping_destination: shippingDestination,
+            shipping_district: shippingDistrict,
         };
         renderCartItems(cartQuotation);
         refreshCartWeight();
@@ -276,6 +373,7 @@ function prefillDeliveryForm() {
 function getDeliveryFormData() {
     const companySelect = document.getElementById("shipping-company");
     const destSelect = document.getElementById("shipping-dest");
+    const districtSelect = document.getElementById("shipping-district");
     const nameEl = document.getElementById("cust-name");
     const phoneEl = document.getElementById("cust-phone");
     const addressEl = document.getElementById("cust-address");
@@ -285,9 +383,12 @@ function getDeliveryFormData() {
         ? destSelect.options[destSelect.selectedIndex].textContent.trim()
         : "";
 
+    const notesEl = document.getElementById("cust-notes");
+
     return {
         shipping_rule: companySelect ? companySelect.value : "",
         shipping_destination: destSelect ? destSelect.value : "",
+        shipping_district: (districtSelect ? districtSelect.value : "") || "",
         first_name: (nameEl && nameEl.value.trim()) || bootstrap.user_fullname || "",
         mobile_no: (phoneEl && phoneEl.value.trim()) || "",
         address_line1: (addressEl && addressEl.value.trim()) || "",
@@ -295,6 +396,7 @@ function getDeliveryFormData() {
         country: bootstrap.country || "Egypt",
         address_name: bootstrap.address_name || null,
         contact_name: bootstrap.contact_name || null,
+        notes: (notesEl && notesEl.value.trim()) || "",
     };
 }
 
@@ -349,7 +451,9 @@ function placeOrder(e) {
                 address_name: addressName,
             });
         })
-        .then(() => Store.call("custom_webshop.shopping_cart.cart_override.place_order_from_cart"))
+        .then(() => Store.call("custom_webshop.shopping_cart.cart_override.place_order_from_cart", {
+            notes: formData.notes || ""
+        }))
         .then(orderName => {
             Store.toast("Order placed! Redirecting to payment...", "success");
             Store.updateCartBadge();

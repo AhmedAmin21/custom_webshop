@@ -118,6 +118,7 @@ def _build_cart_bootstrap(quotation=None):
 		# with a 500. www/payment.py already reads it this way.
 		"shipping_rule": quotation.get("shipping_rule") or "",
 		"shipping_destination": quotation.get("shipping_destination") or "",
+		"shipping_district": quotation.get("shipping_district") or "",
 		"total_weight": weight_info.get("total_weight") or 0,
 		"weight_uom": weight_info.get("weight_uom") or "",
 	}

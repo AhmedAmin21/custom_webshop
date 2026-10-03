@@ -13,18 +13,18 @@ function getStatusInfo(order) {
         return { text: Store.t("order_status_draft"), cls: "status-pending", progress: "0%", step: 1 };
     }
     if (status === "To Deliver and Bill" || status === "To Bill") {
-        return { text: "Processing", cls: "status-processing", progress: "33%", step: 2 };
+        return { text: Store.t("order_status_processing"), cls: "status-processing", progress: "33%", step: 2 };
     }
     if (status === "To Deliver") {
-        return { text: "Shipped", cls: "status-shipped", progress: "66%", step: 3 };
+        return { text: Store.t("order_status_shipped"), cls: "status-shipped", progress: "66%", step: 3 };
     }
     if (status === "Completed") {
-        return { text: "Delivered", cls: "status-delivered", progress: "100%", step: 4 };
+        return { text: Store.t("order_status_delivered"), cls: "status-delivered", progress: "100%", step: 4 };
     }
     if (status === "Cancelled") {
-        return { text: "Cancelled", cls: "status-cancelled", progress: "0%", step: 0 };
+        return { text: Store.t("order_status_cancelled"), cls: "status-cancelled", progress: "0%", step: 0 };
     }
-    return { text: status || "Processing", cls: "status-processing", progress: "10%", step: 2 };
+    return { text: Store.t("order_status_processing"), cls: "status-processing", progress: "33%", step: 2 };
 }
 
 /* ── Build order card HTML ───────────────────────────────────────────────── */
@@ -33,10 +33,16 @@ function buildOrderCard(order) {
     const date = order.transaction_date
         ? new Date(order.transaction_date).toLocaleDateString(Store.lang === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" })
         : "—";
-    const total = order.grand_total_formatted || (parseFloat(order.grand_total || 0).toFixed(2));
+    const total = Store.formatCurrency(order.grand_total, order.currency || "EGP");
 
-    // Track step classes
+    // Track step classes and node icons
     const stepClass = (n) => statusInfo.step >= n ? "completed" : (statusInfo.step === n - 1 ? "active" : "");
+    const stepNodeIcon = (n) => {
+        if (statusInfo.step >= n) {
+            return '<i data-lucide="check" style="width:14px;height:14px;"></i>';
+        }
+        return `${n}`;
+    };
 
     const payBtn = order.docstatus === 0
         ? `<a href="/payment?order_id=${order.name}" class="btn btn-primary btn-sm" style="margin-top:8px;">${Store.t("order_pay_now")}</a>`
@@ -46,7 +52,7 @@ function buildOrderCard(order) {
         <div class="order-history-card">
             <div class="order-card-header">
                 <div class="order-header-main">
-                    <span class="order-id-badge">Order ID: #${order.name}</span>
+                    <span class="order-id-badge">${Store.t("order_id")}: #${order.name}</span>
                     <span class="order-date-text">${Store.t("order_date")}: ${date}</span>
                 </div>
                 <div class="order-status-flex">
@@ -69,34 +75,32 @@ function buildOrderCard(order) {
                 <div class="tracking-flow">
                     <div class="tracking-progress-bar" style="width:${statusInfo.progress};"></div>
                     <div class="track-step ${stepClass(1)}">
-                        <div class="step-node">
-                            ${statusInfo.step >= 1 ? '<i data-lucide="check" style="width:14px;height:14px;"></i>' : "1"}
-                        </div>
-                        <span class="step-label">Order Placed</span>
+                        <div class="step-node">${stepNodeIcon(1)}</div>
+                        <span class="step-label">${Store.t("order_step_placed")}</span>
                     </div>
                     <div class="track-step ${stepClass(2)}">
-                        <div class="step-node">2</div>
-                        <span class="step-label">Order Confirmed</span>
+                        <div class="step-node">${stepNodeIcon(2)}</div>
+                        <span class="step-label">${Store.t("order_step_confirmed")}</span>
                     </div>
                     <div class="track-step ${stepClass(3)}">
-                        <div class="step-node">3</div>
-                        <span class="step-label">Shipped</span>
+                        <div class="step-node">${stepNodeIcon(3)}</div>
+                        <span class="step-label">${Store.t("order_step_shipped")}</span>
                     </div>
                     <div class="track-step ${stepClass(4)}">
-                        <div class="step-node">4</div>
-                        <span class="step-label">Arrived</span>
+                        <div class="step-node">${stepNodeIcon(4)}</div>
+                        <span class="step-label">${Store.t("order_step_arrived")}</span>
                     </div>
                 </div>
 
                 <!-- View order detail toggle -->
-                <button class="order-details-toggle" onclick="toggleOrderDetails(this)">
-                    <span>Show Order Details</span>
+                <button class="order-details-toggle" data-order-name="${order.name}" onclick="toggleOrderDetails(this)">
+                    <span>${Store.t("order_show_details")}</span>
                     <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
                 </button>
 
                 <div class="order-details-drawer">
                     <div class="details-product-list" id="order-items-${order.name}">
-                        <p style="color:var(--text-muted);font-size:0.85rem;">Loading items...</p>
+                        <p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_loading_items")}</p>
                     </div>
                     <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
                         <a href="/orders/${order.name}" class="btn btn-secondary btn-sm">${Store.t("order_view")}</a>
@@ -134,12 +138,11 @@ window.toggleOrderDetails = function(btn) {
     const drawer = btn.nextElementSibling;
     const icon = btn.querySelector("[data-lucide]");
     const isOpen = drawer.classList.toggle("open");
-    btn.querySelector("span").textContent = isOpen ? "Hide Order Details" : "Show Order Details";
+    btn.querySelector("span").textContent = isOpen ? Store.t("order_hide_details") : Store.t("order_show_details");
     if (icon) icon.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
 
     // Load order items on first open
-    const orderCard = btn.closest(".order-history-card");
-    const orderName = orderCard?.querySelector(".order-id-badge")?.textContent?.replace("Order ID: #", "").trim();
+    const orderName = btn.dataset.orderName || btn.closest(".order-history-card")?.querySelector(".order-id-badge")?.textContent?.split("#")[1]?.trim();
     if (isOpen && orderName) loadOrderItems(orderName);
 };
 
@@ -151,25 +154,26 @@ function loadOrderItems(orderName) {
     Store.call("frappe.client.get", {
         doctype: "Sales Order",
         name: orderName,
-        fields: ["name", "items", "grand_total", "taxes"],
+        fields: ["name", "items", "grand_total", "taxes", "currency"],
     }).then(doc => {
         if (!doc || !doc.items || !doc.items.length) {
-            itemsEl.innerHTML = "<p style='color:var(--text-muted);font-size:0.85rem;'>No items found.</p>";
+            itemsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_no_items")}</p>`;
             return;
         }
+        const curr = doc.currency || "EGP";
         itemsEl.innerHTML = doc.items.map(item => `
             <div class="details-prod-item">
                 <span class="details-prod-name">${item.item_name || item.item_code}</span>
                 <span class="details-prod-qty">x${item.qty}</span>
-                <span class="details-prod-price">${parseFloat((item.qty || 1) * (item.rate || 0)).toFixed(2)}</span>
+                <span class="details-prod-price">${Store.formatCurrency((item.qty || 1) * (item.rate || 0), curr)}</span>
             </div>`).join("") + `
             <div class="details-prod-item" style="border-top:1px dashed var(--border-subtle);padding-top:8px;font-weight:bold;">
-                <span>Grand Total</span>
-                <span>${parseFloat(doc.grand_total || 0).toFixed(2)}</span>
+                <span>${Store.t("order_grand_total")}</span>
+                <span>${Store.formatCurrency(doc.grand_total, curr)}</span>
             </div>`;
         itemsEl.dataset.loaded = "1";
     }).catch(() => {
-        itemsEl.innerHTML = "<p style='color:var(--text-muted);font-size:0.85rem;'>Could not load items.</p>";
+        itemsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_error_items")}</p>`;
     });
 }
 
@@ -178,4 +182,10 @@ document.addEventListener("DOMContentLoaded", () => {
     Store.init();
     Store.initCartDrawer(() => Store.renderCartDrawer({ loginRedirect: "/orders" }));
     renderOrdersList();
+
+    // Re-render dynamically when language changes
+    window.addEventListener("cnc_language_changed", () => {
+        renderOrdersList();
+    });
 });
+

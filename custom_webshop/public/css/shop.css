@@ -2529,10 +2529,17 @@ body.rtl .specs-table td.spec-name {
     position: absolute;
     top: 14px;
     left: 48px;
+    right: auto;
     height: 3px;
     background: var(--primary-blue);
     z-index: 2;
     transition: width 0.5s ease;
+}
+
+body.rtl .tracking-progress-bar,
+html[dir="rtl"] .tracking-progress-bar {
+    left: auto;
+    right: 48px;
 }
 
 .track-step {
@@ -4081,6 +4088,7 @@ body.rtl .specs-table td.spec-name {
 .carousel-nav {
     display: flex;
     gap: 8px;
+    direction: ltr;
 }
 .nav-btn-arrow {
     width: 36px;
@@ -4747,3 +4755,20 @@ body.rtl .hero-title {
     color: #1d4ed8;
     text-decoration: underline;
 }
+
+/* ── Image Picker Modal ──────────────────────────────────────────────────── */
+.img-grid-item {
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.img-grid-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-blue, #2563eb) !important;
+}
+.img-modal-tab-btn:hover {
+    color: var(--primary-blue, #2563eb) !important;
+}
+#img-modal-dropzone:hover {
+    border-color: var(--primary-blue, #2563eb) !important;
+    background: rgba(37, 99, 235, 0.04) !important;
+}
+

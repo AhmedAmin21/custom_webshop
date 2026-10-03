@@ -116,10 +116,50 @@ def get_shipping_amount_for_cart(shipping_rule, governorate, weight):
 
 
 @frappe.whitelist()
-def update_cart_shipping(shipping_rule=None, shipping_destination=None):
+def get_districts_for_shipping(shipping_rule, governorate):
     """
-    Update the cart quotation with shipping rule and destination,
-    apply the shipping rule, and recalculate totals.
+    Return the list of districts that have shipping conditions defined for
+    the given shipping_rule + governorate combination.
+
+    Used by the cart page to decide whether to show the district dropdown
+    and to populate its options.  Returns an empty list when no district-
+    specific rows exist — the dropdown is hidden in that case.
+    """
+    if not shipping_rule or not governorate:
+        return []
+
+    # Find district names referenced in the shipping-rule condition table
+    rows = frappe.get_all(
+        "Shipping Rule Governorate",
+        filters={
+            "parent": shipping_rule,
+            "governorate": governorate,
+            "district": ["not in", ["", None]],
+        },
+        fields=["district"],
+        distinct=True,
+    )
+
+    if not rows:
+        return []
+
+    district_names = [r.district for r in rows if r.district]
+
+    # Enrich with human-readable district_name from the District doctype
+    districts = frappe.get_all(
+        "District",
+        filters={"name": ["in", district_names]},
+        fields=["name", "district_name"],
+        order_by="district_name",
+    )
+    return districts
+
+
+@frappe.whitelist()
+def update_cart_shipping(shipping_rule=None, shipping_destination=None, shipping_district=None):
+    """
+    Update the cart quotation with shipping rule, destination and (optional)
+    district, apply the shipping rule, and recalculate totals.
     Returns the updated cart context for re-rendering.
     """
     quotation = _get_cart_quotation()
@@ -128,11 +168,20 @@ def update_cart_shipping(shipping_rule=None, shipping_destination=None):
         quotation.shipping_rule = shipping_rule
     if shipping_destination is not None:
         quotation.shipping_destination = shipping_destination
+    # Always write district (even empty string) so stale values are cleared
+    quotation.shipping_district = shipping_district or ""
 
     # Use our custom cart settings that never auto-select non-Governorate rules
     apply_cart_settings_for_webshop(quotation=quotation)
 
     quotation.flags.ignore_permissions = True
+    # Clear payment_schedule to prevent ERPNext's set_payment_schedule from
+    # failing when grand_total is None (same pattern as cart_override._update_cart)
+    quotation.payment_schedule = []
+    # Clear contact fields to prevent validation errors
+    quotation.contact_person = None
+    quotation.contact_mobile = None
+    quotation.contact_display = None
     quotation.save()
 
     return get_cart_quotation(quotation)

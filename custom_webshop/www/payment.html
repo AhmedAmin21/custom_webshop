@@ -124,8 +124,8 @@
                              data-label="{{ opt.label }}"
                              onclick="selectPaymentMethodUI('{{ opt.key }}')">
                             <span class="payment-method-name">{{ opt.label }}</span>
-                            <span class="payment-method-lbl">Send to:</span>
-                            <span class="payment-method-val">{{ opt.number or '—' }}</span>
+                            <span class="payment-method-lbl" data-i18n="payment_send_to">Send to:</span>
+                            <span class="payment-method-val" dir="ltr">{{ opt.number or '—' }}</span>
                         </div>
                         {% endfor %}
                     </div>

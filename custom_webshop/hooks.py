@@ -185,6 +185,7 @@ doc_events = {
 scheduler_events = {
 	"daily": [
 		"custom_webshop.signup.session.expire_stale_sessions",
+		"custom_webshop.api.catalog.refresh_trending_items",
 	],
 }
 
@@ -270,7 +271,14 @@ custom_fields = {
 			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
 			"insert_after": "payment_terms_section",
 			"read_only": 1,
-		}
+		},
+		{
+			"fieldname": "custom_order_notes",
+			"label": "Delivery Notes / Instructions",
+			"fieldtype": "Small Text",
+			"insert_after": "shipping_address_name",
+			"read_only": 1,
+		},
 	]
 }
 

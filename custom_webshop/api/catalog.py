@@ -276,7 +276,7 @@ def get_materials():
 @frappe.whitelist(allow_guest=True)
 def get_all_tool_families():
 	"""Return the full canonical list of known tool families (static config)."""
-	return [{"tool_family": tf} for tf in ALL_TOOL_FAMILIES]
+	return [{"tool_family": tf, "description": ""} for tf in ALL_TOOL_FAMILIES]
 
 
 @frappe.whitelist(allow_guest=True)
@@ -313,15 +313,27 @@ def get_display_tool_families():
 		return all_families
 
 	family_map = {f["tool_family"]: f for f in all_families}
-	return [family_map[name] for name in selected if name in family_map]
+	result = []
+	for item in selected:
+		if isinstance(item, str):
+			tf_name = item
+			desc = ""
+		elif isinstance(item, dict):
+			tf_name = item.get("tool_family")
+			desc = item.get("description", "") or ""
+		else:
+			continue
+		if tf_name in family_map:
+			result.append({"tool_family": tf_name, "description": desc})
+	return result
 
 
 @frappe.whitelist()
 def save_display_tool_families(tool_family_names):
 	"""
-	Persist the ordered list of enabled tool family names.
+	Persist the ordered list of enabled tool family names and optional descriptions.
 	Requires System Manager role.
-	tool_family_names: JSON list of tool family name strings.
+	tool_family_names: JSON list of tool family names (strings) or dicts with {tool_family, description}.
 	"""
 	frappe.only_for("System Manager")
 
@@ -331,7 +343,17 @@ def save_display_tool_families(tool_family_names):
 	if not isinstance(tool_family_names, list):
 		frappe.throw("tool_family_names must be a list")
 
-	_write_display_tool_family_config(json.dumps(tool_family_names))
+	cleaned = []
+	for item in tool_family_names:
+		if isinstance(item, str):
+			cleaned.append({"tool_family": item, "description": ""})
+		elif isinstance(item, dict) and "tool_family" in item:
+			cleaned.append({
+				"tool_family": str(item["tool_family"]),
+				"description": str(item.get("description", "") or "")
+			})
+
+	_write_display_tool_family_config(json.dumps(cleaned))
 	return {"success": True}
 
 
@@ -558,6 +580,151 @@ def get_catalog_products(
 		row["in_stock"] = True
 
 	return {"items": rows, "total": total}
+
+
+# ============================================================================
+# Trending products — ranked by qty sold on submitted Sales Invoices.
+# Computed once a day by the scheduler (see hooks.py) and stored in Singles,
+# so page visits never run the aggregation and `bench clear-cache` does not
+# force a recompute.
+# ============================================================================
+
+_TRENDING_SINGLES_FIELD = "custom_trending_items"
+_TRENDING_STORE_LIMIT = 12  # store a few extra in case some get unpublished
+
+
+def _compute_trending_item_codes(limit=_TRENDING_STORE_LIMIT):
+	"""
+	Rank published Website Items by net quantity sold on submitted Sales Invoices.
+	Returns (credit notes) have negative qty and are netted out; items whose
+	net sold qty is zero or less are excluded.
+	"""
+	rows = frappe.db.sql(
+		"""
+		SELECT sii.item_code, SUM(sii.stock_qty) AS sold_qty
+		FROM `tabSales Invoice` si
+		INNER JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+		INNER JOIN `tabWebsite Item` wi
+			ON wi.item_code = sii.item_code AND wi.published = 1
+		WHERE si.docstatus = 1
+		GROUP BY sii.item_code
+		HAVING SUM(sii.stock_qty) > 0
+		ORDER BY sold_qty DESC
+		LIMIT %s
+		""",
+		(int(limit),),
+		as_dict=True,
+	)
+	return [{"item_code": r.item_code, "sold_qty": float(r.sold_qty)} for r in rows]
+
+
+def _write_singles_value(field, value):
+	"""Upsert a raw value into tabSingles for Webshop Settings."""
+	if frappe.db.sql(
+		"SELECT 1 FROM `tabSingles` WHERE `doctype`=%s AND `field`=%s",
+		(_SINGLES_DOCTYPE, field),
+	):
+		frappe.db.sql(
+			"UPDATE `tabSingles` SET `value`=%s WHERE `doctype`=%s AND `field`=%s",
+			(value, _SINGLES_DOCTYPE, field),
+		)
+	else:
+		frappe.db.sql(
+			"INSERT INTO `tabSingles` (`doctype`, `field`, `value`) VALUES (%s, %s, %s)",
+			(_SINGLES_DOCTYPE, field, value),
+		)
+
+
+def refresh_trending_items():
+	"""Daily scheduler job: recompute and persist the trending ranking."""
+	ranking = _compute_trending_item_codes()
+	payload = {"computed_on": str(frappe.utils.now_datetime()), "items": ranking}
+	_write_singles_value(_TRENDING_SINGLES_FIELD, json.dumps(payload))
+	frappe.db.commit()
+	return payload
+
+
+def _read_trending_ranking():
+	"""Return stored ranking list, or None if it has never been computed."""
+	rows = frappe.db.sql(
+		"SELECT `value` FROM `tabSingles` WHERE `doctype`=%s AND `field`=%s",
+		(_SINGLES_DOCTYPE, _TRENDING_SINGLES_FIELD),
+	)
+	if not rows or not rows[0][0]:
+		return None
+	try:
+		data = json.loads(rows[0][0])
+		return data.get("items", [])
+	except Exception:
+		return None
+
+
+@frappe.whitelist(allow_guest=True)
+def get_trending_products(limit=6):
+	"""
+	Return product cards for the home page Trending section, in ranked order.
+	Reads the precomputed daily ranking; only computes on the very first call
+	ever (before the scheduler has run once).
+	"""
+	limit = max(1, min(int(limit), _TRENDING_STORE_LIMIT))
+
+	ranking = _read_trending_ranking()
+	if ranking is None:
+		ranking = refresh_trending_items()["items"]
+
+	codes = [r["item_code"] for r in ranking]
+	if not codes:
+		return {"items": []}
+
+	sold_map = {r["item_code"]: r["sold_qty"] for r in ranking}
+	placeholders = ", ".join(["%s"] * len(codes))
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			wi.name,
+			wi.item_code,
+			i.item_name,
+			wi.web_item_name,
+			i.image AS image,
+			i.description AS description,
+			wi.website_image,
+			wi.short_description,
+			wi.route,
+			wi.brand,
+			i.item_group,
+			COALESCE(ip.price_list_rate, 0) AS price
+		FROM `tabWebsite Item` wi
+		INNER JOIN `tabItem` i ON i.name = wi.item_code
+		LEFT JOIN `tabItem Price` ip
+			ON ip.item_code = wi.item_code
+			AND ip.selling = 1
+			AND ip.price_list = (
+				SELECT value FROM `tabSingles`
+				WHERE doctype = 'Webshop Settings' AND field = 'price_list'
+				LIMIT 1
+			)
+		WHERE wi.item_code IN ({placeholders})
+		  AND wi.published = 1
+		""",
+		codes,
+		as_dict=True,
+	)
+
+	# Preserve ranking order; drop duplicates from multiple price rows
+	by_code = {}
+	for row in rows:
+		by_code.setdefault(row.item_code, row)
+	items = []
+	for code in codes:
+		row = by_code.get(code)
+		if row:
+			row["in_stock"] = True
+			row["sold_qty"] = sold_map.get(code, 0)
+			items.append(row)
+		if len(items) >= limit:
+			break
+
+	return {"items": items}
 
 
 # Guests keep their basket in the browser, because building one on the

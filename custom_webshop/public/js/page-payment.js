@@ -18,6 +18,7 @@ function isImageFile(file) {
 
 /* ── Payment method card selection ──────────────────────────────────────── */
 window.selectPaymentMethodUI = function(methodKey) {
+    if (!methodKey) return;
     selectedPaymentMethod = methodKey;
 
     document.querySelectorAll(".payment-method-card").forEach(card => {
@@ -32,18 +33,26 @@ window.selectPaymentMethodUI = function(methodKey) {
     const label = card.dataset.label || methodKey;
     const number = card.dataset.number || "—";
 
+    const titleText = Store.lang === "ar"
+        ? `تفاصيل ${label}`
+        : `${label} Details`;
+
+    const noteText = Store.t("payment_transfer_note");
+    const sendToText = Store.t("payment_send_to_lbl") || (Store.lang === "ar" ? "التحويل إلى" : "Send to");
+    const copiedText = Store.t("payment_copied") || "Copied!";
+
     detailsBox.innerHTML = `
         <div class="method-details-wrapper animate-fade-in">
             <div class="method-details-header">
-                <span class="details-title">${label} Details</span>
-                <span class="details-note">Transfer the exact amount shown above.</span>
+                <span class="details-title">${titleText}</span>
+                <span class="details-note">${noteText}</span>
             </div>
             <div class="details-row">
                 <div class="details-item">
-                    <span class="details-lbl">Send to</span>
+                    <span class="details-lbl">${sendToText}</span>
                     <div class="details-val-copy-container">
-                        <span class="details-val highlight-val">${number}</span>
-                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${number}').then(() => Store.toast('Copied!', 'success'))" title="Copy">
+                        <span class="details-val highlight-val" dir="ltr">${number}</span>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${number}').then(() => Store.toast('${copiedText}', 'success'))" title="Copy">
                             <i data-lucide="copy" class="small-copy-icon"></i>
                         </button>
                     </div>
@@ -211,6 +220,30 @@ function initSubmitButton() {
     });
 }
 
+function updatePaymentStaticTexts() {
+    if (!window.PAYMENT_DATA) return;
+    const payData = window.PAYMENT_DATA;
+
+    const refEl = document.getElementById("payment-ref-text");
+    if (refEl && payData.order_id) {
+        refEl.textContent = Store.lang === "ar"
+            ? `مرجع الطلب: #${payData.order_id}`
+            : `Order Reference: #${payData.order_id}`;
+    }
+
+    const shipDestEl = document.getElementById("payment-shipping-dest");
+    if (shipDestEl && payData.shipping_destination) {
+        shipDestEl.textContent = Store.lang === "ar"
+            ? `الشحن إلى: ${payData.shipping_destination}`
+            : `Shipping to: ${payData.shipping_destination}`;
+    }
+
+    const amountEl = document.getElementById("payment-amount");
+    if (amountEl && payData.grand_total != null) {
+        amountEl.textContent = Store.formatCurrency(payData.grand_total, payData.currency || "EGP");
+    }
+}
+
 /* ── Entry point ─────────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
     Store.init();
@@ -223,11 +256,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initPaymentUpload();
     initSubmitButton();
+    updatePaymentStaticTexts();
 
-    if (!window.PAYMENT_DATA) return;
-
-    const amountEl = document.getElementById("payment-amount");
-    if (amountEl && window.PAYMENT_DATA.grand_total_formatted) {
-        amountEl.textContent = window.PAYMENT_DATA.grand_total_formatted;
-    }
+    // Re-render dynamically when language changes
+    window.addEventListener("cnc_language_changed", () => {
+        updatePaymentStaticTexts();
+        if (selectedPaymentMethod) {
+            selectPaymentMethodUI(selectedPaymentMethod);
+        }
+    });
 });

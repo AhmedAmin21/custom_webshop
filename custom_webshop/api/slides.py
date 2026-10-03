@@ -139,3 +139,99 @@ def reorder_slides(slide_names):
     doc.save()
     frappe.db.commit()
     return {"success": True, "message": _("Slides reordered.")}
+
+
+@frappe.whitelist()
+def get_image_files(search=None, limit=60):
+    """
+    Return a list of available public image files from the File DocType.
+    Requires slide admin permission.
+    """
+    if not is_slide_admin():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif", ".avif")
+    filters = {
+        "is_folder": 0,
+        "is_private": 0,
+    }
+    if search:
+        filters["file_name"] = ["like", f"%{search}%"]
+
+    files = frappe.get_all(
+        "File",
+        filters=filters,
+        fields=["name", "file_name", "file_url", "creation"],
+        order_by="creation desc",
+        limit=int(limit) * 2 if limit else 100,
+    )
+
+    seen = set()
+    result = []
+    for f in files:
+        url = (f.get("file_url") or "").strip()
+        name = (f.get("file_name") or "").strip()
+        if not url or url in seen:
+            continue
+        ext = url.lower().split("?")[0]
+        if any(ext.endswith(e) for e in IMAGE_EXTS) or any(name.lower().endswith(e) for e in IMAGE_EXTS):
+            seen.add(url)
+            result.append({
+                "name": f.name,
+                "file_name": f.file_name or url.split("/")[-1],
+                "file_url": url,
+                "creation": str(f.creation),
+            })
+            if limit and len(result) >= int(limit):
+                break
+
+    return result
+
+
+@frappe.whitelist()
+def upload_slide_image(filename=None, file_content=None):
+    """
+    Upload an image file to be used in slides, stored as a public File record.
+    Accepts base64 file_content + filename or standard multipart file from frappe.request.files.
+    """
+    import base64
+    if not is_slide_admin():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    content = None
+    fname = None
+    if file_content and filename:
+        if "," in file_content:
+            file_content = file_content.split(",", 1)[1]
+        content = base64.b64decode(file_content)
+        fname = filename
+    elif hasattr(frappe.request, "files") and "file" in frappe.request.files:
+        upload = frappe.request.files["file"]
+        fname = upload.filename
+        content = upload.read()
+    else:
+        frappe.throw(_("No file provided for upload."))
+
+    IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif", ".avif")
+    if not any(fname.lower().endswith(e) for e in IMAGE_EXTS):
+        frappe.throw(_("Only image files ({0}) are allowed.").format(", ".join(IMAGE_EXTS)))
+
+    file_doc = frappe.get_doc({
+        "doctype": "File",
+        "file_name": fname,
+        "content": content,
+        "is_private": 0,
+        "attached_to_doctype": "Website Slideshow",
+        "attached_to_name": SLIDESHOW_NAME,
+    })
+    file_doc.flags.ignore_permissions = True
+    file_doc.insert()
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "file_url": file_doc.file_url,
+        "file_name": file_doc.file_name,
+        "name": file_doc.name,
+    }
+
