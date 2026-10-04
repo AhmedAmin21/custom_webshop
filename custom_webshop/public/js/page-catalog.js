@@ -3,9 +3,13 @@
    Depends on: store.js
    ========================================================================== */
 
-let allProducts = [];
-let filteredProducts = [];
+let pageProducts = [];
 let catalogViewMode = "grid";
+
+let catalogPagination = { page: 1, size: 0, total: 0, totalPages: 0 };
+let catalogQuery = {};
+let catalogRequestSeq = 0;
+let catalogSearchTimer = null;
 
 // Currently active attribute filter: { attributeName: [value] } or {}
 let activeAttributeFilter = {};
@@ -27,8 +31,8 @@ function getCatalogQueryArgs(extraArgs = {}) {
             ...activeAttributeFilter,
             ...(extraArgs.attribute_filters || {}),
         },
-        start: 0,
-        search: extraArgs.search || null,
+        search: document.getElementById("catalog-search")?.value?.trim() || null,
+        sort: document.getElementById("sort-select")?.value || "default",
         item_group: extraArgs.item_group || null,
         tool_family: activeToolFamilyFilter || null,
         material: activeMaterialFilter || null,
@@ -104,7 +108,13 @@ function renderCatalogGrid(products) {
     if (!grid) return;
 
     const countEl = document.getElementById("results-count-text");
-    if (countEl) countEl.textContent = Store.t("catalog_results", { count: products.length });
+    if (countEl) {
+        const { page, size, total, totalPages } = catalogPagination;
+        const from = (page - 1) * size + 1;
+        countEl.textContent = totalPages > 1
+            ? Store.t("catalog_results_range", { from, to: from + products.length - 1, total })
+            : Store.t("catalog_results", { count: total });
+    }
 
     if (!products.length) {
         grid.innerHTML = `
@@ -144,7 +154,8 @@ function renderActiveFilterChips() {
             clear: () => {
                 const s = document.getElementById("catalog-search");
                 if (s) s.value = "";
-                applyLocalFilters();
+                renderActiveFilterChips();
+                loadCatalogProducts();
             }
         });
     }
@@ -557,49 +568,122 @@ window.resetAllCatalogFilters = function() {
     loadCatalogProducts({});
 };
 
-/* ── Apply local filters (search, sort) ──────────────────────────────────── */
-function applyLocalFilters() {
-    const searchVal = (document.getElementById("catalog-search")?.value || "").toLowerCase();
-    const sortVal = document.getElementById("sort-select")?.value || "default";
+function writeCatalogUrl(query) {
+    const params = new URLSearchParams();
+    if (query.search) params.set("search", query.search);
+    if (query.item_group) params.set("item_group", query.item_group);
+    if (query.tool_family) params.set("tool_families", query.tool_family);
+    if (query.material) params.set("materials", query.material);
+    for (const [attr, values] of Object.entries(query.attribute_filters || {})) {
+        if (attr === "Brand - الماركة") {
+            params.set("brand", values[0]);
+        } else {
+            params.append("attribute", attr);
+            params.append("value", values[0]);
+        }
+    }
+    if (query.sort && query.sort !== "default") params.set("sort", query.sort);
+    if (query.page > 1) params.set("page", query.page);
 
-    filteredProducts = allProducts.filter(p => {
-        const name = (p.web_item_name || p.item_name || p.name || "").toLowerCase();
-        const desc = (p.short_description || p.description || "").toLowerCase();
-        const code = (p.item_code || "").toLowerCase();
-        return !searchVal || name.includes(searchVal) || desc.includes(searchVal) || code.includes(searchVal);
-    });
-
-    if (sortVal === "price-asc") filteredProducts.sort((a, b) => (a.price || 0) - (b.price || 0));
-    else if (sortVal === "price-desc") filteredProducts.sort((a, b) => (b.price || 0) - (a.price || 0));
-    else if (sortVal === "alpha") filteredProducts.sort((a, b) => (a.web_item_name || a.name || "").localeCompare(b.web_item_name || b.name || ""));
-
-    renderActiveFilterChips();
-    renderCatalogGrid(filteredProducts);
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
 }
 
-function loadCatalogProducts(queryArgs = {}) {
+function loadCatalogProducts(queryArgs = {}, page = 1) {
+    clearTimeout(catalogSearchTimer);
+    catalogQuery = { ...getCatalogQueryArgs(queryArgs), page };
+    loadCatalogPage();
+}
+
+function loadCatalogPage() {
     const grid = document.getElementById("catalog-product-grid");
     if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);" data-i18n="loading">${Store.t("loading")}</div>`;
 
-    const args = getCatalogQueryArgs(queryArgs);
+    const requestId = ++catalogRequestSeq;
+    const query = catalogQuery;
+    writeCatalogUrl(query);
 
     Store.call("custom_webshop.api.catalog.get_catalog_products", {
-        tool_family: args.tool_family || null,
-        material: args.material || null,
-        item_group: args.item_group || null,
-        attribute_filters: JSON.stringify(args.attribute_filters || {}),
-        field_filters: JSON.stringify(args.field_filters || {}),
-        search: args.search || null,
-        start: args.start || 0,
-        page_length: 50,
+        tool_family: query.tool_family || null,
+        material: query.material || null,
+        item_group: query.item_group || null,
+        attribute_filters: JSON.stringify(query.attribute_filters || {}),
+        field_filters: JSON.stringify(query.field_filters || {}),
+        search: query.search || null,
+        sort: query.sort,
+        page: query.page,
     }).then(data => {
-        allProducts = (data && data.items) ? data.items : [];
-        applyLocalFilters();
+        if (requestId !== catalogRequestSeq) return;
+        const { items, page, size, total, totalPages } = data;
+        pageProducts = items;
+        catalogPagination = { page, size, total, totalPages };
+        if (page !== query.page) {
+            catalogQuery = { ...query, page };
+            writeCatalogUrl(catalogQuery);
+        }
+        renderCatalogGrid(pageProducts);
+        renderCatalogPagination();
     }).catch(err => {
+        if (requestId !== catalogRequestSeq) return;
         console.error("Catalog load failed:", err);
         if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">${Store.t("error_generic")}</div>`;
+        const pager = document.getElementById("catalog-pagination");
+        if (pager) pager.style.display = "none";
     });
 }
+
+function getCatalogPageItems(current, totalPages) {
+    const items = [];
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || Math.abs(p - current) <= 1) {
+            items.push(p);
+        } else if (items[items.length - 1] !== "…") {
+            items.push("…");
+        }
+    }
+    return items;
+}
+
+function renderCatalogPagination() {
+    const pager = document.getElementById("catalog-pagination");
+    if (!pager) return;
+
+    const { page, totalPages } = catalogPagination;
+    if (totalPages <= 1) {
+        pager.style.display = "none";
+        pager.innerHTML = "";
+        return;
+    }
+
+    const pageButtons = getCatalogPageItems(page, totalPages).map(p => {
+        if (p === "…") return `<span class="pagination-ellipsis" aria-hidden="true">…</span>`;
+        const current = p === page;
+        return `<button type="button" class="pagination-btn${current ? " active" : ""}" onclick="goToCatalogPage(${p})"
+            aria-label="${Store.t("pagination_page", { page: p })}"${current ? ' aria-current="page"' : ""}>${p}</button>`;
+    }).join("");
+
+    pager.setAttribute("aria-label", Store.t("pagination_label"));
+    pager.innerHTML = `
+        <button type="button" class="pagination-btn" onclick="goToCatalogPage(${page - 1})"
+            aria-label="${Store.t("pagination_prev")}" title="${Store.t("pagination_prev")}"${page <= 1 ? " disabled" : ""}>
+            <i data-lucide="chevron-left"></i>
+        </button>
+        ${pageButtons}
+        <button type="button" class="pagination-btn" onclick="goToCatalogPage(${page + 1})"
+            aria-label="${Store.t("pagination_next")}" title="${Store.t("pagination_next")}"${page >= totalPages ? " disabled" : ""}>
+            <i data-lucide="chevron-right"></i>
+        </button>`;
+    pager.style.display = "flex";
+    if (window.lucide) lucide.createIcons({ nodes: [pager] });
+}
+
+window.goToCatalogPage = function(page) {
+    if (page === catalogQuery.page) return;
+    catalogQuery = { ...catalogQuery, page };
+    loadCatalogPage();
+    document.querySelector(".catalog-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("results-count-text")?.focus({ preventScroll: true });
+};
 
 /* ── Add to cart ─────────────────────────────────────────────────────────── */
 window.addToCartCatalog = function(itemCode) {
@@ -639,7 +723,7 @@ function initViewToggle() {
         gridBtn.classList.add("active");
         listBtn?.classList.remove("active");
         updateViewToggleSlider("grid");
-        applyLocalFilters();
+        renderCatalogGrid(pageProducts);
     });
 
     listBtn?.addEventListener("click", () => {
@@ -648,7 +732,7 @@ function initViewToggle() {
         listBtn.classList.add("active");
         gridBtn?.classList.remove("active");
         updateViewToggleSlider("list");
-        applyLocalFilters();
+        renderCatalogGrid(pageProducts);
     });
 }
 
@@ -686,7 +770,9 @@ function reRenderCatalogOnLangSwitch() {
     buildAttributeFilters(cachedAttributes);
     buildBrandFilters(cachedBrands);
     updateViewToggleSlider(catalogViewMode);
-    applyLocalFilters();
+    renderActiveFilterChips();
+    renderCatalogGrid(pageProducts);
+    renderCatalogPagination();
 }
 
 /* ── Entry point ─────────────────────────────────────────────────────────── */
@@ -697,8 +783,12 @@ document.addEventListener("DOMContentLoaded", () => {
     initMobileFilterDrawer();
 
     // Wire local filter inputs
-    document.getElementById("catalog-search")?.addEventListener("input", () => applyLocalFilters());
-    document.getElementById("sort-select")?.addEventListener("change", () => applyLocalFilters());
+    document.getElementById("catalog-search")?.addEventListener("input", () => {
+        renderActiveFilterChips();
+        clearTimeout(catalogSearchTimer);
+        catalogSearchTimer = setTimeout(() => loadCatalogProducts(), 300);
+    });
+    document.getElementById("sort-select")?.addEventListener("change", () => loadCatalogProducts());
     document.getElementById("clear-filters-btn")?.addEventListener("click", () => resetAllCatalogFilters());
 
     // Read URL params for initial filters.
@@ -712,19 +802,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const toolFamilies = urlParams.get("tool_families"); // e.g. "SEM,FEM,EM"
     const materials    = urlParams.get("materials");     // e.g. "HSS,C,CW,TCT"
     const searchParam  = urlParams.get("search");
+    const sortParam    = urlParams.get("sort");
+    const pageParam    = parseInt(urlParams.get("page"), 10) || 1;
 
     if (searchParam) {
         const searchInput = document.getElementById("catalog-search");
         if (searchInput) searchInput.value = searchParam;
     }
+    const sortSelect = document.getElementById("sort-select");
+    if (sortSelect && [...sortSelect.options].some(o => o.value === sortParam)) {
+        sortSelect.value = sortParam;
+    }
 
     const queryArgs = {};
     if (itemGroup) queryArgs.item_group = itemGroup;
-    if (attrName && attrValue) {
-        activeAttributeFilter[attrName] = [attrValue];
-    } else if (brand) {
-        activeAttributeFilter["Brand - الماركة"] = [brand];
-    }
+    const attrValues = urlParams.getAll("value");
+    urlParams.getAll("attribute").forEach((name, i) => {
+        if (name && attrValues[i]) activeAttributeFilter[name] = [attrValues[i]];
+    });
+    if (brand) activeAttributeFilter["Brand - الماركة"] = [brand];
 
     if (toolFamilies)    activeToolFamilyFilter = toolFamilies;
     else if (toolFamily) activeToolFamilyFilter = toolFamily;
@@ -762,7 +858,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderActiveFilterChips();
     }).catch(() => {});
 
-    loadCatalogProducts(queryArgs);
+    loadCatalogProducts(queryArgs, pageParam);
 
     // Live re-render on language switch
     window.addEventListener("cnc_language_changed", () => {

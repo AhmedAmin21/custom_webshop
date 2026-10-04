@@ -142,7 +142,7 @@
                     </div>
 
                     <div class="catalog-header-bar">
-                        <div class="results-count" id="results-count-text">—</div>
+                        <div class="results-count" id="results-count-text" tabindex="-1" aria-live="polite">—</div>
                         <div class="catalog-header-actions" style="display:flex;align-items:center;gap:20px;">
                             <div class="view-toggle-container" id="catalog-view-toggle">
                                 <div class="toggle-slider" id="toggle-slider"></div>
@@ -168,14 +168,11 @@
                     <!-- Active Filter Chips Tag Bar -->
                     <div class="active-filter-chips" id="active-filter-chips" style="display:none;"></div>
 
-                    <!-- Load more pagination -->
                     <div class="product-grid" id="catalog-product-grid">
                         <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);" data-i18n="loading">Loading...</div>
                     </div>
 
-                    <div style="text-align:center;margin:32px 0;display:none;" id="load-more-container">
-                        <button class="btn btn-secondary" id="load-more-btn">Load More</button>
-                    </div>
+                    <nav class="catalog-pagination" id="catalog-pagination" style="display:none;"></nav>
                 </div>
 
             </div>

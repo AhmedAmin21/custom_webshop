@@ -1,4 +1,5 @@
 import json
+import math
 
 import frappe
 
@@ -417,6 +418,27 @@ def get_items_by_tool_family(tool_family, material=None, start=0, page_length=20
 	return {"items": rows, "total": len(rows)}
 
 
+CATALOG_PAGE_SIZE = 12
+MAX_CATALOG_PAGE_SIZE = 50
+
+_CATALOG_SORT_ORDER = {
+	"default": "wi.web_item_name, wi.name",
+	"alpha": "wi.web_item_name, wi.name",
+	"price-asc": "price ASC, wi.web_item_name, wi.name",
+	"price-desc": "price DESC, wi.web_item_name, wi.name",
+}
+
+
+def _catalog_page(items, page, size, total):
+	return {
+		"items": items,
+		"page": page,
+		"size": size,
+		"total": total,
+		"totalPages": math.ceil(total / size),
+	}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_catalog_products(
 	tool_family=None,
@@ -425,8 +447,9 @@ def get_catalog_products(
 	attribute_filters=None,
 	field_filters=None,
 	search=None,
-	start=0,
-	page_length=50,
+	sort=None,
+	page=1,
+	size=CATALOG_PAGE_SIZE,
 ):
 	"""
 	Unified catalog product endpoint that returns item master image and description.
@@ -445,8 +468,11 @@ def get_catalog_products(
 
 	attribute_filters = attribute_filters or {}
 	field_filters = field_filters or {}
-	start = int(start)
-	page_length = int(page_length)
+	page = max(1, frappe.utils.cint(page))
+	size = frappe.utils.cint(size)
+	size = min(size, MAX_CATALOG_PAGE_SIZE) if size > 0 else CATALOG_PAGE_SIZE
+	order_by = _CATALOG_SORT_ORDER.get(frappe.utils.cstr(sort), _CATALOG_SORT_ORDER["default"])
+	search = frappe.utils.cstr(search).strip()
 
 	# Build WHERE clauses for item_name-based filters.
 	name_clauses = []
@@ -488,30 +514,39 @@ def get_catalog_products(
 	# Search
 	search_clause = ""
 	if search:
-		search_clause = "AND (i.item_name LIKE %s OR wi.web_item_name LIKE %s OR i.description LIKE %s OR wi.short_description LIKE %s)"
+		search_clause = "AND (wi.item_code LIKE %s OR i.item_name LIKE %s OR wi.web_item_name LIKE %s OR i.description LIKE %s OR wi.short_description LIKE %s)"
 		like_search = f"%{search}%"
-		params.extend([like_search, like_search, like_search, like_search])
+		params.extend([like_search] * 5)
 
 	name_where = ("AND " + " AND ".join(name_clauses)) if name_clauses else ""
 
 	# First: get candidate item_codes via item_name filter
 	item_code_rows = frappe.db.sql(
 		f"""
-		SELECT wi.item_code
+		SELECT wi.item_code, COALESCE(ip.price_list_rate, 0) AS price
 		FROM `tabWebsite Item` wi
 		INNER JOIN `tabItem` i ON i.name = wi.item_code
+		LEFT JOIN `tabItem Price` ip
+			ON ip.item_code = wi.item_code
+			AND ip.selling = 1
+			AND ip.price_list = (
+				SELECT value FROM `tabSingles`
+				WHERE doctype = 'Webshop Settings' AND field = 'price_list'
+				LIMIT 1
+			)
 		WHERE wi.published = 1
 		  {name_where}
 		  {ig_clause}
 		  {search_clause}
+		ORDER BY {order_by}
 		""",
 		params,
 		as_list=True,
 	)
-	item_codes = [r[0] for r in item_code_rows]
+	item_codes = list(dict.fromkeys(r[0] for r in item_code_rows))
 
 	if not item_codes:
-		return {"items": [], "total": 0}
+		return _catalog_page([], 1, size, 0)
 
 	# Second: apply attribute filters on the candidate set
 	if attribute_filters:
@@ -532,16 +567,16 @@ def get_catalog_products(
 				item_codes + [attr_name] + list(values),
 				as_list=True,
 			)
-			item_codes = [r[0] for r in matching]
+			matched = {r[0] for r in matching}
+			item_codes = [code for code in item_codes if code in matched]
 			if not item_codes:
-				return {"items": [], "total": 0}
+				return _catalog_page([], 1, size, 0)
 
 	total = len(item_codes)
 
 	# Third: fetch full product data for the final page
-	page_codes = item_codes[start : start + page_length]
-	if not page_codes:
-		return {"items": [], "total": total}
+	page = min(page, math.ceil(total / size))
+	page_codes = item_codes[(page - 1) * size : page * size]
 
 	placeholders = ", ".join(["%s"] * len(page_codes))
 	rows = frappe.db.sql(
@@ -570,16 +605,20 @@ def get_catalog_products(
 				LIMIT 1
 			)
 		WHERE wi.item_code IN ({placeholders})
-		ORDER BY wi.web_item_name
 		""",
 		page_codes,
 		as_dict=True,
 	)
 
+	by_code = {}
 	for row in rows:
+		by_code.setdefault(row.item_code, row)
+	items = [by_code[code] for code in page_codes if code in by_code]
+
+	for row in items:
 		row["in_stock"] = True
 
-	return {"items": rows, "total": total}
+	return _catalog_page(items, page, size, total)
 
 
 # ============================================================================

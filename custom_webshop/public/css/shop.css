@@ -1337,6 +1337,10 @@ body {
         gap: 10px !important;
     }
 
+    .catalog-pagination {
+        order: 5;
+    }
+
     /* Compact 2-Column Product Cards on Mobile */
     .product-card {
         border-radius: var(--radius-sm);
@@ -1554,6 +1558,82 @@ body {
     font-weight: 600;
     color: var(--text-main);
     margin: 0;
+}
+
+.catalog-content {
+    scroll-margin-top: 140px;
+}
+
+.catalog-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 32px 0;
+}
+
+.pagination-btn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+    background: var(--bg-surface-opaque);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.pagination-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: #ffffff;
+    cursor: default;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+[dir="rtl"] .pagination-btn svg {
+    transform: scaleX(-1);
+}
+
+.pagination-ellipsis {
+    min-width: 24px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+    .catalog-pagination {
+        gap: 4px;
+    }
+
+    .pagination-btn {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 6px;
+        font-size: 0.85rem;
+    }
 }
 
 /* 3. PRODUCT DETAIL VIEW SPECIFICS */
