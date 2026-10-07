@@ -573,7 +573,11 @@ def _send_order_email(sales_order, email_type):
 	site_url = frappe.utils.get_url()
 	context = {
 		"site_url": site_url,
-		"site_name": frappe.db.get_default("site_name") or frappe.db.get_default("company") or site_url,
+		"site_name": (
+			frappe.db.get_default("site_name")
+			or frappe.get_conf().get("site_name")
+			or "CNCLeaders"
+		),
 		"first_name": user.first_name or user.full_name or user.name,
 		"sales_order": sales_order,
 		"payment_url": f"{site_url}/payment?order_id={sales_order.name}",

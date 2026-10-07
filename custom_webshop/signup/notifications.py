@@ -39,12 +39,13 @@ class OTPDeliveryFailed(frappe.ValidationError):
 
 def _site_name():
 	"""Return a human-facing name for this shop, for message copy."""
-	return (
-		frappe.db.get_default("site_name")
-		or frappe.get_conf().get("site_name")
-		or frappe.db.get_default("company")
-		or "CNCLeaders"
-	)
+	configured = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
+	if configured:
+		return configured
+	company = frappe.db.get_default("company")
+	if company and company.strip().lower() != "cnc":
+		return company
+	return "CNCLeaders"
 
 
 def _deliver_in_dev_mode(channel, destination, code):

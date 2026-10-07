@@ -67,9 +67,16 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	sales_order.custom_payment_method = method_label
 	sales_order.save(ignore_permissions=True)
 
-	# Submit the Sales Order
-	sales_order.flags.ignore_permissions = True
-	sales_order.submit()
+	# Submit the Sales Order as Administrator so ERPNext's internal
+	# Stock Reservation Entry and warehouse processes can execute
+	# without requiring end-customers to have internal warehouse manager roles.
+	current_user = frappe.session.user
+	frappe.set_user("Administrator")
+	try:
+		sales_order.flags.ignore_permissions = True
+		sales_order.submit()
+	finally:
+		frappe.set_user(current_user)
 
 	# Send payment confirmation email
 	_send_order_email(sales_order, "order_payment_confirmed")
