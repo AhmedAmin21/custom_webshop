@@ -106,7 +106,17 @@ def is_available():
 	if is_signup_disabled() or not settings.is_enabled("signup_enabled"):
 		return False
 
-	return settings.is_enabled("email_otp_enabled") and settings.is_enabled("phone_otp_enabled")
+	has_phone_channel = (
+		(settings.is_enabled("sms_otp_enabled") or settings.is_enabled("whatsapp_otp_enabled"))
+		if settings.is_enabled("phone_otp_enabled")
+		else True
+	)
+
+	return (
+		settings.is_enabled("email_otp_enabled")
+		and settings.is_enabled("phone_otp_enabled")
+		and has_phone_channel
+	)
 
 
 def _assert_signup_available():
@@ -214,10 +224,25 @@ def start(
 	if account_type not in ACCOUNT_TYPES:
 		frappe.throw(_("Please choose whether this is a personal or a company account."))
 
+	if not phone_otp_channel:
+		phone_otp_channel = (
+			session.PHONE_OTP_WHATSAPP
+			if (not settings.is_enabled("sms_otp_enabled") and settings.is_enabled("whatsapp_otp_enabled"))
+			else session.PHONE_OTP_SMS
+		)
+
 	if phone_otp_channel == session.PHONE_OTP_WHATSAPP and not settings.is_enabled(
 		"whatsapp_otp_enabled"
 	):
 		phone_otp_channel = session.PHONE_OTP_SMS
+
+	if phone_otp_channel == session.PHONE_OTP_SMS and not settings.is_enabled(
+		"sms_otp_enabled"
+	):
+		if settings.is_enabled("whatsapp_otp_enabled"):
+			phone_otp_channel = session.PHONE_OTP_WHATSAPP
+		else:
+			frappe.throw(_("SMS verification is not available right now."))
 
 	submitted_name = (full_name or "").strip()
 	full_name = validate_full_name(full_name, min_parts=settings.get_int("require_name_parts"))
@@ -459,6 +484,8 @@ def _deliver_phone_otp(doc, code):
 	if doc.phone_otp_channel == session.PHONE_OTP_WHATSAPP:
 		notifications.send_whatsapp_otp(doc, code)
 	else:
+		if not settings.is_enabled("sms_otp_enabled"):
+			frappe.throw(_("SMS verification is not available right now."))
 		notifications.send_phone_otp(doc, code)
 
 
@@ -571,6 +598,8 @@ def switch_phone_otp_channel(signup_id, channel):
 	_assert_signup_available()
 	if channel == session.PHONE_OTP_WHATSAPP and not settings.is_enabled("whatsapp_otp_enabled"):
 		frappe.throw(_("WhatsApp verification is not available right now."))
+	if channel == session.PHONE_OTP_SMS and not settings.is_enabled("sms_otp_enabled"):
+		frappe.throw(_("SMS verification is not available right now."))
 	if channel not in session.PHONE_OTP_CHANNELS:
 		frappe.throw(_("Please choose a valid delivery method."))
 

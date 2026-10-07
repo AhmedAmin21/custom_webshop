@@ -29,6 +29,7 @@
   "email_otp_enabled",
   "email_otp_dev_mode",
   "phone_otp_enabled",
+  "sms_otp_enabled",
   "phone_otp_dev_mode",
   "sms_sender_method",
   "column_break_otp_messages_2",
@@ -185,6 +186,13 @@
    "fieldname": "phone_otp_enabled",
    "fieldtype": "Check",
    "label": "Phone OTP Enabled"
+  },
+  {
+   "default": "1",
+   "description": "Offer SMS as an OTP delivery channel at signup. Can be turned off if using WhatsApp OTP exclusively.",
+   "fieldname": "sms_otp_enabled",
+   "fieldtype": "Check",
+   "label": "SMS OTP Enabled"
   },
   {
    "default": "0",

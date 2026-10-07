@@ -34,10 +34,19 @@ const Signup = {
     // The document-level listeners an open country popup owns.
     countryListeners: null,
 
+    defaultPhoneOtpChannel() {
+        const ctx = window.LOGIN_CONTEXT || {};
+        const smsEnabled = ctx.sms_otp_enabled !== false;
+        const waEnabled = !!ctx.whatsapp_otp_enabled;
+        return (!smsEnabled && waEnabled) ? "WhatsApp" : "SMS";
+    },
+
     /* ── Entry ─────────────────────────────────────────────────────── */
     init() {
         this.root = document.getElementById("signup-wizard");
         if (!this.root) return;
+
+        this.details.phone_otp_channel = this.defaultPhoneOtpChannel();
 
         // Resume a signup this browser already started. The binding
         // cookie is httpOnly, so possessing this id alone is not enough
@@ -85,6 +94,7 @@ const Signup = {
         this.state = null;
         this.envelope = null;
         this.localStep = "type";
+        this.details.phone_otp_channel = this.defaultPhoneOtpChannel();
         try {
             sessionStorage.removeItem("cnc_signup_id");
         } catch (e) { /* private mode */ }
@@ -326,12 +336,13 @@ const Signup = {
     },
 
     /** The delivery-channel row: SMS vs WhatsApp for the phone code.
-     * Only rendered when the site has WhatsApp/Evolution API configured -
-     * `window.LOGIN_CONTEXT.whatsapp_otp_enabled` is the single source of
-     * truth for that, set from `Webshop Signup Settings` at page load. A
-     * site that hasn't configured it sees no trace of this control. */
+     * Only rendered when the site has both SMS and WhatsApp enabled.
+     * If only one is enabled, that channel is used automatically and no choice is shown. */
     otpChannelField() {
-        if (!(window.LOGIN_CONTEXT || {}).whatsapp_otp_enabled) return "";
+        const ctx = window.LOGIN_CONTEXT || {};
+        const smsEnabled = ctx.sms_otp_enabled !== false;
+        const waEnabled = !!ctx.whatsapp_otp_enabled;
+        if (!smsEnabled || !waEnabled) return "";
 
         const option = (value, labelKey) => `
             <button type="button" class="otp-channel-choice${this.details.phone_otp_channel === value ? " selected" : ""}"
@@ -892,8 +903,11 @@ const Signup = {
         const length = data.otp_length || 6;
         const remaining = data.sends_remaining;
         // Only the phone panel has a delivery channel to switch, and only
-        // when the site offers WhatsApp at all.
-        const canSwitchChannel = !isEmail && (window.LOGIN_CONTEXT || {}).whatsapp_otp_enabled;
+        // when the site offers both SMS and WhatsApp.
+        const ctx = window.LOGIN_CONTEXT || {};
+        const smsEnabled = ctx.sms_otp_enabled !== false;
+        const waEnabled = !!ctx.whatsapp_otp_enabled;
+        const canSwitchChannel = !isEmail && smsEnabled && waEnabled;
         const otherChannel = this.envelope.phone_otp_channel === "WhatsApp" ? "SMS" : "WhatsApp";
         const switchLabel = otherChannel === "SMS" ? "su_switch_to_sms" : "su_switch_to_whatsapp";
 
@@ -1029,8 +1043,8 @@ const Signup = {
             email: value("su-email"),
             phone: value("su-phone"),
             // Untouched by the fields read above: set by the channel
-            // picker's own click handler, and defaults to "SMS".
-            phone_otp_channel: this.details.phone_otp_channel || "SMS",
+            // picker's own click handler, and defaults via defaultPhoneOtpChannel().
+            phone_otp_channel: this.details.phone_otp_channel || this.defaultPhoneOtpChannel(),
         };
 
         // Mirrors of the server's rules, for instant feedback only. The

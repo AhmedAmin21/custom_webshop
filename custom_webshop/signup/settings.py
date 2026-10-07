@@ -21,6 +21,7 @@ DEFAULTS = {
 	"signup_enabled": 0,
 	"email_otp_enabled": 1,
 	"phone_otp_enabled": 1,
+	"sms_otp_enabled": 1,
 	"email_otp_dev_mode": 0,
 	"phone_otp_dev_mode": 0,
 	"otp_length": 6,

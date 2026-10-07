@@ -27,7 +27,8 @@
             password_rules: {{ password_rules | tojson }},
             // Whether to offer WhatsApp as a phone OTP delivery choice.
             // False on any site that hasn't configured Evolution API.
-            whatsapp_otp_enabled: {{ 'true' if whatsapp_otp_enabled else 'false' }}
+            whatsapp_otp_enabled: {{ 'true' if whatsapp_otp_enabled else 'false' }},
+            sms_otp_enabled: {{ 'true' if sms_otp_enabled else 'false' }}
         };
     </script>
 

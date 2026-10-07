@@ -35,6 +35,11 @@ def get_context(context):
 	# Kept for the inline LOGIN_CONTEXT block, which page-login.js reads.
 	context.disable_signup = not context.signup_available
 
+	try:
+		context.sms_otp_enabled = settings.is_enabled("sms_otp_enabled")
+	except Exception:
+		context.sms_otp_enabled = True
+
 	# Gates whether page-signup.js offers WhatsApp as a phone OTP delivery
 	# choice at all. Independent of signup_available: a site can run
 	# SMS-only signup perfectly well with this off, so a failure reading it
