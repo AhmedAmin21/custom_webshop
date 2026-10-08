@@ -183,6 +183,11 @@ doc_events = {
 }
 
 scheduler_events = {
+	"cron": {
+		"*/10 * * * *": [
+			"custom_webshop.tasks.expire_unpaid_webshop_reservations"
+		]
+	},
 	"daily": [
 		"custom_webshop.signup.session.expire_stale_sessions",
 		"custom_webshop.api.catalog.refresh_trending_items",

@@ -165,6 +165,53 @@ def place_order_from_cart(notes=None):
 		sales_order.insert()
 		if notes and str(notes).strip():
 			sales_order.add_comment("Comment", text=f"Customer Order Notes / Delivery Instructions: {str(notes).strip()}")
+
+	# Phase 2: Atomic Checkout Locking & Programmatic Reservation
+	stock_items = [
+		item for item in sales_order.get("items")
+		if frappe.get_cached_value("Item", item.item_code, "is_stock_item")
+	]
+
+	if stock_items:
+		from erpnext.stock.utils import get_or_make_bin
+		from erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry import (
+			get_available_qty_to_reserve,
+			create_stock_reservation_entries_for_so_items
+		)
+		
+		# Ensure reserve_stock is checked on the item (required for SRE creation)
+		for item in stock_items:
+			item.db_set("reserve_stock", 1, update_modified=False)
+
+		# 1. Determine unique (item_code, warehouse) pairs and sort them deterministically to avoid deadlocks
+		pairs = sorted(list(set((item.item_code, item.warehouse) for item in stock_items)))
+
+		# 2. Safely ensure all required Bin rows exist before locking
+		for item_code, warehouse in pairs:
+			get_or_make_bin(item_code, warehouse)
+
+		# 3. Acquire atomic SELECT ... FOR UPDATE row locks on tabBin in deterministic order
+		for item_code, warehouse in pairs:
+			frappe.db.sql(
+				"SELECT actual_qty FROM `tabBin` WHERE item_code=%s AND warehouse=%s FOR UPDATE",
+				(item_code, warehouse)
+			)
+
+		# 4. Perform stock availability validation while locks are held
+		for item in stock_items:
+			avail = get_available_qty_to_reserve(item.item_code, item.warehouse)
+			if item.qty > avail:
+				# Exception aborts the transaction, safely releasing locks and rolling back the Draft SO
+				frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item.item_code))
+
+		# 5. Programmatically create and submit Stock Reservation Entries
+		# Scope the permission bypass specifically to the SRE generation
+		previous_ignore_permissions = frappe.flags.ignore_permissions
+		frappe.flags.ignore_permissions = True
+		try:
+			create_stock_reservation_entries_for_so_items(sales_order, notify=False)
+		finally:
+			frappe.flags.ignore_permissions = previous_ignore_permissions
 	# Keep Sales Order in Draft until customer uploads payment proof
 	# sales_order.submit()
 
@@ -329,11 +376,24 @@ def update_customer_info(address_name, address_data, contact_name, contact_data)
 	"""
 	Update an existing Address and Contact.
 	"""
+	party = get_party()
+	if not party:
+		frappe.throw(_("Customer not found"), frappe.PermissionError)
+
+	def verify_ownership(doc):
+		has_link = any(
+			link.link_doctype == "Customer" and link.link_name == party.name
+			for link in doc.get("links", [])
+		)
+		if not has_link:
+			frappe.throw(_("Not permitted to modify this record"), frappe.PermissionError)
+
 	address_data = frappe.parse_json(address_data)
 	contact_data = frappe.parse_json(contact_data)
 
 	# Update Address
 	address = frappe.get_doc("Address", address_name)
+	verify_ownership(address)
 	address.address_line1 = address_data.get("address_line1")
 	address.city = address_data.get("city")
 	address.country = address_data.get("country")
@@ -342,6 +402,7 @@ def update_customer_info(address_name, address_data, contact_name, contact_data)
 
 	# Update Contact
 	contact = frappe.get_doc("Contact", contact_name)
+	verify_ownership(contact)
 	contact.first_name = contact_data.get("first_name") or contact.first_name
 
 	# Replace mobile number: clear all and set new one as primary mobile

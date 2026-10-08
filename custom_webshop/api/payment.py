@@ -82,3 +82,40 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	_send_order_email(sales_order, "order_payment_confirmed")
 
 	return {"success": True, "message": _("Payment confirmed and order submitted.")}
+
+
+@frappe.whitelist()
+def reject_payment_proof(order_id):
+	"""
+	Admin handler to reject a manual payment proof.
+	Releases the SREs associated with the Draft Sales Order without cancelling the order itself.
+	This is idempotent: calling it twice on an already released order does nothing.
+	"""
+	sales_order = frappe.get_doc("Sales Order", order_id)
+	
+	# Verify the user has write access to the order
+	sales_order.check_permission("write")
+
+	if sales_order.docstatus != 0:
+		frappe.throw(_("Can only reject payment proof for draft orders."), frappe.ValidationError)
+
+	from erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry import cancel_stock_reservation_entries
+
+	has_sre = frappe.db.exists(
+		"Stock Reservation Entry",
+		{
+			"voucher_type": "Sales Order",
+			"voucher_no": sales_order.name,
+			"docstatus": 1,
+			"status": ["not in", ["Delivered", "Cancelled"]]
+		}
+	)
+	
+	if has_sre:
+		cancel_stock_reservation_entries(
+			voucher_type="Sales Order",
+			voucher_no=sales_order.name,
+			notify=False
+		)
+		
+	return {"success": True, "message": _("Payment proof rejected and stock reservation released.")}
