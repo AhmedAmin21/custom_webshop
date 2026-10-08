@@ -7,7 +7,6 @@ from frappe.utils import cint, flt, get_fullname
 from webshop.webshop.shopping_cart.cart import (
 	_get_cart_quotation,
 	get_party,
-	get_cart_quotation,
 	apply_cart_settings,
 	set_cart_count,
 )
@@ -675,3 +674,93 @@ def _send_order_email(sales_order, email_type):
 			title="custom_webshop: could not email order {0}".format(sales_order.name),
 			message=frappe.get_traceback(),
 		)
+
+
+@frappe.whitelist()
+def get_cart_quotation(doc=None):
+	"""
+	Optimized get_cart_quotation to eliminate N+1 queries.
+	"""
+	from webshop.webshop.shopping_cart.cart import (
+		get_address_docs,
+		get_shipping_addresses,
+		get_billing_addresses,
+		get_applicable_shipping_rules,
+		set_cart_count
+	)
+
+	party = get_party()
+
+	if not doc:
+		quotation = _get_cart_quotation(party)
+		doc = quotation
+		set_cart_count(quotation)
+
+	addresses = get_address_docs(party=party)
+
+	if not doc.customer_address and addresses:
+		update_cart_address("billing", addresses[0].name)
+
+	return {
+		"doc": optimized_decorate_quotation_doc(doc),
+		"shipping_addresses": get_shipping_addresses(party),
+		"billing_addresses": get_billing_addresses(party),
+		"shipping_rules": get_applicable_shipping_rules(party),
+		"cart_settings": frappe.get_cached_doc("Webshop Settings"),
+	}
+
+
+def optimized_decorate_quotation_doc(doc):
+	if not doc.get("items"):
+		return doc
+
+	item_codes = [d.item_code for d in doc.items]
+	
+	items_data = frappe.get_all(
+		"Item", 
+		filters={"name": ["in", item_codes]}, 
+		fields=["name", "variant_of", "item_name", "image"]
+	)
+	item_map = {d.name: d for d in items_data}
+	
+	web_item_codes = set(item_codes)
+	for item in items_data:
+		if item.variant_of:
+			web_item_codes.add(item.variant_of)
+			
+	if web_item_codes:
+		web_items_data = frappe.get_all(
+			"Website Item",
+			filters={"item_code": ["in", list(web_item_codes)]},
+			fields=["item_code", "web_item_name", "thumbnail", "website_image", "description", "route", "website_warehouse"]
+		)
+		web_item_map = {d.item_code: d for d in web_items_data}
+	else:
+		web_item_map = {}
+	
+	for d in doc.get("items", []):
+		item_code = d.item_code
+		item_data = item_map.get(item_code)
+		
+		is_variant = item_data and item_data.variant_of and item_code not in web_item_map
+		target_item_code = item_data.variant_of if is_variant else item_code
+		web_item = web_item_map.get(target_item_code)
+		
+		if is_variant and item_data:
+			d.web_item_name = item_data.item_name
+			if item_data.image:
+				d.thumbnail = item_data.image
+				
+		if web_item:
+			if not is_variant:
+				d.web_item_name = web_item.web_item_name
+				d.thumbnail = web_item.thumbnail
+			elif not item_data.image:
+				d.thumbnail = web_item.thumbnail
+				
+			d.website_image = web_item.website_image
+			d.description = web_item.description
+			d.route = web_item.route
+			d.warehouse = web_item.website_warehouse
+
+	return doc
