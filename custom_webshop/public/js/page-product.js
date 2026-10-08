@@ -83,24 +83,18 @@ function loadProductDetail(itemName) {
 
     const bootstrap = getBootstrap();
 
-    loadProductItem(itemName)
-        .then(item => {
-            if (!item) {
+    Store.call("custom_webshop.api.catalog.get_full_product_page_data", { item_name: itemName })
+        .then(data => {
+            if (!data || data.error || !data.item) {
                 container.innerHTML = `<div style="text-align:center;padding:80px;color:var(--text-muted);">
                     <p>Product not found. <a href="/catalog" style="color:var(--primary-blue);">Browse catalog</a></p></div>`;
                 return;
             }
+            const item = data.item;
+            const info = data.product_info;
             currentItemCode = item.item_code || item.name;
-            return Promise.all([
-                fetchProductInfo(currentItemCode),
-                Store.call("custom_webshop.api.catalog.get_item_master_details", { item_code: currentItemCode }).catch(() => ({}))
-            ]).then(([info, master]) => {
-                if (master) {
-                    if (master.description) item.description = master.description;
-                    if (master.image) item.image = master.image;
-                }
-                renderDetailView(item, info, bootstrap);
-            });
+            
+            renderDetailView(item, info, bootstrap);
         })
         .catch(err => {
             container.innerHTML = `<div style="text-align:center;padding:80px;color:var(--text-muted);">${Store.t("error_generic")}</div>`;

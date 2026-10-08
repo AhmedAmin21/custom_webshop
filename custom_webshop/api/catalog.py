@@ -18,6 +18,44 @@ def clear_catalog_caches(doc=None, method=None):
 	frappe.cache().delete_value("custom_webshop:materials")
 	frappe.cache().delete_value("custom_webshop:item_attributes")
 
+
+@frappe.whitelist(allow_guest=True)
+def get_full_product_page_data(item_name):
+	from webshop.webshop.api import get_product_filter_data
+	from webshop.webshop.shopping_cart.product_info import get_product_info_for_website
+	
+	# 1. Fetch item by route or code
+	args = json.dumps({"field_filters": {"route": [item_name]}, "start": 0})
+	data = get_product_filter_data(query_args=args)
+	items = data.get("items", [])
+	
+	if not items:
+		args = json.dumps({"field_filters": {"item_code": [item_name]}, "start": 0})
+		data = get_product_filter_data(query_args=args)
+		items = data.get("items", [])
+		
+	if not items:
+		return {"error": "Not found"}
+		
+	item = items[0]
+	item_code = item.get("item_code") or item.get("name")
+	
+	# 2. Fetch product info (price, stock)
+	info = get_product_info_for_website(item_code=item_code, skip_quotation_creation=True) or {}
+	
+	# 3. Fetch item master details
+	master = get_item_master_details(item_code) or {}
+	if master.get("description"):
+		item["description"] = master["description"]
+	if master.get("image"):
+		item["image"] = master["image"]
+		
+	return {
+		"item": item,
+		"product_info": info
+	}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_item_master_details(item_code):
 	"""Return image and description directly from Item master for a given item_code."""
