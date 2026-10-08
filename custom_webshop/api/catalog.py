@@ -13,6 +13,11 @@ from custom_webshop.api.item_parser import (
 )
 
 
+def clear_catalog_caches(doc=None, method=None):
+	frappe.cache().delete_value("custom_webshop:tool_families")
+	frappe.cache().delete_value("custom_webshop:materials")
+	frappe.cache().delete_value("custom_webshop:item_attributes")
+
 @frappe.whitelist(allow_guest=True)
 def get_item_master_details(item_code):
 	"""Return image and description directly from Item master for a given item_code."""
@@ -67,13 +72,7 @@ def get_brands():
 	return rows
 
 
-@frappe.whitelist(allow_guest=True)
-def get_item_attributes():
-	"""
-	Return all Item Attributes with the distinct values actually used on
-	published Website Items, grouped so callers get one entry per
-	(attribute, attribute_value) pair.
-	"""
+def _generate_item_attributes():
 	rows = frappe.db.sql(
 		"""
 		SELECT DISTINCT iva.attribute, iva.attribute_value
@@ -96,6 +95,19 @@ def get_item_attributes():
 		grouped[attr].append(row["attribute_value"])
 
 	return [{"attribute": k, "values": v} for k, v in grouped.items()]
+
+
+@frappe.whitelist(allow_guest=True)
+def get_item_attributes():
+	"""
+	Return all Item Attributes with the distinct values actually used on
+	published Website Items, grouped so callers get one entry per
+	(attribute, attribute_value) pair.
+	"""
+	return frappe.cache().get_value(
+		"custom_webshop:item_attributes",
+		generator=_generate_item_attributes
+	)
 
 
 _SINGLES_DOCTYPE = "Webshop Settings"
@@ -235,12 +247,7 @@ def _get_published_item_names():
 	return [r[0] for r in rows]
 
 
-@frappe.whitelist(allow_guest=True)
-def get_tool_families():
-	"""
-	Return distinct Tool Families derived from published item names, sorted.
-	Each entry: {"tool_family": "SEM"}
-	"""
+def _generate_tool_families():
 	seen = set()
 	result = []
 	for name in _get_published_item_names():
@@ -253,11 +260,18 @@ def get_tool_families():
 
 
 @frappe.whitelist(allow_guest=True)
-def get_materials():
+def get_tool_families():
 	"""
-	Return distinct Materials derived from published item names, sorted.
-	Each entry: {"material": "C", "label_en": "Carbide", "label_ar": "كربيد"}
+	Return distinct Tool Families derived from published item names, sorted.
+	Each entry: {"tool_family": "SEM"}
 	"""
+	return frappe.cache().get_value(
+		"custom_webshop:tool_families",
+		generator=_generate_tool_families
+	)
+
+
+def _generate_materials():
 	seen = set()
 	result = []
 	for name in _get_published_item_names():
@@ -272,6 +286,18 @@ def get_materials():
 			})
 	result.sort(key=lambda x: x["material"])
 	return result
+
+
+@frappe.whitelist(allow_guest=True)
+def get_materials():
+	"""
+	Return distinct Materials derived from published item names, sorted.
+	Each entry: {"material": "C", "label_en": "Carbide", "label_ar": "كربيد"}
+	"""
+	return frappe.cache().get_value(
+		"custom_webshop:materials",
+		generator=_generate_materials
+	)
 
 
 @frappe.whitelist(allow_guest=True)

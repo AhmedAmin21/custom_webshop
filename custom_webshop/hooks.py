@@ -180,6 +180,10 @@ doc_events = {
 		"on_update": "custom_webshop.signup.countries.clear_cache",
 		"on_trash": "custom_webshop.signup.countries.clear_cache",
 	},
+	"Website Item": {
+		"on_update": "custom_webshop.api.catalog.clear_catalog_caches",
+		"on_trash": "custom_webshop.api.catalog.clear_catalog_caches",
+	},
 }
 
 scheduler_events = {
