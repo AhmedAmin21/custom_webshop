@@ -42,32 +42,6 @@ function stripHtml(html) {
     return (tmp.textContent || tmp.innerText || "").trim();
 }
 
-function fetchProductByFilter(field, value) {
-    return Store.call("webshop.webshop.api.get_product_filter_data", {
-        query_args: JSON.stringify({
-            field_filters: { [field]: [value] },
-            start: 0,
-        }),
-    }).then(data => {
-        const items = (data && data.items) ? data.items : [];
-        return items.length ? items[0] : null;
-    });
-}
-
-function loadProductItem(itemName) {
-    return fetchProductByFilter("route", itemName).then(item => {
-        if (item) return item;
-        return fetchProductByFilter("item_code", itemName);
-    });
-}
-
-function fetchProductInfo(itemCode) {
-    return Store.call(
-        "webshop.webshop.shopping_cart.product_info.get_product_info_for_website",
-        { item_code: itemCode, skip_quotation_creation: true }
-    ).then(data => data || {});
-}
-
 /* ── Fetch Website Item data ─────────────────────────────────────────────── */
 function loadProductDetail(itemName) {
     const container = document.getElementById("product-detail-container");

@@ -34,10 +34,6 @@ window.switchTab = function (panel) {
         }
     });
 
-    // #region agent log
-    Store.debugLog("page-login.js:switchTab", "tab switched", { panel, found }, "H3");
-    // #endregion
-
     if (history.replaceState) {
         history.replaceState(null, "", `#${panel}`);
     } else {

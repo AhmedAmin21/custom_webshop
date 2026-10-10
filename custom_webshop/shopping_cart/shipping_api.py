@@ -1,5 +1,4 @@
 import frappe
-from frappe import _
 from frappe.utils import flt
 
 from webshop.webshop.shopping_cart.cart import (
@@ -198,27 +197,3 @@ def get_governorates():
         fields=["name", "governorate_name"],
         order_by="governorate_name",
     )
-
-
-def _get_weight_conversion_factor(weight_uom):
-    """Get conversion factor to Kg for a given weight UOM."""
-    conversion_factor = frappe.db.get_value(
-        "UOM Conversion Factor",
-        {"category": "Mass", "from_uom": weight_uom, "to_uom": "Kg"},
-        "value"
-    )
-    if conversion_factor:
-        return flt(conversion_factor)
-
-    # Common fallbacks
-    weight_uom_lower = weight_uom.lower()
-    if weight_uom_lower in ("gram", "grams", "g"):
-        return 0.001
-    elif weight_uom_lower in ("ton", "tons", "tonne", "tonnes"):
-        return 1000
-    elif weight_uom_lower in ("pound", "pounds", "lb", "lbs"):
-        return 0.453592
-    elif weight_uom_lower in ("ounce", "ounces", "oz"):
-        return 0.0283495
-
-    return None

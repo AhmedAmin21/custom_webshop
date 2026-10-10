@@ -482,23 +482,6 @@ const Store = {
         }
     },
 
-    /* ------------------------------------------------------------------
-       Debug log — posts to server (browser cannot reach localhost ingest)
-       ------------------------------------------------------------------ */
-    debugLog(location, message, data = {}, hypothesisId = "", runId = "") {
-        fetch("/api/method/custom_webshop.api.debug_log.log_client_event", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({
-                location,
-                message,
-                data: JSON.stringify(data),
-                hypothesis_id: hypothesisId,
-                run_id: runId,
-            }),
-        }).catch(() => {});
-    },
-
     formatCurrency(amount, currency = "EGP") {
         if (amount == null || isNaN(amount)) return "—";
         const val = parseFloat(amount);
@@ -546,11 +529,6 @@ const Store = {
             body: JSON.stringify(args),
         })
         .then(res => {
-            // #region agent log
-            if (method.includes("get_product_filter_data") || method.includes("is_slide_admin") || method.includes("custom_sign_up")) {
-                this.debugLog("store.js:call", "api response", { method, status: res.status, ok: res.ok }, "H3");
-            }
-            // #endregion
             if (!res.ok) {
                 return res.json().then(data => {
                     throw new Error(this.extractApiError(data) || `HTTP ${res.status}`);
