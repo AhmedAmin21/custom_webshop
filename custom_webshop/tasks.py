@@ -51,5 +51,8 @@ def expire_unpaid_webshop_reservations():
 						voucher_no=so.name,
 						notify=False
 					)
+					from custom_webshop.shopping_cart.cart_override import _send_order_email
+					so_doc = frappe.get_doc("Sales Order", so.name)
+					_send_order_email(so_doc, "order_expired")
 				except Exception:
 					frappe.log_error(f"Failed to cancel reservations for abandoned order {so.name}", "expire_unpaid_webshop_reservations")

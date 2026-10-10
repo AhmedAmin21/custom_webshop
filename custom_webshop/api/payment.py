@@ -34,8 +34,23 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	if sales_order.customer not in customers:
 		frappe.throw(_("Order not found."), frappe.DoesNotExistError)
 
+	if sales_order.status == "Cancelled":
+		frappe.throw(
+			_("This order reservation has expired because payment was not submitted within 60 minutes. Please place a new order."),
+			frappe.ValidationError,
+		)
+
 	if sales_order.docstatus != 0:
 		frappe.throw(_("This order does not require payment."), frappe.ValidationError)
+
+	# Validate file type and size
+	import os
+	ext = os.path.splitext(filename)[1].lower()
+	if ext not in [".png", ".jpg", ".jpeg", ".pdf", ".webp"]:
+		frappe.throw(_("Only images or PDF files are allowed."), frappe.ValidationError)
+
+	if len(file_content) > 10 * 1024 * 1024:
+		frappe.throw(_("File size exceeds 7MB limit."), frappe.ValidationError)
 
 	# Decode file content
 	try:
@@ -67,16 +82,14 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	sales_order.custom_payment_method = method_label
 	sales_order.save(ignore_permissions=True)
 
-	# Submit the Sales Order as Administrator so ERPNext's internal
-	# Stock Reservation Entry and warehouse processes can execute
-	# without requiring end-customers to have internal warehouse manager roles.
-	current_user = frappe.session.user
-	frappe.set_user("Administrator")
+	# Submit the Sales Order. 
+	# Using frappe.flags.ignore_permissions to bypass strict write checks for guests/customers 
+	# submitting their own order, so background stock processes can execute.
 	try:
-		sales_order.flags.ignore_permissions = True
+		frappe.flags.ignore_permissions = True
 		sales_order.submit()
 	finally:
-		frappe.set_user(current_user)
+		frappe.flags.ignore_permissions = False
 
 	# Send payment confirmation email
 	_send_order_email(sales_order, "order_payment_confirmed")

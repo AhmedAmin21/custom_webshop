@@ -448,6 +448,8 @@ def _merge(doc, survivor, note):
 		frappe.db.rollback(save_point=savepoint)
 		raise
 
+	doc.reload()
+
 	account = _("Merged {0} into {1}.").format(", ".join(losers), survivor)
 	closed = merge.settle(
 		doc, merge.MERGE, "\n".join([account] + steps + ([note] if note else []))

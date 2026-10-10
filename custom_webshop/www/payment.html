@@ -21,6 +21,7 @@
         {% if not invalid %}
         window.PAYMENT_DATA = {
             order_id: "{{ sales_order.name }}",
+            created_at: "{{ sales_order.creation }}",
             grand_total: {{ sales_order.grand_total or 0 }},
             grand_total_formatted: "{{ grand_total_formatted }}",
             currency: "{{ sales_order.currency or 'EGP' }}",
@@ -85,11 +86,11 @@
                         <div class="payment-icon-wrapper">
                             <i data-lucide="alert-circle" class="payment-icon" style="color:#EF4444;"></i>
                         </div>
-                        <h2 class="payment-title">Order Not Found</h2>
+                        <h2 class="payment-title">{{ error_title or _("Order Not Found") }}</h2>
                         <p class="payment-subtitle">{{ error }}</p>
                     </div>
                     <div class="payment-actions">
-                        <a href="/orders" class="btn btn-primary btn-full center-text" data-i18n="payment_track">Back to Orders</a>
+                        <a href="{{ action_url or '/orders' }}" class="btn btn-primary btn-full center-text">{{ action_text or _("Back to Orders") }}</a>
                     </div>
                 </div>
             </div>
@@ -104,6 +105,25 @@
                         </div>
                         <h2 class="payment-title" data-i18n="payment_title">Checkout</h2>
                         <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing, please transfer the total amount and upload your receipt screenshot below.</p>
+                    </div>
+
+                    <!-- 60-Minute Reservation Expiration Warning Banner -->
+                    <div class="payment-warning-banner" id="payment-timer-banner">
+                        <div class="warning-banner-header">
+                            <div class="warning-icon-wrapper">
+                                <i data-lucide="clock" class="warning-banner-icon"></i>
+                            </div>
+                            <div class="warning-banner-headings">
+                                <h4 class="warning-banner-title" data-i18n="payment_warning_title">Payment Window: 60 Minutes</h4>
+                                <div class="warning-countdown-badge" id="payment-countdown-badge">
+                                    <span class="countdown-pulse-dot"></span>
+                                    <span id="payment-countdown-text">--:--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="warning-banner-text" data-i18n="payment_warning_text">
+                            Please complete payment and upload your receipt within 60 minutes (1 hour) of placing the order. After this window, your inventory reservation will expire automatically and the order will be cancelled to release stock for other buyers.
+                        </p>
                     </div>
 
                     <div class="payment-amount-box">

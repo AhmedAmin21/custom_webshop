@@ -355,14 +355,17 @@ def signup_enabled():
 	channels, and sets a short resend cooldown so tests are not slowed by
 	the real one.
 	"""
+	from unittest.mock import patch
+
 	with signup_allowed(), signup_settings_as(
 		signup_enabled=1,
 		email_otp_enabled=1,
 		phone_otp_enabled=1,
+		sms_otp_enabled=1,
 		email_otp_dev_mode=0,
 		phone_otp_dev_mode=0,
 		otp_resend_cooldown_seconds=0,
-	):
+	), patch("frappe.core.doctype.user.user.throttle_user_creation"):
 		yield
 
 

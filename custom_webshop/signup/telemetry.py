@@ -22,7 +22,7 @@ import frappe
 
 from custom_webshop.signup.identity import mask_email, mask_phone
 
-LOGGER_NAME = "custom_webshop.signup"
+LOGGER_NAME = "custom_webshop.signup2"
 
 # Anything whose name looks like a secret is replaced before it is
 # written, whatever the caller passed.

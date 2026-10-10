@@ -54,6 +54,25 @@ def shopping_as_customer():
 		frappe.flags.ignore_permissions = previous
 
 
+@contextlib.contextmanager
+def run_as_system_admin():
+	"""Temporarily execute internal server operations under Administrator context.
+
+	Used strictly for internal routines (e.g. ERPNext stock availability calculation
+	and Stock Reservation Entry generation) where ERPNext internal functions call
+	`frappe.has_permission('Item', 'read')`. The Customer role intentionally does not
+	have read permission on Item to prevent API data leaks.
+
+	The session user is unconditionally restored in the finally block.
+	"""
+	orig_user = frappe.session.user
+	frappe.session.user = "Administrator"
+	try:
+		yield
+	finally:
+		frappe.session.user = orig_user
+
+
 def assert_purchasable(item_code):
 	"""Refuse an item the shop does not actually offer.
 
@@ -185,32 +204,33 @@ def place_order_from_cart(notes=None):
 		# 1. Determine unique (item_code, warehouse) pairs and sort them deterministically to avoid deadlocks
 		pairs = sorted(list(set((item.item_code, item.warehouse) for item in stock_items)))
 
-		# 2. Safely ensure all required Bin rows exist before locking
-		for item_code, warehouse in pairs:
-			get_or_make_bin(item_code, warehouse)
+		with run_as_system_admin():
+			# 2. Safely ensure all required Bin rows exist before locking
+			for item_code, warehouse in pairs:
+				get_or_make_bin(item_code, warehouse)
 
-		# 3. Acquire atomic SELECT ... FOR UPDATE row locks on tabBin in deterministic order
-		for item_code, warehouse in pairs:
-			frappe.db.sql(
-				"SELECT actual_qty FROM `tabBin` WHERE item_code=%s AND warehouse=%s FOR UPDATE",
-				(item_code, warehouse)
-			)
+			# 3. Acquire atomic SELECT ... FOR UPDATE row locks on tabBin in deterministic order
+			for item_code, warehouse in pairs:
+				frappe.db.sql(
+					"SELECT actual_qty FROM `tabBin` WHERE item_code=%s AND warehouse=%s FOR UPDATE",
+					(item_code, warehouse)
+				)
 
-		# 4. Perform stock availability validation while locks are held
-		for item in stock_items:
-			avail = get_available_qty_to_reserve(item.item_code, item.warehouse)
-			if item.qty > avail:
-				# Exception aborts the transaction, safely releasing locks and rolling back the Draft SO
-				frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item.item_code))
+			# 4. Perform stock availability validation while locks are held
+			for item in stock_items:
+				avail = get_available_qty_to_reserve(item.item_code, item.warehouse)
+				if item.qty > avail:
+					# Exception aborts the transaction, safely releasing locks and rolling back the Draft SO
+					frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item.item_code))
 
-		# 5. Programmatically create and submit Stock Reservation Entries
-		# Scope the permission bypass specifically to the SRE generation
-		previous_ignore_permissions = frappe.flags.ignore_permissions
-		frappe.flags.ignore_permissions = True
-		try:
-			create_stock_reservation_entries_for_so_items(sales_order, notify=False)
-		finally:
-			frappe.flags.ignore_permissions = previous_ignore_permissions
+			# 5. Programmatically create and submit Stock Reservation Entries
+			# Scope the permission bypass specifically to the SRE generation
+			previous_ignore_permissions = frappe.flags.ignore_permissions
+			frappe.flags.ignore_permissions = True
+			try:
+				create_stock_reservation_entries_for_so_items(sales_order, notify=False)
+			finally:
+				frappe.flags.ignore_permissions = previous_ignore_permissions
 	# Keep Sales Order in Draft until customer uploads payment proof
 	# sales_order.submit()
 
@@ -263,22 +283,38 @@ def add_customer_info(address_data, contact_data):
 		for c_name in existing_contacts:
 			c = frappe.get_doc("Contact", c_name)
 			if c.email_id == frappe.session.user:
-				contact_doc = c
-				break
-		if not contact_doc:
-			contact_doc = frappe.get_doc("Contact", existing_contacts[0])
-		contact = contact_doc
+				# Ensure it is safe to use: either already linked to us, or has no links to other Customers/Suppliers
+				has_other_links = any(link.link_doctype in ("Customer", "Supplier") and link.link_name != party.name for link in c.get("links", []))
+				if not has_other_links:
+					contact_doc = c
+					break
 
-		# Ensure link to customer exists (add if missing)
-		has_customer_link = any(
-			link.link_doctype == "Customer" and link.link_name == party.name
-			for link in contact.get("links", [])
-		)
-		if not has_customer_link:
-			contact.append("links", {
-				"link_doctype": "Customer",
-				"link_name": party.name
-			})
+		if not contact_doc:
+			# Fallback to the first safely linked contact
+			for c_name in existing_contacts:
+				c = frappe.get_doc("Contact", c_name)
+				has_other_links = any(link.link_doctype in ("Customer", "Supplier") and link.link_name != party.name for link in c.get("links", []))
+				if not has_other_links:
+					contact_doc = c
+					break
+
+		if contact_doc:
+			contact = contact_doc
+			# Ensure link to customer exists (add if missing)
+			has_customer_link = any(
+				link.link_doctype == "Customer" and link.link_name == party.name
+				for link in contact.get("links", [])
+			)
+			if not has_customer_link:
+				contact.append("links", {
+					"link_doctype": "Customer",
+					"link_name": party.name
+				})
+		else:
+			# If no safe existing contact is found, clear existing_contacts to trigger creation of a new one
+			existing_contacts = []
+
+	if existing_contacts:
 
 		# Ensure is_primary_contact is set
 		if not contact.is_primary_contact:
@@ -481,6 +517,9 @@ def _update_cart(item_code, qty, additional_notes, with_items):
 	empty_card = False
 	qty = flt(qty)
 
+	if qty < 0:
+		frappe.throw(_("Quantity cannot be negative."))
+
 	if qty == 0:
 		quotation_items = quotation.get("items", {"item_code": ["!=", item_code]})
 		if quotation_items:
@@ -570,7 +609,20 @@ def update_cart_address(address_type, address_name):
 	from frappe.contacts.doctype.address.address import get_address_display
 
 	quotation = _get_cart_quotation()
+	party = get_party()
+	if not party:
+		frappe.throw(_("Customer not found"), frappe.PermissionError)
+
 	address_doc = frappe.get_doc("Address", address_name).as_dict()
+	
+	# Verify ownership to prevent IDOR
+	has_link = any(
+		link.link_doctype == "Customer" and link.link_name == party.name
+		for link in address_doc.get("links", [])
+	)
+	if not has_link:
+		frappe.throw(_("Not permitted to use this address"), frappe.PermissionError)
+
 	address_display = get_address_display(address_doc)
 
 	if address_type.lower() == "billing":
@@ -618,21 +670,29 @@ def get_customer_for_user(user=None):
 	return get_customer(user)
 
 
-def _send_order_email(sales_order, email_type):
+def _send_order_email(sales_order, email_type, recipient_email=None):
 	"""
 	Send order-related email notifications to the customer.
-	email_type: 'order_created' | 'order_payment_confirmed'
+	email_type: 'order_created' | 'order_payment_confirmed' | 'order_expired'
 	"""
-	if frappe.session.user == "Guest":
+	target_email = recipient_email or sales_order.get("contact_email") or sales_order.get("owner")
+	if not target_email or target_email == "Guest":
+		if frappe.session.user != "Guest":
+			target_email = frappe.session.user
+		else:
+			return
+
+	if not frappe.db.exists("User", target_email):
 		return
 
-	user = frappe.get_doc("User", frappe.session.user)
+	user = frappe.get_doc("User", target_email)
 	if not user.enabled:
 		return
 
 	site_url = frappe.utils.get_url()
 	context = {
 		"site_url": site_url,
+		"shop_url": f"{site_url}/shop",
 		"site_name": (
 			frappe.db.get_default("site_name")
 			or frappe.get_conf().get("site_name")
@@ -647,9 +707,14 @@ def _send_order_email(sales_order, email_type):
 	if email_type == "order_created":
 		subject = _("Your order {0} has been created - payment required").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_created.html"
-	else:
+	elif email_type == "order_payment_confirmed":
 		subject = _("We received your payment proof for order {0}").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
+	elif email_type == "order_expired":
+		subject = _("Stock reservation expired for order {0}").format(sales_order.name)
+		template = "custom_webshop/templates/emails/order_expired.html"
+	else:
+		return
 
 	message = frappe.render_template(template, context)
 

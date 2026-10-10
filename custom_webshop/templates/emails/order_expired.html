@@ -1,0 +1,59 @@
+{% from "custom_webshop/templates/emails/_partials/macros.html" import brand_button, items_table %}
+<style>
+	@media only screen and (max-width:600px) {
+		.cw-card { padding: 28px 20px !important; }
+	}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#F8FAFC;">
+	<tr>
+		<td align="center" style="padding:32px 16px;">
+			<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff; border:1px solid rgba(226,232,240,.8); border-radius:24px; overflow:hidden; box-shadow:0 24px 48px -24px rgba(15,23,42,.18), 0 2px 8px -2px rgba(15,23,42,.06);">
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/header.html" %}
+					</td>
+				</tr>
+				<tr>
+					<td class="cw-card" style="padding:40px 36px 8px;">
+
+						<div dir="rtl" lang="ar" style="font-family:'Cairo',Tahoma,Arial,sans-serif;">
+							<h1 style="margin:0 0 18px; font-size:23px; font-weight:700; color:#DC2626;">
+								انتهت مهلة سداد الطلب، {{ first_name | e }}
+							</h1>
+							<p style="margin:0 0 14px; font-size:15px; line-height:1.8; color:#1E293B;">
+								نحيطكم علماً بأنه تم إلغاء حجز المنتجات للطلب رقم
+								<span dir="ltr" style="font-family:'JetBrains Mono','Courier New',monospace; font-weight:700; color:#DC2626; unicode-bidi:embed;">{{ sales_order.name }}</span>
+								نظراً لعدم استلام إثبات الدفع خلال المهلة المحددة (60 دقيقة).
+							</p>
+							<p style="margin:0 0 20px; font-size:14px; line-height:1.8; color:#64748B;">
+								تمت إعادة المنتجات إلى المخزن لتكون متاحة للطلب من جديد. إذا كنت ما زلت ترغب في شراء هذه المنتجات، يسعدنا ترحيبك بزيارة المتجر وإعادة الطلب في أي وقت.
+							</p>
+						</div>
+
+						{{ items_table(sales_order) }}
+
+						<div style="margin:24px 0;">
+							{{ brand_button(shop_url, "تصفح المتجر واطلب مجدداً", "Visit Shop & Reorder") }}
+						</div>
+
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 20px;">
+							<tr><td style="border-top:1px solid rgba(226,232,240,.8); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+						</table>
+
+						<div dir="ltr" lang="en" style="font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;">
+							<p style="margin:0 0 24px; font-size:13px; line-height:1.7; color:#94A3B8;">
+								Hello {{ first_name | e }}. The inventory reservation for order {{ sales_order.name }} has expired because payment was not confirmed within the 60-minute window. The items have been released back to stock. If you still wish to complete this purchase, please visit our shop to place a new order.
+							</p>
+						</div>
+
+					</td>
+				</tr>
+				<tr>
+					<td>
+						{% include "custom_webshop/templates/emails/_partials/footer.html" %}
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>

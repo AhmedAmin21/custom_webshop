@@ -38,6 +38,17 @@ def get_context(context):
 		context.error = _("Order not found.")
 		return context
 
+	if sales_order.status == "Cancelled":
+		context.invalid = True
+		context.is_expired = True
+		context.error_title = _("Order Reservation Expired")
+		context.error = _(
+			"This order reservation expired because payment was not submitted within 60 minutes. The items have been returned to inventory. Please place a new order."
+		)
+		context.action_url = "/shop"
+		context.action_text = _("Return to Shop")
+		return context
+
 	if sales_order.docstatus != 0:
 		context.invalid = True
 		context.error = _("This order does not require payment.")
