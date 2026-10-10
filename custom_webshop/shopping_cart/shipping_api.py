@@ -4,10 +4,10 @@ from frappe.utils import flt
 
 from webshop.webshop.shopping_cart.cart import (
     _get_cart_quotation,
-    get_party,
     get_cart_quotation,
     set_cart_count,
 )
+from custom_webshop.shopping_cart.party import safe_get_party as get_party
 from webshop.webshop.doctype.webshop_settings.webshop_settings import (
     get_shopping_cart_settings,
 )

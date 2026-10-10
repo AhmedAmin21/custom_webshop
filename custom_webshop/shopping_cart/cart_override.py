@@ -6,10 +6,10 @@ from frappe.utils import cint, flt, get_fullname
 
 from webshop.webshop.shopping_cart.cart import (
 	_get_cart_quotation,
-	get_party,
 	apply_cart_settings,
 	set_cart_count,
 )
+from custom_webshop.shopping_cart.party import safe_get_party as get_party
 from frappe.contacts.doctype.contact.contact import get_contact_name
 from webshop.webshop.doctype.webshop_settings.webshop_settings import (
 	get_shopping_cart_settings,

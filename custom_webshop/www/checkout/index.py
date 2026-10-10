@@ -2,7 +2,8 @@ import json
 
 import frappe
 from frappe.contacts.doctype.contact.contact import get_contact_name
-from webshop.webshop.shopping_cart.cart import _get_cart_quotation as _fetch_cart_quotation, get_party
+from webshop.webshop.shopping_cart.cart import _get_cart_quotation as _fetch_cart_quotation
+from custom_webshop.shopping_cart.party import safe_get_party as get_party
 
 from custom_webshop.shopping_cart.shipping_api import _get_cart_weight_info
 
