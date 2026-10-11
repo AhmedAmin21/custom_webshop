@@ -146,32 +146,48 @@ window.toggleOrderDetails = function(btn) {
     if (isOpen && orderName) loadOrderItems(orderName);
 };
 
-/* ── Load order line items from ERPNext ──────────────────────────────────── */
+/* ── Render order line items HTML helper ─────────────────────────────────── */
+function renderOrderItemsContent(itemsEl, items, grandTotal, currency) {
+    if (!items || !items.length) {
+        itemsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_no_items")}</p>`;
+        return;
+    }
+    const curr = currency || "EGP";
+    itemsEl.innerHTML = items.map(item => `
+        <div class="details-prod-item">
+            <span class="details-prod-name">${item.item_name || item.item_code}</span>
+            <span class="details-prod-qty">x${item.qty}</span>
+            <span class="details-prod-price">${Store.formatCurrency((item.qty || 1) * (item.rate || 0), curr)}</span>
+        </div>`).join("") + `
+        <div class="details-prod-item" style="border-top:1px dashed var(--border-subtle);padding-top:8px;font-weight:bold;">
+            <span>${Store.t("order_grand_total")}</span>
+            <span>${Store.formatCurrency(grandTotal, curr)}</span>
+        </div>`;
+    itemsEl.dataset.loaded = "1";
+}
+
+/* ── Load order line items ──────────────────────────────────────────────── */
 function loadOrderItems(orderName) {
     const itemsEl = document.getElementById(`order-items-${orderName}`);
     if (!itemsEl || itemsEl.dataset.loaded) return;
 
-    Store.call("frappe.client.get", {
-        doctype: "Sales Order",
-        name: orderName,
-        fields: ["name", "items", "grand_total", "taxes", "currency"],
-    }).then(doc => {
-        if (!doc || !doc.items || !doc.items.length) {
+    // 1. Check if items were already preloaded in window.ORDERS_DATA
+    const cachedOrder = (window.ORDERS_DATA || []).find(o => o.name === orderName);
+    if (cachedOrder && cachedOrder.items && cachedOrder.items.length) {
+        renderOrderItemsContent(itemsEl, cachedOrder.items, cachedOrder.grand_total, cachedOrder.currency);
+        return;
+    }
+
+    // 2. Fallback to dedicated secure endpoint
+    Store.call("custom_webshop.api.orders.get_order_items", {
+        order_name: orderName,
+    }).then(res => {
+        const data = res?.message || res;
+        if (!data || !data.items || !data.items.length) {
             itemsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_no_items")}</p>`;
             return;
         }
-        const curr = doc.currency || "EGP";
-        itemsEl.innerHTML = doc.items.map(item => `
-            <div class="details-prod-item">
-                <span class="details-prod-name">${item.item_name || item.item_code}</span>
-                <span class="details-prod-qty">x${item.qty}</span>
-                <span class="details-prod-price">${Store.formatCurrency((item.qty || 1) * (item.rate || 0), curr)}</span>
-            </div>`).join("") + `
-            <div class="details-prod-item" style="border-top:1px dashed var(--border-subtle);padding-top:8px;font-weight:bold;">
-                <span>${Store.t("order_grand_total")}</span>
-                <span>${Store.formatCurrency(doc.grand_total, curr)}</span>
-            </div>`;
-        itemsEl.dataset.loaded = "1";
+        renderOrderItemsContent(itemsEl, data.items, data.grand_total, data.currency);
     }).catch(() => {
         itemsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_error_items")}</p>`;
     });

@@ -682,12 +682,20 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 		else:
 			return
 
-	if not frappe.db.exists("User", target_email):
+	if not target_email or "@" not in str(target_email):
 		return
 
-	user = frappe.get_doc("User", target_email)
-	if not user.enabled:
-		return
+	first_name = ""
+	send_to = target_email
+
+	if frappe.db.exists("User", target_email):
+		user = frappe.get_doc("User", target_email)
+		if user.email:
+			send_to = user.email
+		first_name = user.first_name or user.full_name or user.name
+
+	if not first_name:
+		first_name = sales_order.get("customer_name") or send_to.split("@")[0]
 
 	site_url = frappe.utils.get_url()
 	context = {
@@ -698,17 +706,17 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 			or frappe.get_conf().get("site_name")
 			or "CNCLeaders"
 		),
-		"first_name": user.first_name or user.full_name or user.name,
+		"first_name": first_name,
 		"sales_order": sales_order,
 		"payment_url": f"{site_url}/payment?order_id={sales_order.name}",
 		"order_url": f"{site_url}/orders/{sales_order.name}",
 	}
 
 	if email_type == "order_created":
-		subject = _("Your order {0} has been created - payment required").format(sales_order.name)
+		subject = _("Order Confirmation: Your order {0} has been created").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_created.html"
 	elif email_type == "order_payment_confirmed":
-		subject = _("We received your payment proof for order {0}").format(sales_order.name)
+		subject = _("Payment Confirmed: We received your payment proof for order {0}").format(sales_order.name)
 		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
 	elif email_type == "order_expired":
 		subject = _("Stock reservation expired for order {0}").format(sales_order.name)
@@ -718,16 +726,10 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 
 	message = frappe.render_template(template, context)
 
-	# Failing to notify must never undo the order. `now=True` sends inline,
-	# and with no outgoing Email Account configured - the state of this
-	# site - it raises `OutgoingEmailError`; Frappe rolls the whole request
-	# back on an unhandled exception, so the Sales Order that was just
-	# created is destroyed and the customer is told nothing happened. The
-	# order is the thing that matters; the email is a courtesy, and a
-	# courtesy that cannot be delivered is logged and left there.
+	# Failing to notify must never undo the order.
 	try:
 		frappe.sendmail(
-			recipients=[user.email],
+			recipients=[send_to],
 			subject=subject,
 			message=message,
 			reference_doctype="Sales Order",

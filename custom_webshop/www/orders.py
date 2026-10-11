@@ -47,7 +47,27 @@ def get_context(context):
 		ignore_permissions=True,
 	)
 
+	order_names = [o.name for o in orders]
+	items_by_order = {}
+	if order_names:
+		items = frappe.get_all(
+			"Sales Order Item",
+			filters={"parent": ["in", order_names]},
+			fields=["parent", "item_code", "item_name", "qty", "rate", "amount"],
+			order_by="idx asc",
+			ignore_permissions=True,
+		)
+		for item in items:
+			items_by_order.setdefault(item.parent, []).append({
+				"item_code": item.item_code,
+				"item_name": item.item_name,
+				"qty": item.qty,
+				"rate": item.rate,
+				"amount": item.amount,
+			})
+
 	for order in orders:
+		order.items = items_by_order.get(order.name, [])
 		order.grand_total_formatted = frappe.format_value(
 			order.grand_total, {"fieldtype": "Currency", "options": order.currency}
 		)
