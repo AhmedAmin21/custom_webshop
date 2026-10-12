@@ -41,8 +41,7 @@ function getCatalogQueryArgs(extraArgs = {}) {
 
 /* ── Build product card HTML ─────────────────────────────────────────────── */
 function buildCatalogCard(item, mode) {
-    const inStock = item.in_stock !== false;
-    const badgeHTML = inStock ? "" : `<span class="product-badge out-of-stock">${Store.t("stock_out")}</span>`;
+    const badgeHTML = "";
     const price = Store.productPrice(item);
     const img = item.image || item.website_image || "/assets/custom_webshop/images/placeholder.svg";
     const productHref = Store.productLink(item);
@@ -51,16 +50,13 @@ function buildCatalogCard(item, mode) {
     const descHTML = rawDesc ? `<p class="product-card-desc">${Store.escapeHtml(rawDesc)}</p>` : "";
     const brand = item.brand || "";
     const brandHTML = brand ? `<div class="product-meta-specs"><div class="spec-line"><span>${Store.t("filter_brand")}:</span><span style="font-weight:700;">${Store.escapeHtml(brand)}</span></div></div>` : "";
-    const addBtn = inStock
-        ? `<button class="card-add-btn" onclick="addToCartCatalog('${item.item_code || item.name}')" title="${Store.t("btn_add_to_cart")}"><i data-lucide="shopping-cart"></i></button>`
-        : `<button class="card-add-btn disabled" disabled title="${Store.t("btn_out_of_stock")}"><i data-lucide="shopping-cart"></i></button>`;
+    const addBtn = `<button class="card-add-btn" onclick="addToCartCatalog('${item.item_code || item.name}')" title="${Store.t("btn_add_to_cart")}"><i data-lucide="shopping-cart"></i></button>`;
 
     if (mode === "list") {
         return `
         <div class="product-card list-layout">
             <div class="product-img-wrapper" onclick="window.location.href='${productHref}'">
                 <img src="${img}" alt="${Store.escapeAttr(displayName)}" class="product-img" loading="lazy" onerror="this.onerror=null;this.src='/assets/custom_webshop/images/placeholder.svg';">
-                ${badgeHTML}
             </div>
             <div class="product-info-list">
                 <div class="product-main-details">
@@ -70,15 +66,11 @@ function buildCatalogCard(item, mode) {
                 <div class="product-specs-list">
                     <div class="product-meta-specs">
                         ${brand ? `<div class="spec-line"><span>${Store.t("filter_brand")}:</span><span style="font-weight:700;">${Store.escapeHtml(brand)}</span></div>` : ""}
-                        <div class="spec-line"><span>${Store.t("filter_stock")}:</span><span style="color:${inStock ? '#22c55e' : '#ef4444'};font-weight:600;">${inStock ? Store.t("stock_in") : Store.t("stock_out")}</span></div>
                     </div>
                 </div>
                 <div class="product-actions-list">
                     <span class="product-price">${price}</span>
-                    ${inStock
-                        ? `<button class="btn btn-primary btn-sm" onclick="addToCartCatalog('${item.item_code || item.name}')"><i data-lucide="shopping-cart" style="width:16px;height:16px;margin-right:6px;display:inline-block;vertical-align:middle;"></i>${Store.t("btn_add_to_cart")}</button>`
-                        : `<button class="btn btn-primary btn-sm disabled" disabled>${Store.t("btn_out_of_stock")}</button>`
-                    }
+                    <button class="btn btn-primary btn-sm" onclick="addToCartCatalog('${item.item_code || item.name}')"><i data-lucide="shopping-cart" style="width:16px;height:16px;margin-right:6px;display:inline-block;vertical-align:middle;"></i>${Store.t("btn_add_to_cart")}</button>
                 </div>
             </div>
         </div>`;
@@ -306,16 +298,21 @@ window.toggleSectionCollapse = function(headerEl) {
 
 /* ── Build attribute filter sidebar ──────────────────────────────────────── */
 function buildAttributeFilters(attrs) {
-    cachedAttributes = attrs || [];
+    // Filter out brand attribute since it has its own dedicated filter card right after material
+    const filteredAttrs = (attrs || []).filter(attr => {
+        const name = (attr.attribute || "").toLowerCase();
+        return name !== "brand - الماركة".toLowerCase() && name !== "brand" && !name.includes("الماركة");
+    });
+    cachedAttributes = filteredAttrs;
     const container = document.getElementById("attribute-filters-container");
     if (!container) return;
 
-    if (!attrs || !attrs.length) {
+    if (!filteredAttrs.length) {
         container.innerHTML = "";
         return;
     }
 
-    container.innerHTML = attrs.map(attr => {
+    container.innerHTML = filteredAttrs.map(attr => {
         const safeName = attr.attribute.replace(/\s+/g, "-");
         return `
         <div class="filter-card" id="filter-card-attr-${safeName}">
@@ -329,7 +326,7 @@ function buildAttributeFilters(attrs) {
         </div>`;
     }).join("");
 
-    attrs.forEach(attr => {
+    filteredAttrs.forEach(attr => {
         const safeName = attr.attribute.replace(/\s+/g, "-");
         const optionsEl = document.getElementById(`filter-opts-attr-${safeName}`);
         if (!optionsEl) return;

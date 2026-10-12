@@ -202,8 +202,11 @@ function initSubmitButton() {
                 filename: pendingReceiptFile.name,
                 file_content: base64,
             }).then(() => {
-                Store.toast("Payment confirmed! Order submitted.", "success");
-                setTimeout(() => { window.location.href = "/orders"; }, 1500);
+                const successMsg = Store.lang === "ar"
+                    ? "تم استلام إثبات الدفع بنجاح! سيقوم فريق خدمة العملاء بالتواصل معك لتأكيد الطلب."
+                    : "Payment confirmed! Customer support agents will contact you to confirm the order.";
+                Store.toast(successMsg, "success");
+                setTimeout(() => { window.location.href = "/orders"; }, 2000);
             }).catch(err => {
                 const msg = err.message || Store.t("error_generic");
                 Store.toast(msg, "error");
@@ -244,47 +247,8 @@ function updatePaymentStaticTexts() {
     }
 }
 
-let countdownInterval = null;
-
 function initPaymentCountdown() {
-    if (!window.PAYMENT_DATA || !window.PAYMENT_DATA.created_at) return;
-
-    const banner = document.getElementById("payment-timer-banner");
-    const badge = document.getElementById("payment-countdown-badge");
-    const countdownText = document.getElementById("payment-countdown-text");
-    if (!banner || !countdownText) return;
-
-    const createdStr = window.PAYMENT_DATA.created_at.replace(" ", "T");
-    const createdAt = new Date(createdStr).getTime();
-    const expiresAt = createdAt + (60 * 60 * 1000);
-
-    function updateTimer() {
-        const now = Date.now();
-        const diffMs = expiresAt - now;
-
-        if (diffMs <= 0) {
-            if (countdownInterval) clearInterval(countdownInterval);
-            if (badge) badge.classList.add("expired");
-            countdownText.textContent = Store.t("payment_time_expired") || (Store.lang === "ar" ? "انتهت مهلة الحجز" : "Reservation window expired");
-            return;
-        }
-
-        const totalSecs = Math.floor(diffMs / 1000);
-        const mins = Math.floor(totalSecs / 60);
-        const secs = totalSecs % 60;
-        const formatted = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-
-        const remainingTpl = Store.t("payment_time_remaining") || (Store.lang === "ar" ? "الوقت المتبقي: {time}" : "Time Remaining: {time}");
-        countdownText.textContent = remainingTpl.replace("{time}", formatted);
-
-        if (mins < 10 && badge) {
-            badge.classList.add("urgent");
-        }
-    }
-
-    updateTimer();
-    if (countdownInterval) clearInterval(countdownInterval);
-    countdownInterval = setInterval(updateTimer, 1000);
+    // Stock reservations are no longer expiring; timer is omitted
 }
 
 /* ── Entry point ─────────────────────────────────────────────────────────── */

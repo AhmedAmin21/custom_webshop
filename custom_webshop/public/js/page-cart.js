@@ -454,18 +454,63 @@ function placeOrder(e) {
         .then(() => Store.call("custom_webshop.shopping_cart.cart_override.place_order_from_cart", {
             notes: formData.notes || ""
         }))
-        .then(orderName => {
-            Store.toast("Order placed! Redirecting to payment...", "success");
+        .then(res => {
+            const quotationName = (typeof res === "object" && res) ? (res.quotation_name || res.order_name || res.name) : res;
+            const requiresPayment = (typeof res === "object" && res) ? (res.requires_payment !== false) : true;
             Store.updateCartBadge();
-            setTimeout(() => {
-                window.location.href = `/payment?order_id=${orderName}`;
-            }, 1000);
+
+            if (!requiresPayment) {
+                if (btn) { btn.disabled = false; btn.textContent = Store.t("cart_proceed"); }
+                showAgentContactModal(quotationName);
+            } else {
+                Store.toast(Store.lang === "ar" ? "تم إرسال الطلب! جاري التحويل لصفحة الدفع..." : "Order placed! Redirecting to payment...", "success");
+                setTimeout(() => {
+                    window.location.href = `/payment?order_id=${quotationName}`;
+                }, 1000);
+            }
         })
         .catch(err => {
             const msg = err.message || Store.t("error_generic");
             Store.toast(msg, "error");
             if (btn) { btn.disabled = false; btn.textContent = Store.t("cart_proceed"); }
         });
+}
+
+function showAgentContactModal(quotationName) {
+    const isAr = Store.lang === "ar";
+    const modalHtml = `
+        <div id="agent-contact-modal" style="position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;">
+            <div style="background:#ffffff;border:1px solid rgba(226,232,240,0.8);box-shadow:0 25px 50px -12px rgba(15,23,42,0.25);border-radius:20px;max-width:520px;width:100%;padding:36px 32px;text-align:center;direction:${isAr ? 'rtl' : 'ltr'};font-family:${isAr ? "'Cairo',sans-serif" : "'Inter',sans-serif"};">
+                <div style="width:64px;height:64px;margin:0 auto 20px;background:rgba(37,99,235,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2563EB;">
+                    <i data-lucide="phone-call" style="width:32px;height:32px;"></i>
+                </div>
+                <h3 style="font-size:1.4rem;font-weight:700;color:#1E293B;margin-bottom:8px;">
+                    ${isAr ? "تم إرسال طلبك بنجاح!" : "Order Quotation Placed!"}
+                </h3>
+                <div style="margin-bottom:16px;">
+                    <span style="display:inline-block;padding:4px 12px;background:#F1F5F9;color:#2563EB;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.95rem;border-radius:8px;">
+                        #${quotationName}
+                    </span>
+                </div>
+                <p style="font-size:1rem;line-height:1.7;color:#475569;margin-bottom:28px;">
+                    ${isAr 
+                        ? "نظراً لتجاوز قيمة الطلب 10,000 ج.م، سيقوم فريق خدمة العملاء بالتواصل معك هاتفياً في أقرب وقت لتأكيد تفاصيل الطلب وخيارات السداد والتوصيل."
+                        : "Because your order exceeds 10,000 EGP, our customer support team will contact you shortly by phone to confirm order details, payment options, and delivery."}
+                </p>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                    <a href="/orders" class="btn btn-primary" style="padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        <i data-lucide="package" style="width:18px;height:18px;"></i>
+                        <span>${isAr ? "متابعة الطلبات" : "Track Quotations"}</span>
+                    </a>
+                    <a href="/shop" class="btn btn-secondary" style="padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        <span>${isAr ? "العودة للمتجر" : "Continue Shopping"}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ── Cart drawer for mini view ───────────────────────────────────────────── */

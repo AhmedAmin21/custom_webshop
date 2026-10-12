@@ -20,28 +20,30 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	if payment_method not in valid_methods:
 		frappe.throw(_("Invalid payment method."), frappe.ValidationError)
 
-	# Find customers linked to this user
-	customers = frappe.get_all(
-		"Portal User",
-		filters={"user": frappe.session.user, "parenttype": "Customer"},
-		pluck="parent"
-	)
-	if not customers:
-		frappe.throw(_("Customer not found."), frappe.DoesNotExistError)
+	from custom_webshop.signup.resolution import owns_customer
 
-	# Fetch and validate Sales Order
-	sales_order = frappe.get_doc("Sales Order", order_id)
-	if sales_order.customer not in customers:
+	# Fetch and validate Document (Quotation first, fallback to Sales Order)
+	doc = None
+	doctype = None
+	if frappe.db.exists("Quotation", order_id):
+		doc = frappe.get_doc("Quotation", order_id)
+		doctype = "Quotation"
+	elif frappe.db.exists("Sales Order", order_id):
+		doc = frappe.get_doc("Sales Order", order_id)
+		doctype = "Sales Order"
+
+	if not doc:
 		frappe.throw(_("Order not found."), frappe.DoesNotExistError)
 
-	if sales_order.status == "Cancelled":
+	customer_name = doc.customer if doctype == "Sales Order" else (doc.party_name if doc.quotation_to == "Customer" else None)
+	if not customer_name or not owns_customer(customer_name):
+		frappe.throw(_("Order not found."), frappe.DoesNotExistError)
+
+	if doc.status == "Cancelled":
 		frappe.throw(
-			_("This order reservation has expired because payment was not submitted within 60 minutes. Please place a new order."),
+			_("This order or quotation has been cancelled. Please place a new order."),
 			frappe.ValidationError,
 		)
-
-	if sales_order.docstatus != 0:
-		frappe.throw(_("This order does not require payment."), frappe.ValidationError)
 
 	# Validate file type and size
 	import os
@@ -61,40 +63,51 @@ def confirm_payment(order_id, payment_method, filename, file_content):
 	if not decoded_content:
 		frappe.throw(_("Empty file content."), frappe.ValidationError)
 
-	# Save file attached to Sales Order using Frappe's standard file manager
+	# Save file attached to Document using Frappe's standard file manager
 	file_doc = save_file(
 		fname=filename,
 		content=decoded_content,
-		dt="Sales Order",
-		dn=sales_order.name,
+		dt=doctype,
+		dn=doc.name,
 		folder=None,
 		decode=False,
-		is_private=1,
+		is_private=0,
 	)
 
-	# Update payment method on Sales Order
 	method_label = {
 		"instapay": "InstaPay",
 		"vodafone_cash": "Vodafone Cash",
 		"etisalat_cash": "Etisalat Cash",
 	}.get(payment_method)
 
-	sales_order.custom_payment_method = method_label
-	sales_order.save(ignore_permissions=True)
+	if doctype == "Quotation":
+		doc.db_set("custom_payment_method", method_label)
+		doc.db_set("custom_payment_receipt", file_doc.file_url)
+		doc.db_set("custom_agent_contact_status", "Pending Agent Contact")
+		try:
+			frappe.flags.ignore_permissions = True
+			doc.add_comment(
+				"Comment",
+				text=f"Payment proof uploaded ({method_label}): {file_doc.file_url}"
+			)
+		finally:
+			frappe.flags.ignore_permissions = False
+		_send_order_email(doc, "order_payment_confirmed")
+		return {
+			"success": True,
+			"message": _("Payment proof received. Customer support agents will review it and contact you to confirm the order.")
+		}
+	else:
+		doc.custom_payment_method = method_label
+		doc.save(ignore_permissions=True)
+		try:
+			frappe.flags.ignore_permissions = True
+			doc.submit()
+		finally:
+			frappe.flags.ignore_permissions = False
 
-	# Submit the Sales Order. 
-	# Using frappe.flags.ignore_permissions to bypass strict write checks for guests/customers 
-	# submitting their own order, so background stock processes can execute.
-	try:
-		frappe.flags.ignore_permissions = True
-		sales_order.submit()
-	finally:
-		frappe.flags.ignore_permissions = False
-
-	# Send payment confirmation email
-	_send_order_email(sales_order, "order_payment_confirmed")
-
-	return {"success": True, "message": _("Payment confirmed and order submitted.")}
+		_send_order_email(doc, "order_payment_confirmed")
+		return {"success": True, "message": _("Payment confirmed and order submitted.")}
 
 
 @frappe.whitelist()

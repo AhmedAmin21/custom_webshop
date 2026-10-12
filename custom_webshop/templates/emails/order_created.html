@@ -38,22 +38,36 @@
 						</table>
 
 						<div dir="rtl" lang="ar" style="font-family:'Cairo',Tahoma,Arial,sans-serif;">
-							<p style="margin:0 0 22px; font-size:14px; line-height:1.8; color:#64748B;">
-								لإتمام طلبك، يرجى سداد المبلغ ثم رفع إثبات الدفع من خلال الزر أدناه.
+							<p style="margin:0 0 22px; font-size:14px; line-height:1.8; color:#1E293B;">
+								{% if requires_payment %}
+								تم استلام طلبك وعرض السعر بنجاح. سيقوم فريق خدمة العملاء بالتواصل معك لتأكيد الطلب. يمكنك سداد المبلغ ورفع إثبات الدفع الآن عبر الرابط أدناه.
+								{% else %}
+								تم استلام طلبك وعرض السعر بنجاح. نظراً لتجاوز قيمة الطلب 10,000 ج.م، سيقوم فريق خدمة العملاء بالتواصل معك هاتفياً قريباً لتأكيد تفاصيل الطلب والدفع والشحن.
+								{% endif %}
 							</p>
 						</div>
 
+						{% if requires_payment %}
 						{{ brand_button(payment_url, "ادفع الآن", "Pay Now") }}
+						{% else %}
+						{{ brand_button(order_url, "عرض الطلب", "View Order") }}
+						{% endif %}
 
 						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 20px;">
 							<tr><td style="border-top:1px solid rgba(226,232,240,.8); font-size:1px; line-height:1px;">&nbsp;</td></tr>
 						</table>
 
 						<div dir="ltr" lang="en" style="font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;">
-							<p style="margin:0 0 24px; font-size:13px; line-height:1.7; color:#94A3B8;">
-								Thank you, {{ first_name | e }}. Order {{ sales_order.name }} has been created — total
+							<p style="margin:0 0 24px; font-size:13px; line-height:1.7; color:#64748B;">
+								{% if requires_payment %}
+								Thank you, {{ first_name | e }}. Order {{ sales_order.name }} quotation has been created — total
 								{{ frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency}) }}.
-								Please complete payment and upload proof to proceed.
+								Our customer support team will contact you to confirm the order. You may complete payment and upload proof below.
+								{% else %}
+								Thank you, {{ first_name | e }}. Order {{ sales_order.name }} quotation has been created — total
+								{{ frappe.format_value(sales_order.grand_total, {"fieldtype": "Currency", "options": sales_order.currency}) }}.
+								Because your order exceeds 10,000 EGP, our customer support team will contact you shortly by phone to confirm details, payment, and delivery.
+								{% endif %}
 							</p>
 						</div>
 

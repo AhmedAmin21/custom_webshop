@@ -31,14 +31,14 @@ const DEFAULT_SLIDES_AR = [
     {
         eyebrow: "هندسة وحلول CNC فائقة الدقة",
         title: "أدوات قطع ومكونات صناعية مصممة لأعلى كفاءة تشغيل",
-        subtitle: "الموزع المعتمد لبناط الراوتر الكاربيد، أدوات التفريز، ومستلزمات ماكينات الـ CNC ذات الجودة العالية.",
+        subtitle: "الموزع المعتمد لبنط الراوتر الكاربيد، أدوات التفريز، ومستلزمات ماكينات الـ CNC ذات الجودة العالية.",
         link: "/catalog",
         image: "/assets/custom_webshop/images/assets/Aluminum%20and%20metal.jpeg"
     },
     {
         eyebrow: "أدوات قطع كاربيد متطورة",
-        title: "بناط تفريز وأدوات توجيه كاربيد عالية التحمل",
-        subtitle: "تشكيلة واسعة من بناط الألومنيوم والأخشاب والرخام بمختلف الأقطار والمواصفات المعتمدة.",
+        title: "بنط تفريز وأدوات توجيه كاربيد عالية التحمل",
+        subtitle: "تشكيلة واسعة من بنط الألومنيوم والأخشاب والرخام بمختلف الأقطار والمواصفات المعتمدة.",
         link: "/catalog?tool_families=SEM,EM,FEM",
         image: "/assets/custom_webshop/images/assets/Wood%20and%20mdf.jpeg"
     }
@@ -251,11 +251,8 @@ function stopSlideshowRotation() {
 
 /* ── Product Card HTML Helper ────────────────────────────────────────────── */
 function buildProductCard(item, badge = "") {
-    const inStock = item.in_stock !== false;
     let badgeHTML = "";
-    if (!inStock) {
-        badgeHTML = `<span class="product-badge out-of-stock">${Store.t("stock_out")}</span>`;
-    } else if (badge && badge !== "STOCK") {
+    if (badge && badge !== "STOCK") {
         badgeHTML = `<span class="product-badge">${badge}</span>`;
     }
 
@@ -267,9 +264,7 @@ function buildProductCard(item, badge = "") {
     const descHTML = rawDesc ? `<p class="product-card-desc">${Store.escapeHtml(rawDesc)}</p>` : "";
     const brand = item.brand || "";
     const brandHTML = brand ? `<div class="product-meta-specs"><div class="spec-line"><span>${Store.t("filter_brand")}:</span><span style="font-weight:700;">${Store.escapeHtml(brand)}</span></div></div>` : "";
-    const addBtn = inStock
-        ? `<button class="card-add-btn" onclick="addToCartItem('${item.item_code || item.name}')" title="${Store.t("btn_add_to_cart")}"><i data-lucide="shopping-cart"></i></button>`
-        : `<button class="card-add-btn disabled" disabled title="${Store.t("btn_out_of_stock")}"><i data-lucide="shopping-cart"></i></button>`;
+    const addBtn = `<button class="card-add-btn" onclick="addToCartItem('${item.item_code || item.name}')" title="${Store.t("btn_add_to_cart")}"><i data-lucide="shopping-cart"></i></button>`;
 
     return `
         <div class="product-card">

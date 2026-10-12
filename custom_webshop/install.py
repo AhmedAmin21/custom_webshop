@@ -1,12 +1,17 @@
 # Copyright (c) 2026, ahmedamin and contributors
 # For license information, please see license.txt
 
-from custom_webshop.setup.custom_fields import create_signup_custom_fields, create_signup_indexes
+from custom_webshop.setup.custom_fields import (
+	create_quotation_custom_fields,
+	create_signup_custom_fields,
+	create_signup_indexes,
+)
 from custom_webshop.setup.email_settings import disable_standard_email_footer
 from custom_webshop.setup.portal_permissions import grant_portal_shopping_permissions
 
 
 def after_install():
+	create_quotation_custom_fields()
 	create_signup_custom_fields()
 	create_signup_indexes()
 	grant_portal_shopping_permissions()
@@ -20,6 +25,7 @@ def after_migrate():
 	after_install covers the case this app is already installed on a site
 	that predates these fields - the ordinary situation for this bench.
 	"""
+	create_quotation_custom_fields()
 	create_signup_custom_fields()
 	create_signup_indexes()
 	grant_portal_shopping_permissions()

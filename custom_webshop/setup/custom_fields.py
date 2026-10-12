@@ -50,6 +50,48 @@ SIGNUP_CUSTOM_FIELDS = {
 	],
 }
 
+QUOTATION_CUSTOM_FIELDS = {
+	"Quotation": [
+		{
+			"fieldname": "custom_payment_method",
+			"label": "Payment Method",
+			"fieldtype": "Select",
+			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
+			"insert_after": "payment_terms_template",
+			"read_only": 1,
+			"allow_on_submit": 1,
+		},
+		{
+			"fieldname": "custom_payment_receipt",
+			"label": "Payment Receipt",
+			"fieldtype": "Attach Image",
+			"insert_after": "custom_payment_method",
+			"read_only": 1,
+			"allow_on_submit": 1,
+		},
+		{
+			"fieldname": "custom_order_notes",
+			"label": "Delivery Notes / Instructions",
+			"fieldtype": "Small Text",
+			"insert_after": "shipping_address_name",
+			"read_only": 1,
+			"allow_on_submit": 1,
+		},
+		{
+			"fieldname": "custom_agent_contact_status",
+			"label": "Agent Contact Status",
+			"fieldtype": "Select",
+			"options": "\nPending Agent Contact\nContacted\nConfirmed",
+			"insert_after": "custom_payment_receipt",
+			"allow_on_submit": 1,
+		},
+	]
+}
+
+
+def create_quotation_custom_fields():
+	create_custom_fields(QUOTATION_CUSTOM_FIELDS, update=True)
+
 
 def create_signup_custom_fields():
 	"""Add the columns this app owns on Contact records.

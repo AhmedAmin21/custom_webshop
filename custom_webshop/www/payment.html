@@ -107,22 +107,18 @@
                         <p class="payment-subtitle" data-i18n="payment_subtitle">To complete order processing, please transfer the total amount and upload your receipt screenshot below.</p>
                     </div>
 
-                    <!-- 60-Minute Reservation Expiration Warning Banner -->
-                    <div class="payment-warning-banner" id="payment-timer-banner">
-                        <div class="warning-banner-header">
-                            <div class="warning-icon-wrapper">
-                                <i data-lucide="clock" class="warning-banner-icon"></i>
+                    <!-- Payment Instructions / Agent Confirmation Banner -->
+                    <div class="payment-info-banner" id="payment-timer-banner" style="border:1px solid rgba(37,99,235,0.25);border-radius:14px;padding:18px 22px;margin-bottom:24px;background:linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(37,99,235,0.02) 100%);box-shadow:0 4px 16px rgba(37,99,235,0.04);">
+                        <div class="warning-banner-header" style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                            <div class="warning-icon-wrapper" style="width:38px;height:38px;border-radius:10px;background:rgba(37,99,235,0.12);display:flex;align-items:center;justify-content:center;color:#2563EB;flex-shrink:0;">
+                                <i data-lucide="shield-check" class="warning-banner-icon" style="width:20px;height:20px;"></i>
                             </div>
                             <div class="warning-banner-headings">
-                                <h4 class="warning-banner-title" data-i18n="payment_warning_title">Payment Window: 60 Minutes</h4>
-                                <div class="warning-countdown-badge" id="payment-countdown-badge">
-                                    <span class="countdown-pulse-dot"></span>
-                                    <span id="payment-countdown-text">--:--</span>
-                                </div>
+                                <h4 class="warning-banner-title" data-i18n="payment_info_title" style="margin:0;font-size:1.05rem;font-weight:700;color:#1D4ED8;">Order Confirmation &amp; Payment</h4>
                             </div>
                         </div>
-                        <p class="warning-banner-text" data-i18n="payment_warning_text">
-                            Please complete payment and upload your receipt within 60 minutes (1 hour) of placing the order. After this window, your inventory reservation will expire automatically and the order will be cancelled to release stock for other buyers.
+                        <p class="warning-banner-text" data-i18n="payment_info_text" style="margin:0;color:#334155;font-size:0.92rem;line-height:1.6;">
+                            Please transfer the total amount using one of the payment methods below and upload your receipt screenshot. Our customer support agents will verify your payment and contact you to confirm your order details and delivery.
                         </p>
                     </div>
 

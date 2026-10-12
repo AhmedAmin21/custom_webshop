@@ -5,6 +5,7 @@ no_cache = 1
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 from custom_webshop.signup.resolution import get_customer_names
 
@@ -12,27 +13,23 @@ from custom_webshop.signup.resolution import get_customer_names
 def get_context(context):
 	context.no_cache = 1
 	context.show_sidebar = True
-	context.title = _("Orders")
+	context.title = _("Orders & Quotations")
 	context.parents = [{"route": "me", "title": _("My Account")}]
 
-	# Resolve through the verified identity record rather than reading
-	# Portal User directly: a Portal User row only says some code path
-	# once linked this account to that Customer, and webshop's get_party()
-	# adds them from an arbitrary contact link. This list drives an
-	# ignore_permissions query below, so it has to be the authoritative
-	# answer.
 	customers = get_customer_names()
-	if not customers:
-		context.orders = []
-		return context
 
-	# Fetch Sales Orders for ALL linked customers
-	orders = frappe.get_all(
-		"Sales Order",
-		filters={
-			"customer": ["in", customers],
-			"docstatus": ["<", 2],
-		},
+	quotation_filters = {
+		"docstatus": ["<", 2],
+	}
+	if customers:
+		quotation_filters["party_name"] = ["in", customers]
+	else:
+		quotation_filters["contact_email"] = frappe.session.user
+
+	# Fetch Quotations for customer
+	quotations = frappe.get_all(
+		"Quotation",
+		filters=quotation_filters,
 		fields=[
 			"name",
 			"transaction_date",
@@ -40,25 +37,26 @@ def get_context(context):
 			"docstatus",
 			"grand_total",
 			"currency",
-			"per_delivered",
-			"per_billed",
+			"custom_payment_method",
+			"custom_payment_receipt",
+			"custom_agent_contact_status",
 		],
 		order_by="transaction_date desc, creation desc",
 		ignore_permissions=True,
 	)
 
-	order_names = [o.name for o in orders]
-	items_by_order = {}
-	if order_names:
+	quotation_names = [q.name for q in quotations]
+	items_by_quotation = {}
+	if quotation_names:
 		items = frappe.get_all(
-			"Sales Order Item",
-			filters={"parent": ["in", order_names]},
+			"Quotation Item",
+			filters={"parent": ["in", quotation_names]},
 			fields=["parent", "item_code", "item_name", "qty", "rate", "amount"],
 			order_by="idx asc",
 			ignore_permissions=True,
 		)
 		for item in items:
-			items_by_order.setdefault(item.parent, []).append({
+			items_by_quotation.setdefault(item.parent, []).append({
 				"item_code": item.item_code,
 				"item_name": item.item_name,
 				"qty": item.qty,
@@ -66,14 +64,15 @@ def get_context(context):
 				"amount": item.amount,
 			})
 
-	for order in orders:
-		order.items = items_by_order.get(order.name, [])
-		order.grand_total_formatted = frappe.format_value(
-			order.grand_total, {"fieldtype": "Currency", "options": order.currency}
+	for q in quotations:
+		q.items = items_by_quotation.get(q.name, [])
+		q.grand_total_formatted = frappe.format_value(
+			q.grand_total, {"fieldtype": "Currency", "options": q.currency}
 		)
-		# Serialize date for Jinja tojson in orders.html
-		if order.transaction_date:
-			order.transaction_date = str(order.transaction_date)
+		q.requires_payment = flt(q.grand_total) <= 10000.0
+		q.has_payment_receipt = bool(q.custom_payment_receipt)
+		if q.transaction_date:
+			q.transaction_date = str(q.transaction_date)
 
-	context.orders = orders
+	context.orders = quotations
 	return context

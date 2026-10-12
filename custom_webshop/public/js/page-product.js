@@ -111,35 +111,16 @@ function renderDetailView(item, productInfoData, bootstrap) {
 
     document.title = `CNCLeaders | ${displayName}`;
 
-    function buildStockLabel() {
-        if (onBackorder) {
-            return `<span class="dot-status dot-instock" style="background:#3B82F6;box-shadow:0 0 10px rgba(59,130,246,0.4);"></span><span style="color:#3B82F6;">${Store.t("stock_backorder")}</span>`;
-        }
-        if (!inStock) {
-            return `<span class="dot-status dot-outofstock"></span><span style="color:#EF4444;">${Store.t("stock_out")}</span>`;
-        }
-        let qty = null;
-        if (productInfo.stock_qty != null && productInfo.stock_qty !== "") {
-            const parsed = parseFloat(productInfo.stock_qty);
-            if (!Number.isNaN(parsed)) qty = parsed;
-        }
-        if (qty != null && qty > 0 && qty <= 10) {
-            const formattedQty = qty % 1 === 0 ? qty.toFixed(0) : qty.toFixed(2);
-            return `<span class="dot-status dot-lowstock"></span><span style="color:#F59E0B;">${Store.t("stock_low", { qty: formattedQty })}</span>`;
-        }
-        return `<span class="dot-status dot-instock"></span><span style="color:#22C55E;">${Store.t("stock_in")}</span>`;
-    }
+    const stockHTML = "";
 
-    const stockHTML = !showStock ? "" : buildStockLabel();
-
-    const canAddToCart = cartSettings.enabled !== false && (inStock || onBackorder || cartSettings.allow_items_not_in_stock)
+    const canAddToCart = cartSettings.enabled !== false
         && (productInfo.price || !cartSettings.hide_price_for_guest || !Store.isGuest);
 
     const addBtnHTML = canAddToCart
         ? `<button class="btn btn-primary" style="flex-grow:1;" onclick="addDetailItemToCart()">
                <i data-lucide="shopping-cart"></i> ${Store.t("btn_add_to_cart")}
            </button>`
-        : `<button class="btn btn-primary disabled" disabled style="flex-grow:1;">${Store.t("btn_out_of_stock")}</button>`;
+        : `<button class="btn btn-primary disabled" disabled style="flex-grow:1;">${Store.t("btn_add_to_cart")}</button>`;
 
     const wishlistHTML = wishlistEnabled
         ? `<button type="button" class="detail-wishlist-btn ${currentWished ? "wished" : ""}" id="detail-wishlist-btn" onclick="toggleDetailWishlist()" title="Wishlist">

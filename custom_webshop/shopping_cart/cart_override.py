@@ -95,70 +95,28 @@ def assert_purchasable(item_code):
 def place_order_from_cart(notes=None):
 	"""
 	Override for 'Place Order' and 'Request for Quotation'.
-	Instead of submitting the Sales Order immediately, we:
-	1. Submit the cart Quotation
-	2. Create a Sales Order from it and keep it in Draft
-	3. Send an order-created email to the customer
-	4. Clear the cart
-	5. Return the Sales Order name
-	The customer must upload payment proof before the SO is submitted.
+	In the Quotation-first assisted sales workflow:
+	1. Save shipping address, notes, and contact person onto the cart Quotation.
+	2. Submit the cart Quotation (docstatus = 1) so it is finalized and ready for sales agent review.
+	3. Determine threshold:
+	   - > 10,000 EGP: does not proceed to payment page; support agents contact customer.
+	   - <= 10,000 EGP: customer proceeds to payment page to upload payment proof.
+	4. Send order/quotation confirmation email to the customer.
+	5. Clear the shopping cart session.
+	6. Return routing metadata to the frontend.
 	"""
 	quotation = _get_cart_quotation()
 	cart_settings = frappe.get_cached_doc("Webshop Settings")
 	quotation.company = cart_settings.company
 
-	quotation.flags.ignore_permissions = True
-	# Same reason as update_cart: submitting the quotation and building the
-	# Sales Order from it both re-resolve item details, which check Item
-	# read permission the Customer role does not have.
-	with shopping_as_customer():
-		quotation.submit()
-
-	if quotation.quotation_to == "Lead" and quotation.party_name:
-		frappe.defaults.set_user_default("company", quotation.company)
-
 	if not (quotation.shipping_address_name or quotation.customer_address):
 		frappe.throw(_("Set Shipping Address or Billing Address"))
 
-	sales_order = frappe.get_doc(
-		_make_sales_order(quotation.name, ignore_permissions=True)
-	)
-	sales_order.payment_schedule = []
-
-	# Copy Governorate shipping fields from Quotation to Sales Order
-	for field in ("shipping_rule", "shipping_destination", "shipping_district", "custom_manual_shipping_amount"):
-		if quotation.get(field):
-			sales_order.set(field, quotation.get(field))
-
 	# Save customer delivery notes if provided
 	if notes and str(notes).strip():
-		sales_order.custom_order_notes = str(notes).strip()
+		quotation.custom_order_notes = str(notes).strip()
 
-	# Reserve stock for this Sales Order
-	sales_order.reserve_stock = 1
-
-	if not cint(cart_settings.allow_items_not_in_stock):
-		for item in sales_order.get("items"):
-			item.warehouse = frappe.db.get_value(
-				"Website Item", {"item_code": item.item_code}, "website_warehouse"
-			)
-			is_stock_item = frappe.db.get_value("Item", item.item_code, "is_stock_item")
-
-			if is_stock_item:
-				item_stock = get_web_item_qty_in_stock(
-					item.item_code, "website_warehouse"
-				)
-				if not cint(item_stock.in_stock):
-					frappe.throw(_("{0} Not in Stock").format(item.item_code))
-				if item.qty > item_stock.stock_qty:
-					avail = int(item_stock.stock_qty) if item_stock.stock_qty == int(item_stock.stock_qty) else item_stock.stock_qty
-					frappe.throw(
-						_(
-							"Only {0} in Stock for item {1}"
-						).format(avail, item.item_code)
-					)
-
-	# Set contact info on Sales Order from customer's primary contact
+	# Set contact info on Quotation from customer's primary contact
 	party = get_party()
 	if party:
 		contact = frappe.db.sql("""
@@ -173,74 +131,39 @@ def place_order_from_cart(notes=None):
 
 		if contact:
 			contact_doc = contact[0]
-			sales_order.contact_person = contact_doc.name
-			sales_order.contact_mobile = contact_doc.mobile_no
-			sales_order.contact_email = frappe.session.user
-			sales_order.contact_display = f"{contact_doc.first_name or ''} {contact_doc.last_name or ''}".strip()
+			quotation.contact_person = contact_doc.name
+			quotation.contact_mobile = contact_doc.mobile_no
+			quotation.contact_email = frappe.session.user
+			quotation.contact_display = f"{contact_doc.first_name or ''} {contact_doc.last_name or ''}".strip()
 
-	sales_order.flags.ignore_permissions = True
+	grand_total = flt(quotation.grand_total)
+	requires_payment = grand_total <= 10000.0
+
+	quotation.custom_agent_contact_status = "Pending Agent Contact"
+	quotation.flags.ignore_permissions = True
 	with shopping_as_customer():
-		sales_order.insert()
+		quotation.submit()
 		if notes and str(notes).strip():
-			sales_order.add_comment("Comment", text=f"Customer Order Notes / Delivery Instructions: {str(notes).strip()}")
+			quotation.add_comment("Comment", text=f"Customer Order Notes / Delivery Instructions: {str(notes).strip()}")
 
-	# Phase 2: Atomic Checkout Locking & Programmatic Reservation
-	stock_items = [
-		item for item in sales_order.get("items")
-		if frappe.get_cached_value("Item", item.item_code, "is_stock_item")
-	]
+	if quotation.quotation_to == "Lead" and quotation.party_name:
+		frappe.defaults.set_user_default("company", quotation.company)
 
-	if stock_items:
-		from erpnext.stock.utils import get_or_make_bin
-		from erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry import (
-			get_available_qty_to_reserve,
-			create_stock_reservation_entries_for_so_items
-		)
-		
-		# Ensure reserve_stock is checked on the item (required for SRE creation)
-		for item in stock_items:
-			item.db_set("reserve_stock", 1, update_modified=False)
-
-		# 1. Determine unique (item_code, warehouse) pairs and sort them deterministically to avoid deadlocks
-		pairs = sorted(list(set((item.item_code, item.warehouse) for item in stock_items)))
-
-		with run_as_system_admin():
-			# 2. Safely ensure all required Bin rows exist before locking
-			for item_code, warehouse in pairs:
-				get_or_make_bin(item_code, warehouse)
-
-			# 3. Acquire atomic SELECT ... FOR UPDATE row locks on tabBin in deterministic order
-			for item_code, warehouse in pairs:
-				frappe.db.sql(
-					"SELECT actual_qty FROM `tabBin` WHERE item_code=%s AND warehouse=%s FOR UPDATE",
-					(item_code, warehouse)
-				)
-
-			# 4. Perform stock availability validation while locks are held
-			for item in stock_items:
-				avail = get_available_qty_to_reserve(item.item_code, item.warehouse)
-				if item.qty > avail:
-					# Exception aborts the transaction, safely releasing locks and rolling back the Draft SO
-					frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item.item_code))
-
-			# 5. Programmatically create and submit Stock Reservation Entries
-			# Scope the permission bypass specifically to the SRE generation
-			previous_ignore_permissions = frappe.flags.ignore_permissions
-			frappe.flags.ignore_permissions = True
-			try:
-				create_stock_reservation_entries_for_so_items(sales_order, notify=False)
-			finally:
-				frappe.flags.ignore_permissions = previous_ignore_permissions
-	# Keep Sales Order in Draft until customer uploads payment proof
-	# sales_order.submit()
-
-	# Send draft order confirmation email
-	_send_order_email(sales_order, "order_created")
+	# Send quotation confirmation email
+	_send_order_email(quotation, "order_created")
 
 	if hasattr(frappe.local, "cookie_manager"):
 		frappe.local.cookie_manager.delete_cookie("cart_count")
 
-	return sales_order.name
+	return {
+		"name": quotation.name,
+		"order_name": quotation.name,
+		"quotation_name": quotation.name,
+		"grand_total": grand_total,
+		"requires_payment": requires_payment,
+		"currency": quotation.currency or "EGP",
+		"message": _("Customer support agents will contact you to confirm your order.")
+	}
 
 
 
@@ -528,17 +451,6 @@ def _update_cart(item_code, qty, additional_notes, with_items):
 			empty_card = True
 
 	else:
-		cart_settings = get_shopping_cart_settings()
-		if not cint(cart_settings.allow_items_not_in_stock):
-			is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
-			if is_stock_item:
-				item_stock = get_web_item_qty_in_stock(item_code, "website_warehouse")
-				if not cint(item_stock.in_stock):
-					frappe.throw(_("{0} Not in Stock").format(item_code))
-				if qty > flt(item_stock.stock_qty):
-					avail = int(item_stock.stock_qty) if item_stock.stock_qty == int(item_stock.stock_qty) else item_stock.stock_qty
-					frappe.throw(_("Only {0} in Stock for item {1}").format(avail, item_code))
-
 		warehouse = frappe.get_cached_value(
 			"Website Item", {"item_code": item_code}, "website_warehouse"
 		)
@@ -670,12 +582,13 @@ def get_customer_for_user(user=None):
 	return get_customer(user)
 
 
-def _send_order_email(sales_order, email_type, recipient_email=None):
+def _send_order_email(doc, email_type, recipient_email=None):
 	"""
 	Send order-related email notifications to the customer.
+	doc: Quotation or Sales Order document
 	email_type: 'order_created' | 'order_payment_confirmed' | 'order_expired'
 	"""
-	target_email = recipient_email or sales_order.get("contact_email") or sales_order.get("owner")
+	target_email = recipient_email or doc.get("contact_email") or doc.get("owner")
 	if not target_email or target_email == "Guest":
 		if frappe.session.user != "Guest":
 			target_email = frappe.session.user
@@ -695,9 +608,12 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 		first_name = user.first_name or user.full_name or user.name
 
 	if not first_name:
-		first_name = sales_order.get("customer_name") or send_to.split("@")[0]
+		first_name = doc.get("customer_name") or send_to.split("@")[0]
 
 	site_url = frappe.utils.get_url()
+	grand_total = flt(doc.get("grand_total"))
+	requires_payment = grand_total <= 10000.0
+
 	context = {
 		"site_url": site_url,
 		"shop_url": f"{site_url}/shop",
@@ -707,19 +623,22 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 			or "CNCLeaders"
 		),
 		"first_name": first_name,
-		"sales_order": sales_order,
-		"payment_url": f"{site_url}/payment?order_id={sales_order.name}",
-		"order_url": f"{site_url}/orders/{sales_order.name}",
+		"sales_order": doc,
+		"quotation": doc,
+		"doc": doc,
+		"requires_payment": requires_payment,
+		"payment_url": f"{site_url}/payment?order_id={doc.name}",
+		"order_url": f"{site_url}/orders/{doc.name}",
 	}
 
 	if email_type == "order_created":
-		subject = _("Order Confirmation: Your order {0} has been created").format(sales_order.name)
+		subject = _("Order Confirmation: Your order {0} has been created").format(doc.name)
 		template = "custom_webshop/templates/emails/order_created.html"
 	elif email_type == "order_payment_confirmed":
-		subject = _("Payment Confirmed: We received your payment proof for order {0}").format(sales_order.name)
+		subject = _("Payment Confirmed: We received your payment proof for order {0}").format(doc.name)
 		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
 	elif email_type == "order_expired":
-		subject = _("Stock reservation expired for order {0}").format(sales_order.name)
+		subject = _("Stock reservation expired for order {0}").format(doc.name)
 		template = "custom_webshop/templates/emails/order_expired.html"
 	else:
 		return
@@ -732,13 +651,13 @@ def _send_order_email(sales_order, email_type, recipient_email=None):
 			recipients=[send_to],
 			subject=subject,
 			message=message,
-			reference_doctype="Sales Order",
-			reference_name=sales_order.name,
+			reference_doctype=doc.doctype or "Quotation",
+			reference_name=doc.name,
 			now=True,
 		)
 	except Exception:
 		frappe.log_error(
-			title="custom_webshop: could not email order {0}".format(sales_order.name),
+			title="custom_webshop: could not email {0} {1}".format(doc.doctype or "Quotation", doc.name),
 			message=frappe.get_traceback(),
 		)
 

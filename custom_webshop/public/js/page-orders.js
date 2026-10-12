@@ -8,30 +8,39 @@
 function getStatusInfo(order) {
     const status = order.status || "";
     const docstatus = order.docstatus;
+    const isAr = Store.lang === "ar";
 
-    if (docstatus === 0) {
-        return { text: Store.t("order_status_draft"), cls: "status-pending", progress: "0%", step: 1 };
+    if (docstatus === 2 || status === "Cancelled") {
+        return { text: isAr ? "ملغي" : "Cancelled", cls: "status-cancelled", progress: "0%", step: 0 };
     }
-    if (status === "To Deliver and Bill" || status === "To Bill") {
-        return { text: Store.t("order_status_processing"), cls: "status-processing", progress: "33%", step: 2 };
+    if (status === "Ordered" || status === "Completed") {
+        return { text: isAr ? "طلب مؤكد" : "Order Confirmed", cls: "status-delivered", progress: "100%", step: 4 };
     }
-    if (status === "To Deliver") {
-        return { text: Store.t("order_status_shipped"), cls: "status-shipped", progress: "66%", step: 3 };
+    if (order.has_payment_receipt || !order.requires_payment) {
+        return {
+            text: isAr ? "قيد المراجعة / اتصال خدمة العملاء" : "Under Review / Agent Contact",
+            cls: "status-processing",
+            progress: "50%",
+            step: 2
+        };
     }
-    if (status === "Completed") {
-        return { text: Store.t("order_status_delivered"), cls: "status-delivered", progress: "100%", step: 4 };
+    if (order.requires_payment && !order.has_payment_receipt) {
+        return {
+            text: isAr ? "بانتظار سداد المبلغ" : "Pending Payment",
+            cls: "status-pending",
+            progress: "25%",
+            step: 1
+        };
     }
-    if (status === "Cancelled") {
-        return { text: Store.t("order_status_cancelled"), cls: "status-cancelled", progress: "0%", step: 0 };
-    }
-    return { text: Store.t("order_status_processing"), cls: "status-processing", progress: "33%", step: 2 };
+    return { text: isAr ? "قيد المراجعة" : "Under Review", cls: "status-processing", progress: "50%", step: 2 };
 }
 
 /* ── Build order card HTML ───────────────────────────────────────────────── */
 function buildOrderCard(order) {
     const statusInfo = getStatusInfo(order);
+    const isAr = Store.lang === "ar";
     const date = order.transaction_date
-        ? new Date(order.transaction_date).toLocaleDateString(Store.lang === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" })
+        ? new Date(order.transaction_date).toLocaleDateString(isAr ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" })
         : "—";
     const total = Store.formatCurrency(order.grand_total, order.currency || "EGP");
 
@@ -44,15 +53,21 @@ function buildOrderCard(order) {
         return `${n}`;
     };
 
-    const payBtn = order.docstatus === 0
+    const needsPayment = Boolean(order.requires_payment && !order.has_payment_receipt && order.docstatus !== 2 && order.status !== "Cancelled");
+    const payBtn = needsPayment
         ? `<a href="/payment?order_id=${order.name}" class="btn btn-primary btn-sm" style="margin-top:8px;">${Store.t("order_pay_now")}</a>`
-        : "";
+        : `<span style="font-size:0.85rem;color:var(--primary-blue,#2563EB);font-weight:600;display:inline-block;margin-top:8px;">${isAr ? "سيقوم فريق الدعم بالتواصل معك" : "Support team will contact you"}</span>`;
+
+    const step1Label = isAr ? "تم إرسال الطلب" : "Quotation Placed";
+    const step2Label = isAr ? "مراجعة الدعم" : "Agent Review";
+    const step3Label = isAr ? "تأكيد الطلب" : "Order Confirmed";
+    const step4Label = isAr ? "التجهيز والتسليم" : "Processing / Dispatched";
 
     return `
         <div class="order-history-card">
             <div class="order-card-header">
                 <div class="order-header-main">
-                    <span class="order-id-badge">${Store.t("order_id")}: #${order.name}</span>
+                    <span class="order-id-badge">${isAr ? "رقم الطلب" : "Quotation"}: #${order.name}</span>
                     <span class="order-date-text">${Store.t("order_date")}: ${date}</span>
                 </div>
                 <div class="order-status-flex">
@@ -76,19 +91,19 @@ function buildOrderCard(order) {
                     <div class="tracking-progress-bar" style="width:${statusInfo.progress};"></div>
                     <div class="track-step ${stepClass(1)}">
                         <div class="step-node">${stepNodeIcon(1)}</div>
-                        <span class="step-label">${Store.t("order_step_placed")}</span>
+                        <span class="step-label">${step1Label}</span>
                     </div>
                     <div class="track-step ${stepClass(2)}">
                         <div class="step-node">${stepNodeIcon(2)}</div>
-                        <span class="step-label">${Store.t("order_step_confirmed")}</span>
+                        <span class="step-label">${step2Label}</span>
                     </div>
                     <div class="track-step ${stepClass(3)}">
                         <div class="step-node">${stepNodeIcon(3)}</div>
-                        <span class="step-label">${Store.t("order_step_shipped")}</span>
+                        <span class="step-label">${step3Label}</span>
                     </div>
                     <div class="track-step ${stepClass(4)}">
                         <div class="step-node">${stepNodeIcon(4)}</div>
-                        <span class="step-label">${Store.t("order_step_arrived")}</span>
+                        <span class="step-label">${step4Label}</span>
                     </div>
                 </div>
 
@@ -102,10 +117,10 @@ function buildOrderCard(order) {
                     <div class="details-product-list" id="order-items-${order.name}">
                         <p style="color:var(--text-muted);font-size:0.85rem;">${Store.t("order_loading_items")}</p>
                     </div>
-                    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
-                        <a href="/orders/${order.name}" class="btn btn-secondary btn-sm">${Store.t("order_view")}</a>
-                        ${order.docstatus === 0 ? `<a href="/payment?order_id=${order.name}" class="btn btn-primary btn-sm">${Store.t("order_pay_now")}</a>` : ""}
-                    </div>
+                        ${needsPayment ? `
+                        <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
+                            <a href="/payment?order_id=${order.name}" class="btn btn-primary btn-sm">${Store.t("order_pay_now")}</a>
+                        </div>` : ""}
                 </div>
             </div>
         </div>`;
