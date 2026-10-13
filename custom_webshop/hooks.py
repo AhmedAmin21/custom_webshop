@@ -227,104 +227,12 @@ scheduler_events = {
 # Custom Fields
 # -------------
 #
-# The Contact / Contact Phone fields here are the same ones
-# custom_webshop.setup.custom_fields.create_signup_custom_fields creates by
-# hand from after_install/after_migrate and from inside
-# patches.backfill_contact_phone_e164 - listed here too so a plain
-# `bench migrate` keeps them in step with this file on every run, the way
-# Frappe's own customization sync expects, rather than relying solely on
-# this app's own install hooks.
-from custom_webshop.setup.custom_fields import SIGNUP_CUSTOM_FIELDS
+# Custom Fields
+# -------------
+from custom_webshop.setup.custom_fields import CUSTOM_FIELDS
 
-custom_fields = {
-	**SIGNUP_CUSTOM_FIELDS,
-	"Webshop Settings": [
-		{
-			"fieldname": "custom_manual_payment_settings",
-			"label": "Manual Payment Settings",
-			"fieldtype": "Section Break",
-			"insert_after": "payment_gateway_account",
-			"collapsible": 1,
-		},
-		{
-			"fieldname": "custom_instapay_number",
-			"label": "InstaPay Number",
-			"fieldtype": "Data",
-			"insert_after": "custom_manual_payment_settings",
-		},
-		{
-			"fieldname": "custom_vodafone_cash_number",
-			"label": "Vodafone Cash Number",
-			"fieldtype": "Data",
-			"insert_after": "custom_instapay_number",
-		},
-		{
-			"fieldname": "custom_etisalat_cash_number",
-			"label": "Etisalat Cash Number",
-			"fieldtype": "Data",
-			"insert_after": "custom_vodafone_cash_number",
-		},
-		{
-			"fieldname": "custom_display_attributes",
-			"label": "Display Attributes (JSON)",
-			"fieldtype": "Small Text",
-			"insert_after": "custom_etisalat_cash_number",
-			"description": "JSON list of attribute names to show on the shop page carousels, in order. Managed by the admin panel.",
-		},
-	],
-	"Sales Order": [
-		{
-			"fieldname": "custom_payment_method",
-			"label": "Payment Method",
-			"fieldtype": "Select",
-			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
-			"insert_after": "payment_terms_section",
-			"read_only": 1,
-		},
-		{
-			"fieldname": "custom_order_notes",
-			"label": "Delivery Notes / Instructions",
-			"fieldtype": "Small Text",
-			"insert_after": "shipping_address_name",
-			"read_only": 1,
-		},
-	],
-	"Quotation": [
-		{
-			"fieldname": "custom_payment_method",
-			"label": "Payment Method",
-			"fieldtype": "Select",
-			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
-			"insert_after": "payment_terms_template",
-			"read_only": 1,
-			"allow_on_submit": 1,
-		},
-		{
-			"fieldname": "custom_payment_receipt",
-			"label": "Payment Receipt",
-			"fieldtype": "Attach Image",
-			"insert_after": "custom_payment_method",
-			"read_only": 1,
-			"allow_on_submit": 1,
-		},
-		{
-			"fieldname": "custom_order_notes",
-			"label": "Delivery Notes / Instructions",
-			"fieldtype": "Small Text",
-			"insert_after": "shipping_address_name",
-			"read_only": 1,
-			"allow_on_submit": 1,
-		},
-		{
-			"fieldname": "custom_agent_contact_status",
-			"label": "Agent Contact Status",
-			"fieldtype": "Select",
-			"options": "\nPending Agent Contact\nContacted\nConfirmed",
-			"insert_after": "custom_payment_receipt",
-			"allow_on_submit": 1,
-		},
-	]
-}
+custom_fields = CUSTOM_FIELDS
+
 
 # Overriding Methods
 # ------------------------------

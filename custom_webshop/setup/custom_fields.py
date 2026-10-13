@@ -88,6 +88,75 @@ QUOTATION_CUSTOM_FIELDS = {
 	]
 }
 
+WEBSHOP_SETTINGS_CUSTOM_FIELDS = {
+	"Webshop Settings": [
+		{
+			"fieldname": "custom_manual_payment_settings",
+			"label": "Manual Payment Settings",
+			"fieldtype": "Section Break",
+			"insert_after": "payment_gateway_account",
+			"collapsible": 1,
+		},
+		{
+			"fieldname": "custom_instapay_number",
+			"label": "InstaPay Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_manual_payment_settings",
+		},
+		{
+			"fieldname": "custom_vodafone_cash_number",
+			"label": "Vodafone Cash Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_instapay_number",
+		},
+		{
+			"fieldname": "custom_etisalat_cash_number",
+			"label": "Etisalat Cash Number",
+			"fieldtype": "Data",
+			"insert_after": "custom_vodafone_cash_number",
+		},
+		{
+			"fieldname": "custom_display_attributes",
+			"label": "Display Attributes (JSON)",
+			"fieldtype": "Small Text",
+			"insert_after": "custom_etisalat_cash_number",
+			"description": "JSON list of attribute names to show on the shop page carousels, in order. Managed by the admin panel.",
+		},
+	]
+}
+
+SALES_ORDER_CUSTOM_FIELDS = {
+	"Sales Order": [
+		{
+			"fieldname": "custom_payment_method",
+			"label": "Payment Method",
+			"fieldtype": "Select",
+			"options": "\nInstaPay\nVodafone Cash\nEtisalat Cash",
+			"insert_after": "payment_terms_section",
+			"read_only": 1,
+		},
+		{
+			"fieldname": "custom_order_notes",
+			"label": "Delivery Notes / Instructions",
+			"fieldtype": "Small Text",
+			"insert_after": "shipping_address_name",
+			"read_only": 1,
+		},
+	]
+}
+
+CUSTOM_FIELDS = {
+	**SIGNUP_CUSTOM_FIELDS,
+	**WEBSHOP_SETTINGS_CUSTOM_FIELDS,
+	**SALES_ORDER_CUSTOM_FIELDS,
+	**QUOTATION_CUSTOM_FIELDS,
+}
+
+
+def create_all_custom_fields():
+	"""Create all custom fields owned by custom_webshop idempotently."""
+	create_custom_fields(CUSTOM_FIELDS, update=True)
+
 
 def create_quotation_custom_fields():
 	create_custom_fields(QUOTATION_CUSTOM_FIELDS, update=True)
