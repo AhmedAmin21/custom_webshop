@@ -59,9 +59,9 @@ def get_slides():
 def save_slide(eyebrow, title, subtitle, link="/catalog", image="", slide_name=None):
     """
     Insert or update a single hero slide.
-    Requires System Manager role.
+    Requires System Manager or Website Manager role.
     """
-    frappe.only_for("System Manager")
+    frappe.only_for(["System Manager", "Website Manager"])
 
     doc = _get_or_create_slideshow()
 
@@ -102,9 +102,9 @@ def save_slide(eyebrow, title, subtitle, link="/catalog", image="", slide_name=N
 def delete_slide(slide_name):
     """
     Remove a slide row from the hero slideshow.
-    Requires System Manager role.
+    Requires System Manager or Website Manager role.
     """
-    frappe.only_for("System Manager")
+    frappe.only_for(["System Manager", "Website Manager"])
 
     doc = _get_or_create_slideshow()
     doc.slideshow_items = [item for item in doc.slideshow_items if item.name != slide_name]
@@ -118,11 +118,11 @@ def delete_slide(slide_name):
 def reorder_slides(slide_names):
     """
     Reorder slides by providing an ordered list of row names.
-    Requires System Manager role.
+    Requires System Manager or Website Manager role.
     slide_names: JSON list of row names in desired order.
     """
     import json
-    frappe.only_for("System Manager")
+    frappe.only_for(["System Manager", "Website Manager"])
 
     if isinstance(slide_names, str):
         slide_names = json.loads(slide_names)

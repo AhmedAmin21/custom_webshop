@@ -217,10 +217,10 @@ def get_display_attributes():
 def save_display_attributes(attribute_names):
 	"""
 	Persist the ordered list of enabled attribute names.
-	Requires System Manager role.
+	Requires System Manager or Website Manager role.
 	attribute_names: JSON list of attribute name strings.
 	"""
-	frappe.only_for("System Manager")
+	frappe.only_for(["System Manager", "Website Manager"])
 
 	if isinstance(attribute_names, str):
 		attribute_names = json.loads(attribute_names)
@@ -397,10 +397,10 @@ def get_display_tool_families():
 def save_display_tool_families(tool_family_names):
 	"""
 	Persist the ordered list of enabled tool family names and optional descriptions.
-	Requires System Manager role.
+	Requires System Manager or Website Manager role.
 	tool_family_names: JSON list of tool family names (strings) or dicts with {tool_family, description}.
 	"""
-	frappe.only_for("System Manager")
+	frappe.only_for(["System Manager", "Website Manager"])
 
 	if isinstance(tool_family_names, str):
 		tool_family_names = json.loads(tool_family_names)
