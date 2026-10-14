@@ -16,7 +16,7 @@ def get_context(context):
 	context.session_user = frappe.session.user
 	context.is_guest = frappe.session.user == "Guest"
 	context.csrf_token = frappe.sessions.get_csrf_token()
-	context.cart_bootstrap = "null"
+	context.cart_bootstrap = None
 
 	if frappe.session.user == "Guest":
 		frappe.local.flags.redirect_location = "/login?redirect-to=/cart"
@@ -41,7 +41,7 @@ def get_context(context):
 			quotation.flags.ignore_permissions = True
 			quotation.save()
 
-	context.cart_bootstrap = json.dumps(_build_cart_bootstrap(quotation))
+	context.cart_bootstrap = _build_cart_bootstrap(quotation)
 	return context
 
 
@@ -55,7 +55,22 @@ def _build_cart_bootstrap(quotation=None):
 	)
 	mobile_no = frappe.db.get_value("User", user, "mobile_no") or ""
 
+	party = get_party()
 	contact_name = get_contact_name(user)
+	if party and not contact_name:
+		linked_contacts = frappe.get_all(
+			"Contact",
+			filters=[
+				["Dynamic Link", "link_doctype", "=", "Customer"],
+				["Dynamic Link", "link_name", "=", party.name],
+			],
+			order_by="is_primary_contact desc, modified desc",
+			limit=1,
+			pluck="name",
+		)
+		if linked_contacts:
+			contact_name = linked_contacts[0]
+
 	if contact_name:
 		# Contact.mobile_no is a read-only virtual field; query the child table directly
 		contact_mobile = frappe.db.get_value(
@@ -80,8 +95,6 @@ def _build_cart_bootstrap(quotation=None):
 	country = frappe.db.get_default("country") or "Egypt"
 	address_name = None
 	contact_name_for_edit = contact_name
-
-	party = get_party()
 	if party:
 		addresses = frappe.db.sql(
 			"""

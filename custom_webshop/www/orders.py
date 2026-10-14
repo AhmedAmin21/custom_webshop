@@ -16,15 +16,20 @@ def get_context(context):
 	context.title = _("Orders & Quotations")
 	context.parents = [{"route": "me", "title": _("My Account")}]
 
+	if frappe.session.user == "Guest":
+		frappe.local.flags.redirect_location = "/login?redirect-to=/orders"
+		raise frappe.Redirect
+
 	customers = get_customer_names()
+	if not customers:
+		context.orders = []
+		return context
 
 	quotation_filters = {
 		"docstatus": ["<", 2],
+		"quotation_to": "Customer",
+		"party_name": ["in", customers],
 	}
-	if customers:
-		quotation_filters["party_name"] = ["in", customers]
-	else:
-		quotation_filters["contact_email"] = frappe.session.user
 
 	# Fetch Quotations for customer
 	quotations = frappe.get_all(

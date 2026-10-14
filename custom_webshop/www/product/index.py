@@ -15,7 +15,7 @@ def get_context(context):
 
 	item_slug = (frappe.form_dict.get("item") or "").strip()
 	context.item_name = item_slug
-	context.product_bootstrap = "null"
+	context.product_bootstrap = None
 
 	if not item_slug:
 		return context
@@ -24,8 +24,7 @@ def get_context(context):
 	if not doc:
 		return context
 
-	bootstrap = _build_product_bootstrap(doc)
-	context.product_bootstrap = json.dumps(bootstrap)
+	context.product_bootstrap = _build_product_bootstrap(doc)
 	return context
 
 

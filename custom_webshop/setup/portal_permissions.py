@@ -36,9 +36,10 @@ from frappe.permissions import add_permission, update_permission_property
 
 SHOPPING_ROLE = "Customer"
 
-# Read, because `get_item_details` calls `item.check_permission()` and
-# nothing narrower will satisfy it.
-SHOPPING_READS = ("Item",)
+# Item read is intentionally NOT granted here to prevent exposing valuation rates
+# and internal costing. Cart quotation operations safely bypass permission checks
+# internally via cart_override.shopping_as_customer().
+SHOPPING_READS = ()
 
 # Select only. ERPNext's own `account_perm_check` asks for "select"
 # rather than "read" when select is all the role has
@@ -113,7 +114,7 @@ def revoke():
 	Returns:
 		None.
 	"""
-	for doctype in SHOPPING_READS + SHOPPING_SELECTS:
+	for doctype in ("Item", "Account"):
 		for name in frappe.get_all(
 			"Custom DocPerm", filters={"parent": doctype, "role": SHOPPING_ROLE}, pluck="name"
 		):

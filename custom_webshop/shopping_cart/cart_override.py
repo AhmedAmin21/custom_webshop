@@ -333,6 +333,9 @@ def add_customer_info(address_data, contact_data):
 def update_customer_info(address_name, address_data, contact_name, contact_data):
 	"""
 	Update an existing Address and Contact.
+	If either record is shared with other customer/supplier accounts, creates
+	an isolated dedicated record for the current customer to avoid mutating
+	shared contact details.
 	"""
 	party = get_party()
 	if not party:
@@ -346,35 +349,137 @@ def update_customer_info(address_name, address_data, contact_name, contact_data)
 		if not has_link:
 			frappe.throw(_("Not permitted to modify this record"), frappe.PermissionError)
 
-	address_data = frappe.parse_json(address_data)
-	contact_data = frappe.parse_json(contact_data)
+	address_data = frappe.parse_json(address_data) if address_data else {}
+	contact_data = frappe.parse_json(contact_data) if contact_data else {}
 
-	# Update Address
-	address = frappe.get_doc("Address", address_name)
-	verify_ownership(address)
-	address.address_line1 = address_data.get("address_line1")
-	address.city = address_data.get("city")
-	address.country = address_data.get("country")
-	address.flags.ignore_permissions = True
-	address.save()
+	# 1. Update or Isolate Address
+	final_address_name = address_name
+	if address_name and address_data:
+		address = frappe.get_doc("Address", address_name)
+		verify_ownership(address)
 
-	# Update Contact
-	contact = frappe.get_doc("Contact", contact_name)
-	verify_ownership(contact)
-	contact.first_name = contact_data.get("first_name") or contact.first_name
+		has_other_address_links = any(
+			link.link_doctype in ("Customer", "Supplier") and link.link_name != party.name
+			for link in address.get("links", [])
+		)
 
-	# Replace mobile number: clear all and set new one as primary mobile
-	if contact_data.get("mobile_no"):
-		contact.set("phone_nos", [])
-		contact.append("phone_nos", {
-			"phone": contact_data.get("mobile_no"),
-			"is_primary_mobile_no": 1
-		})
+		if has_other_address_links:
+			# Shared address: clone a dedicated address for this customer
+			new_address = frappe.new_doc("Address")
+			new_address.address_title = party.customer_name
+			new_address.address_line1 = address_data.get("address_line1")
+			new_address.city = address_data.get("city")
+			new_address.country = address_data.get("country")
+			new_address.address_type = "Shipping"
+			new_address.append("links", {
+				"link_doctype": "Customer",
+				"link_name": party.name
+			})
+			new_address.flags.ignore_permissions = True
+			new_address.insert()
 
-	contact.flags.ignore_permissions = True
-	contact.save()
+			# Unlink party from shared address
+			address.set("links", [
+				l for l in address.get("links", [])
+				if not (l.link_doctype in ("Customer", "Supplier") and l.link_name == party.name)
+			])
+			address.flags.ignore_permissions = True
+			address.save()
 
-	return address.name
+			# Update active quotation to use dedicated address
+			quotation = _get_cart_quotation()
+			if quotation and quotation.party_name == party.name:
+				quotation.customer_address = new_address.name
+				quotation.shipping_address_name = new_address.name
+				quotation.flags.ignore_permissions = True
+				quotation.save()
+
+			final_address_name = new_address.name
+		else:
+			# Exclusively owned: update in place
+			address.address_line1 = address_data.get("address_line1")
+			address.city = address_data.get("city")
+			address.country = address_data.get("country")
+			address.flags.ignore_permissions = True
+			address.save()
+			final_address_name = address.name
+
+	# 2. Update or Isolate Contact
+	if contact_name and contact_data:
+		contact = frappe.get_doc("Contact", contact_name)
+		verify_ownership(contact)
+
+		has_other_contact_links = any(
+			link.link_doctype in ("Customer", "Supplier") and link.link_name != party.name
+			for link in contact.get("links", [])
+		)
+
+		if has_other_contact_links:
+			# Shared contact: clone a dedicated contact for this customer
+			new_contact = frappe.new_doc("Contact")
+			new_contact.first_name = contact_data.get("first_name") or contact.first_name
+			new_contact.is_primary_contact = 1
+
+			if contact_data.get("mobile_no"):
+				new_contact.append("phone_nos", {
+					"phone": contact_data.get("mobile_no"),
+					"is_primary_mobile_no": 1
+				})
+
+			user_email = frappe.db.get_value("User", frappe.session.user, "email")
+			if user_email:
+				new_contact.append("email_ids", {
+					"email_id": user_email,
+					"is_primary": 1
+				})
+
+			new_contact.append("links", {
+				"link_doctype": "Customer",
+				"link_name": party.name
+			})
+			new_contact.flags.ignore_permissions = True
+			new_contact.insert()
+
+			# Unlink party from shared contact
+			contact.set("links", [
+				l for l in contact.get("links", [])
+				if not (l.link_doctype in ("Customer", "Supplier") and l.link_name == party.name)
+			])
+			contact.flags.ignore_permissions = True
+			contact.save()
+
+			# Update active quotation to use dedicated contact
+			quotation = _get_cart_quotation()
+			if quotation and quotation.party_name == party.name:
+				quotation.contact_person = new_contact.name
+				quotation.flags.ignore_permissions = True
+				quotation.save()
+		else:
+			# Exclusively owned: update in place
+			contact.first_name = contact_data.get("first_name") or contact.first_name
+
+			# Update mobile number: update existing row or append new
+			if contact_data.get("mobile_no"):
+				new_mobile = contact_data.get("mobile_no")
+				matched = False
+				for p in contact.get("phone_nos", []):
+					if p.phone == new_mobile:
+						p.is_primary_mobile_no = 1
+						matched = True
+					else:
+						p.is_primary_mobile_no = 0
+				if not matched:
+					for p in contact.get("phone_nos", []):
+						p.is_primary_mobile_no = 0
+					contact.append("phone_nos", {
+						"phone": new_mobile,
+						"is_primary_mobile_no": 1
+					})
+
+			contact.flags.ignore_permissions = True
+			contact.save()
+
+	return final_address_name
 
 
 @frappe.whitelist()

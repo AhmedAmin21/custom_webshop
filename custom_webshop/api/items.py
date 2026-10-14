@@ -12,6 +12,7 @@ MAX_BATCH_SIZE = 50
 @frappe.whitelist()
 def publish_items_to_website(item_codes):
 	"""Publish a batch of items to Website Items with a strict 50-item limit.
+	Restricted to authorized staff roles.
 
 	Args:
 		item_codes: list or JSON list of Item codes.
@@ -19,6 +20,14 @@ def publish_items_to_website(item_codes):
 	Returns:
 		dict with published, skipped, failed counts, elapsed time, and summary message.
 	"""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please log in to continue."), frappe.PermissionError)
+
+	allowed_roles = {"Item Manager", "Stock Manager", "Website Manager", "System Manager"}
+	user_roles = set(frappe.get_roles(frappe.session.user))
+	if not (user_roles & allowed_roles):
+		frappe.throw(_("Not permitted to publish items to website."), frappe.PermissionError)
+
 	if isinstance(item_codes, str):
 		item_codes = frappe.parse_json(item_codes)
 
@@ -42,11 +51,11 @@ def publish_items_to_website(item_codes):
 
 	for item_code in item_codes:
 		try:
-			# Verify item exists and check template status
+			# Verify item exists and check template/status
 			item_data = frappe.db.get_value(
 				"Item",
 				item_code,
-				["name", "has_variants", "published_in_website"],
+				["name", "has_variants", "published_in_website", "disabled", "is_sales_item"],
 				as_dict=True,
 			)
 
@@ -59,8 +68,32 @@ def publish_items_to_website(item_codes):
 				})
 				continue
 
-			# 1. Skip Template items (has_variants = 1)
-			if item_data.has_variants:
+			disabled = item_data.get("disabled") if isinstance(item_data, dict) else getattr(item_data, "disabled", False)
+			is_sales = item_data.get("is_sales_item") if isinstance(item_data, dict) else getattr(item_data, "is_sales_item", True)
+			has_variants = item_data.get("has_variants") if isinstance(item_data, dict) else getattr(item_data, "has_variants", False)
+
+			# 1. Skip Disabled items
+			if disabled:
+				skipped += 1
+				details.append({
+					"item_code": item_code,
+					"status": "Skipped",
+					"reason": _("Item is disabled"),
+				})
+				continue
+
+			# 2. Skip Non-sales items
+			if not is_sales:
+				skipped += 1
+				details.append({
+					"item_code": item_code,
+					"status": "Skipped",
+					"reason": _("Item is not marked as a sales item"),
+				})
+				continue
+
+			# 3. Skip Template items (has_variants = 1)
+			if has_variants:
 				skipped += 1
 				details.append({
 					"item_code": item_code,
@@ -78,9 +111,19 @@ def publish_items_to_website(item_codes):
 			)
 
 			if existing_web_item:
-				if not existing_web_item.published:
+				is_published = (
+					existing_web_item.get("published")
+					if isinstance(existing_web_item, dict)
+					else getattr(existing_web_item, "published", 0)
+				)
+				web_item_name = (
+					existing_web_item.get("name")
+					if isinstance(existing_web_item, dict)
+					else getattr(existing_web_item, "name", None)
+				)
+				if not is_published:
 					frappe.db.set_value(
-						"Website Item", existing_web_item.name, "published", 1
+						"Website Item", web_item_name, "published", 1
 					)
 					frappe.db.set_value("Item", item_code, "published_in_website", 1)
 					published += 1
@@ -111,7 +154,6 @@ def publish_items_to_website(item_codes):
 				"Bulk Website Item Publish",
 			)
 
-	frappe.db.commit()
 	elapsed = round(time.time() - start_time, 2)
 
 	summary = _(

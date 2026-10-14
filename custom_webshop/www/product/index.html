@@ -18,8 +18,8 @@
             csrf_token: "{{ csrf_token }}",
             is_guest: {{ 'true' if is_guest else 'false' }}
         };
-        window.ITEM_NAME = "{{ item_name | replace('"', '\\"') }}";
-        window.PRODUCT_BOOTSTRAP = {{ product_bootstrap | safe }};
+        window.ITEM_NAME = {{ item_name | tojson }};
+        window.PRODUCT_BOOTSTRAP = {{ product_bootstrap | tojson }};
     </script>
 </head>
 <body>
