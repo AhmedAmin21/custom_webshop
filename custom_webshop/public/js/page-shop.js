@@ -324,66 +324,193 @@ function loadBrands() {
         .catch(() => {});
 }
 
+/* ── Tool Family Progressive Carousel Loading ──────────────────────────── */
+const TOOL_FAMILY_BATCH_SIZE = 6;
+let tfGeneration = 0;
+let pendingFamilies = [];
+let failedFamilies = [];
+let isLoadingTfBatch = false;
+let renderedFamilyCount = 0;
+
+function buildFamilyCarouselSection(family, products) {
+    const familyName = (typeof family === "object" ? family.tool_family : family) || "";
+    const description = (typeof family === "object" ? family.description : "") || "";
+    const safeId = familyName.replace(/[^a-zA-Z0-9]/g, "-");
+    const trackId = `carousel-track-${safeId}`;
+    const section = document.createElement("div");
+    section.className = "category-carousel-section";
+    section.innerHTML = `
+        <div class="category-carousel-header">
+            <div class="carousel-title-group" style="display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <h3 class="carousel-title" style="margin:0;">${Store.escapeHtml(familyName)}</h3>
+                    <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">${Store.t("view_more")} &rarr;</a>
+                </div>
+                ${description ? `<p class="carousel-subtitle" style="margin:0;font-size:0.9rem;color:var(--text-muted);font-weight:400;line-height:1.4;">${Store.escapeHtml(description)}</p>` : ""}
+            </div>
+            <div class="carousel-nav">
+                <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
+                <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',1)" aria-label="Next"><i data-lucide="chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="category-carousel-track-wrapper">
+            <div class="category-carousel-track" id="${trackId}">
+                ${products.map(p => buildProductCard(p, "")).join("")}
+            </div>
+        </div>`;
+    return section;
+}
+
+function getOrCreateViewMoreContainer(container) {
+    let btnWrapper = document.getElementById("view-more-families-container");
+    if (!btnWrapper) {
+        btnWrapper = document.createElement("div");
+        btnWrapper.id = "view-more-families-container";
+        btnWrapper.className = "view-more-families-container";
+        btnWrapper.style.display = "none";
+        container.appendChild(btnWrapper);
+    }
+    return btnWrapper;
+}
+
+function updateViewMoreButton(container, gen) {
+    if (gen !== tfGeneration) return;
+    const btnWrapper = getOrCreateViewMoreContainer(container);
+    const remainingCount = pendingFamilies.length + failedFamilies.length;
+
+    if (remainingCount <= 0) {
+        btnWrapper.style.display = "none";
+        btnWrapper.innerHTML = "";
+        return;
+    }
+
+    const btnLabel = Store.t("btn_view_more_cutting_tools");
+
+    btnWrapper.style.display = "flex";
+    btnWrapper.innerHTML = `
+        <button class="view-more-families-btn" id="view-more-families-btn" type="button">
+            <span>${btnLabel}</span>
+            <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
+        </button>
+    `;
+    if (window.lucide) lucide.createIcons({ nodes: [btnWrapper] });
+
+    const btn = document.getElementById("view-more-families-btn");
+    if (btn) {
+        btn.addEventListener("click", () => {
+            if (isLoadingTfBatch) return;
+            loadNextToolFamilyBatch(container, gen);
+        });
+    }
+}
+
+function processToolFamilyBatch(container, batch, gen) {
+    const btnWrapper = getOrCreateViewMoreContainer(container);
+    const slots = [];
+
+    // Pre-insert placeholder slots in order before the View More button
+    batch.forEach(family => {
+        const slot = document.createElement("div");
+        slot.className = "category-carousel-placeholder";
+        const familyName = (typeof family === "object" ? family.tool_family : family) || "";
+        slot.dataset.family = familyName;
+        container.insertBefore(slot, btnWrapper);
+        slots.push({ family, slot });
+    });
+
+    const requests = slots.map(({ family, slot }) => {
+        const familyName = (typeof family === "object" ? family.tool_family : family) || "";
+        return Store.call("custom_webshop.api.catalog.get_items_by_tool_family", {
+            tool_family: familyName,
+            start: 0,
+            page_length: 8,
+        }).then(data => {
+            if (gen !== tfGeneration) return;
+            const items = (data && data.items) || [];
+            if (items.length > 0) {
+                const section = buildFamilyCarouselSection(family, items);
+                if (slot.parentNode) {
+                    slot.parentNode.replaceChild(section, slot);
+                    if (window.lucide) lucide.createIcons({ nodes: [section] });
+                    renderedFamilyCount++;
+                }
+            } else {
+                // Successful response with no published items: skip and remove slot
+                if (slot.parentNode) {
+                    slot.parentNode.removeChild(slot);
+                }
+            }
+        }).catch(() => {
+            if (gen !== tfGeneration) return;
+            // Network/server failure: preserve for retry and remove ghost slot
+            if (slot.parentNode) {
+                slot.parentNode.removeChild(slot);
+            }
+            failedFamilies.push(family);
+        });
+    });
+
+    Promise.allSettled(requests).then(() => {
+        if (gen !== tfGeneration) return;
+        isLoadingTfBatch = false;
+        updateViewMoreButton(container, gen);
+
+        if (renderedFamilyCount === 0 && pendingFamilies.length === 0 && failedFamilies.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">${Store.lang === 'ar' ? 'لا توجد منتجات حالياً' : 'No tool families found.'}</p>`;
+        }
+    });
+}
+
+function loadNextToolFamilyBatch(container, gen) {
+    if (isLoadingTfBatch || gen !== tfGeneration) return;
+    if (pendingFamilies.length === 0 && failedFamilies.length === 0) return;
+
+    isLoadingTfBatch = true;
+    const btn = document.getElementById("view-more-families-btn");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="btn-spinner"></span> <span>${Store.t("loading")}</span>`;
+    }
+
+    const batch = [];
+    while (batch.length < TOOL_FAMILY_BATCH_SIZE && failedFamilies.length > 0) {
+        batch.push(failedFamilies.shift());
+    }
+    while (batch.length < TOOL_FAMILY_BATCH_SIZE && pendingFamilies.length > 0) {
+        batch.push(pendingFamilies.shift());
+    }
+
+    processToolFamilyBatch(container, batch, gen);
+}
+
 /* Load tool-family carousels: one carousel per tool family (SEM, FEM, …) */
 function loadToolFamilyCarousels() {
     const container = document.getElementById("home-category-carousels");
     if (!container) return;
 
+    tfGeneration++;
+    const currentGen = tfGeneration;
+    pendingFamilies = [];
+    failedFamilies = [];
+    isLoadingTfBatch = false;
+    renderedFamilyCount = 0;
+    container.innerHTML = "";
+
     Store.call("custom_webshop.api.catalog.get_display_tool_families")
         .then(families => {
+            if (currentGen !== tfGeneration) return;
             if (!families || !families.length) {
-                container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">No tool families found.</p>`;
+                container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">${Store.lang === 'ar' ? 'لا توجد منتجات حالياً' : 'No tool families found.'}</p>`;
                 return;
             }
 
-            container.innerHTML = "";
-
-            const renderFamilyCarousel = (family, products) => {
-                if (!products.length) return;
-                const familyName = (typeof family === "object" ? family.tool_family : family) || "";
-                const description = (typeof family === "object" ? family.description : "") || "";
-                const safeId = familyName.replace(/[^a-zA-Z0-9]/g, "-");
-                const trackId = `carousel-track-${safeId}`;
-                const section = document.createElement("div");
-                section.className = "category-carousel-section";
-                section.innerHTML = `
-                    <div class="category-carousel-header">
-                        <div class="carousel-title-group" style="display:flex;flex-direction:column;gap:4px;">
-                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                                <h3 class="carousel-title" style="margin:0;">${Store.escapeHtml(familyName)}</h3>
-                                <a href="/catalog?tool_family=${encodeURIComponent(familyName)}" class="carousel-view-all">${Store.t("view_more")} &rarr;</a>
-                            </div>
-                            ${description ? `<p class="carousel-subtitle" style="margin:0;font-size:0.9rem;color:var(--text-muted);font-weight:400;line-height:1.4;">${Store.escapeHtml(description)}</p>` : ""}
-                        </div>
-                        <div class="carousel-nav">
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',-1)" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
-                            <button class="nav-btn-arrow" onclick="scrollCarousel('${safeId}',1)" aria-label="Next"><i data-lucide="chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <div class="category-carousel-track-wrapper">
-                        <div class="category-carousel-track" id="${trackId}">
-                            ${products.map(p => buildProductCard(p, "")).join("")}
-                        </div>
-                    </div>`;
-                container.appendChild(section);
-                if (window.lucide) lucide.createIcons({ nodes: [section] });
-            };
-
-            // Fetch products for each tool family in parallel (limited preview)
-            const promises = families.map(f =>
-                Store.call("custom_webshop.api.catalog.get_items_by_tool_family", {
-                    tool_family: f.tool_family,
-                    start: 0,
-                    page_length: 8,
-                }).then(data => ({ family: f, products: (data && data.items) || [] }))
-                  .catch(() => ({ family: f, products: [] }))
-            );
-
-            Promise.all(promises).then(results => {
-                results.forEach(r => renderFamilyCarousel(r.family, r.products));
-            });
+            pendingFamilies = [...families];
+            loadNextToolFamilyBatch(container, currentGen);
         })
-        .catch(() => {});
+        .catch(() => {
+            if (currentGen !== tfGeneration) return;
+            container.innerHTML = `<p style="color:var(--text-muted);padding:16px;">${Store.lang === 'ar' ? 'فشل تحميل عائلات الأدوات' : 'Failed to load tool families.'}</p>`;
+        });
 }
 
 window.scrollCarousel = function(safeId, dir) {

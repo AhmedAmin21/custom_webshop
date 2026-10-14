@@ -12,8 +12,8 @@ const TRANSLATIONS = {
         home_shop_category_sub: "Swipe through certified high-precision parts by class",
         home_shop_attribute: "Shop by Attribute", home_shop_attribute_sub: "Browse products grouped by their attributes",
         filter_attribute: "Attribute",
-        home_shop_tool_family: "Shop by Tool Family", home_shop_tool_family_sub: "Browse products by cutting tool family",
-        filter_tool_family: "Tool Family", filter_material: "Material",
+        home_shop_tool_family: "Shop by Cutting Tools", home_shop_tool_family_sub: "Browse products by cutting tools",
+        filter_tool_family: "Cutting Tools", filter_material: "Material",
         home_trending: "Trending Equipment", home_trending_sub: "Most demanded components",
         home_shop_brand: "Shop by Certified Brand", home_shop_brand_sub: "Genuine components from authorized industrial manufacturers",
         filter_search: "Search", filter_search_placeholder: "Search by model or spec...",
@@ -193,7 +193,9 @@ const TRANSLATIONS = {
         filter_mobile_btn: "Filter Products",
         filter_mobile_title: "Filters",
         filter_active: "Active Filters:",
-        btn_apply_filters: "Show Results"
+        btn_apply_filters: "Show Results",
+        btn_view_more_families: "View More Cutting Tools",
+        btn_view_more_cutting_tools: "View More Cutting Tools"
     },
     ar: {
         nav_home: "الرئيسية", nav_catalog: "جميع المنتجات", nav_orders: "تتبع الطلبات", nav_admin: "لوحة التحكم",
@@ -203,8 +205,8 @@ const TRANSLATIONS = {
         home_shop_category_sub: "تصفح أجزاء عالية الدقة معتمدة حسب الفئة",
         home_shop_attribute: "تسوق حسب الخصائص", home_shop_attribute_sub: "تصفح المنتجات مجمعةً حسب خصائصها",
         filter_attribute: "الخصائص",
-        home_shop_tool_family: "تسوق حسب عائلة الأداة", home_shop_tool_family_sub: "تصفح المنتجات حسب عائلة أداة القطع",
-        filter_tool_family: "عائلة الأداة", filter_material: "الخامة",
+        home_shop_tool_family: "تسوق حسب أدوات القطع", home_shop_tool_family_sub: "تصفح المنتجات حسب أدوات القطع",
+        filter_tool_family: "أدوات القطع", filter_material: "الخامة",
         home_trending: "المعدات الشائعة",
         home_trending_sub: "المكونات الأكثر طلباً لورش ومصانع الـ CNC", home_shop_brand: "تسوق حسب العلامة التجارية المعتمدة",
         home_shop_brand_sub: "مكونات وأدوات أصلية من الشركات المصنعة المعتمدة", filter_search: "بحث",
@@ -385,7 +387,9 @@ const TRANSLATIONS = {
         filter_mobile_btn: "تصفية المنتجات",
         filter_mobile_title: "الفلاتر",
         filter_active: "الفلاتر المطبقة:",
-        btn_apply_filters: "عرض النتائج"
+        btn_apply_filters: "عرض النتائج",
+        btn_view_more_families: "عرض المزيد من أدوات القطع",
+        btn_view_more_cutting_tools: "عرض المزيد من أدوات القطع"
     }
 };
 

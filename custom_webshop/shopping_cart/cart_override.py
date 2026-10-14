@@ -635,7 +635,7 @@ def _send_order_email(doc, email_type, recipient_email=None):
 		subject = _("Order Confirmation: Your order {0} has been created").format(doc.name)
 		template = "custom_webshop/templates/emails/order_created.html"
 	elif email_type == "order_payment_confirmed":
-		subject = _("Payment Confirmed: We received your payment proof for order {0}").format(doc.name)
+		subject = _("{0}: Payment update for order {1}").format(context["site_name"], doc.name)
 		template = "custom_webshop/templates/emails/order_payment_confirmed.html"
 	elif email_type == "order_expired":
 		subject = _("Stock reservation expired for order {0}").format(doc.name)
