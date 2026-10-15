@@ -363,11 +363,7 @@ function prefillDeliveryForm() {
 
     if (nameEl && bootstrap.user_fullname) nameEl.value = bootstrap.user_fullname;
     if (phoneEl && bootstrap.mobile_no) phoneEl.value = bootstrap.mobile_no;
-
-    if (addressEl) {
-        const parts = [bootstrap.address_line1, bootstrap.city].filter(Boolean);
-        if (parts.length) addressEl.value = parts.join(", ");
-    }
+    if (addressEl && bootstrap.address_line1) addressEl.value = bootstrap.address_line1;
 }
 
 function getDeliveryFormData() {
